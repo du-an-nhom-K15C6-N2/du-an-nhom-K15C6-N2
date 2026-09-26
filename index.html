@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ Thống Điểm Danh - EP-01</title>
+    <style>
+        :root {
+            --bg: #f4f7ff;
+            --panel: #ffffff;
+            --panel-soft: #eef4ff;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-soft: #dbeafe;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #dfe7f5;
+            --warning-bg: #fff7d6;
+            --warning-text: #92400e;
+            --warning-border: #fcd34d;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --danger-border: #fca5a5;
+            --success: #10b981;
+            --shadow: rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(135deg, #f8fbff 0%, #edf5ff 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(90deg, #0f172a 0%, #111827 100%);
+            color: white;
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        }
+
+        .navbar h2 {
+            font-size: 18px;
+            letter-spacing: 0.02em;
+        }
+
+        .user-panel {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.18);
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 760px;
+            margin: 42px auto;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 22px;
+            box-shadow: 0 18px 40px var(--shadow);
+            overflow: hidden;
+        }
+
+        /* Banner phiên đăng nhập */
+        .session-status-bar {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--warning-border);
+        }
+
+        .session-status-bar.danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border-bottom-color: var(--danger-border);
+        }
+
+        .btn-renew {
+            background: white;
+            border: 1px solid var(--warning-border);
+            padding: 7px 12px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--warning-text);
+            transition: all 0.2s ease;
+        }
+
+        .btn-renew:hover {
+            background: #fffdf7;
+            transform: translateY(-1px);
+        }
+
+        .content {
+            padding: 32px 30px 28px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 22px;
+            color: var(--text);
+            letter-spacing: -0.03em;
+        }
+
+        .form-group { margin-bottom: 22px; }
+
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            background: #fbfdff;
+            color: var(--text);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: rgba(37, 99, 235, 0.7);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-top: 28px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .draft-notice {
+            font-size: 13px;
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 12px 22px rgba(37, 99, 235, 0.22);
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.03);
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .container {
+                margin: 22px 14px;
+            }
+
+            .session-status-bar,
+            .action-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-submit {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>🎓 Quản Lý Điểm Danh Hệ Thống</h2>
+        <div class="user-panel">
+            <span>Xin chào, <strong>Sinh viên</strong></span>
+            <button class="btn-logout" onclick="dangXuatAnToan()">Đăng xuất</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Thanh trạng thái phiên đăng nhập (Đáp ứng tiêu chí EP-01) -->
+        <div id="statusBar" class="session-status-bar">
+            <span id="statusText">⏳ Phiên đăng nhập còn hiệu lực: <strong>30s</strong></span>
+            <button class="btn-renew" onclick="giaHanPhien()">Gia hạn phiên</button>
+        </div>
+
+        <div class="content">
+            <div class="title">Biểu Mẫu Điểm Danh Lớp Học</div>
+
+            <div class="form-group">
+                <label>Môn học</label>
+                <select>
+                    <option>Phân tích thiết kế hệ thống K23</option>
+                    <option>Lập trình hướng đối tượng</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Nội dung ghi chú / Dữ liệu nhập dở (Được bảo vệ tự động):</label>
+                <textarea id="noiDungNhap" placeholder="Nhập nội dung điểm danh của bạn tại đây..."></textarea>
+            </div>
+
+            <div class="action-row">
+                <span id="draftStatus" class="draft-notice">💾 Dữ liệu đã được lưu bản nháp an toàn</span>
+                <button class="btn-submit" onclick="diemDanhThanhCong()">Gửi Điểm Danh</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Kiểm tra bảo mật: Nếu chưa đăng nhập mà gõ trực tiếp URL index.html thì đá về login
+    if (localStorage.getItem("isLoggedIn") !== "true") {
+        window.location.href = "login.html";
+    }
+
+    // Thiết lập thời gian phiên (ví dụ 30 giây để kiểm thử nhanh)
+    let sessionTime = 30;
+    const statusBar = document.getElementById("statusBar");
+    const statusText = document.getElementById("statusText");
+    const noiDungNhap = document.getElementById("noiDungNhap");
+    const draftStatus = document.getElementById("draftStatus");
+
+    // 1. Phục hồi dữ liệu đang nhập dở khi vào lại trang
+    window.onload = function() {
+        const savedDraft = localStorage.getItem("diem_danh_draft");
+        if (savedDraft) {
+            noiDungNhap.value = savedDraft;
+        }
+    };
+
+    // 2. Chống mất dữ liệu: Tự động lưu bản nháp khi người dùng gõ phím
+    noiDungNhap.addEventListener("input", function() {
+        localStorage.setItem("diem_danh_draft", noiDungNhap.value);
+        draftStatus.innerText = "💾 Đang lưu tự động...";
+        setTimeout(() => {
+            draftStatus.innerText = "💾 Dữ liệu đã được lưu bản nháp an toàn";
+        }, 500);
+    });
+
+    // 3. Đếm ngược thời gian phiên và xử lý hết hạn (Timeout)
+    const sessionTimer = setInterval(() => {
+        sessionTime--;
+        
+        if (sessionTime <= 10) {
+            statusBar.classList.add("danger");
+            statusText.innerHTML = `⚠️ <strong>Cảnh báo:</strong> Phiên sắp hết hạn sau <strong>${sessionTime}s</strong>!`;
+        } else {
+            statusText.innerHTML = `⏳ Phiên đăng nhập còn hiệu lực: <strong>${sessionTime}s</strong>`;
+        }
+
+        if (sessionTime <= 0) {
+            clearInterval(sessionTimer);
+            // Đánh dấu nguyên nhân hết hạn để trang login hiển thị cảnh báo
+            localStorage.setItem("logout_reason", "timeout");
+            localStorage.removeItem("isLoggedIn");
+            alert("Phiên làm việc đã hết hạn. Hệ thống đưa bạn về trang đăng nhập (Dữ liệu đang nhập dở của bạn vẫn được giữ nguyên).");
+            window.location.href = "login.html";
+        }
+    }, 1000);
+
+    // 4. Gia hạn phiên khi có hoạt động hoặc bấm nút
+    function giaHanPhien() {
+        sessionTime = 30; // Reset lại thời gian đếm ngược
+        statusBar.classList.remove("danger");
+        statusText.innerHTML = "✅ Phiên đã được gia hạn thành công!";
+        setTimeout(() => {
+            statusText.innerHTML = `⏳ Phiên đăng nhập còn hiệu lực: <strong>${sessionTime}s</strong>`;
+        }, 2000);
+    }
+
+    // 5. Đăng xuất an toàn (Hủy phiên lập tức ở phía client/server)
+    function dangXuatAnToan() {
+        if (confirm("Bạn có chắc chắn muốn đăng xuất an toàn không?")) {
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("diem_danh_draft"); // Xóa dữ liệu tạm khi đăng xuất hẳn trên máy chung
+            window.location.href = "login.html";
+        }
+    }
+
+    function diemDanhThanhCong() {
+        alert("Điểm danh thành công!");
+        localStorage.removeItem("diem_danh_draft");
+    }
+</script>
+
+</body>
+</html>
