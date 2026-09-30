@@ -1,6 +1,7 @@
 const express = require('express');
 const gradeRoutes = require('./routes/gradeRoutes');
 const tuitionRoutes = require('./routes/tuitionRoutes');
+const rbacPolicy = require('./config/rbacPolicy');
 
 const app = express();
 app.use(express.json());
@@ -39,7 +40,26 @@ app.get('/api/v1/me', (req, res) => {
     role: req.user.role
   });
 });
+app.get('/api/v1/navigation', (req, res) => {
+  const user = req.user || {
+    id: 1,
+    name: 'NGUYEN VAN A',
+    role: 'ADMIN'
+  };
 
+  const permissions = rbacPolicy[user.role] || {
+    grades: [],
+    tuition: [],
+    system: []
+  };
+
+  res.status(200).json({
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    permissions: permissions
+  });
+});
 app.get('/profile', (req, res) => {
   const user = req.user || {
     name: 'NGUYEN VAN A',
