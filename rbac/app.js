@@ -45,6 +45,36 @@ app.get('/profile', (req, res) => {
     name: 'NGUYEN VAN A',
     role: 'ADMIN'
   };
+  const menuItems = [
+    {
+      name: 'Trang chu',
+      path: '/',
+      roles: ['USER', 'ADMIN']
+    },
+    {
+      name: 'Ho so',
+      path: '/profile',
+      roles: ['USER', 'ADMIN']
+    },
+    {
+      name: 'Quan ly diem',
+      path: '/api/v1/grades/update',
+      roles: ['ADMIN']
+    },
+    {
+      name: 'Quan ly hoc phi',
+      path: '/api/v1/tuition/update',
+      roles: ['ADMIN']
+    }
+  ];
+
+  const visibleMenu = menuItems.filter(item =>
+    item.roles.includes(user.role)
+  );
+
+  const menuHtml = visibleMenu.map(item =>
+    `<li><a href="${item.path}">${item.name}</a></li>`
+  ).join('');
 
   res.send(`
         <!DOCTYPE html>
@@ -98,6 +128,11 @@ app.get('/profile', (req, res) => {
         <h2>Thong tin nguoi dung</h2>
         <p><strong>Ten:</strong> ${user.name}</p>
         <p><strong>Vai tro:</strong> ${user.role}</p>
+        <h3>Menu</h3>
+        <ul>
+    ${menuHtml}
+</ul>
+ 
     </div>
 </body>
         </html>
