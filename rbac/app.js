@@ -52,15 +52,54 @@ app.get('/profile', (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f5f5;
+    }
+
+    .profile-box {
+        max-width: 400px;
+        margin: 20px auto;
+        padding: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+
+    @media (max-width: 360px) {
+        body {
+            padding: 10px;
+        }
+
+        .profile-box {
+            width: 100%;
+            margin: 10px 0;
+            padding: 15px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        p {
+            font-size: 14px;
+        }
+    }
+</style>
             <title>Thong tin nguoi dung</title>
         </head>
 
         <body>
-            <h2>Thong tin nguoi dung</h2>
-
-            <p><strong>Ten:</strong> ${user.name}</p>
-            <p><strong>Vai tro:</strong> ${user.role}</p>
-        </body>
+    <div class="profile-box">
+        <h2>Thong tin nguoi dung</h2>
+        <p><strong>Ten:</strong> ${user.name}</p>
+        <p><strong>Vai tro:</strong> ${user.role}</p>
+    </div>
+</body>
         </html>
     `);
 });
