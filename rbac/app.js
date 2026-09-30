@@ -103,7 +103,42 @@ app.get('/profile', (req, res) => {
         </html>
     `);
 });
+app.get('/unauthorized', (req, res) => {
+  res.status(403).send(`
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Khong co quyen truy cap</title>
 
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 30px;
+                    background: #f5f5f5;
+                }
+
+                .message-box {
+                    max-width: 500px;
+                    margin: 50px auto;
+                    padding: 25px;
+                    background: white;
+                    border: 1px solid #ddd;
+                    border-radius: 8px;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="message-box">
+                <h2>Khong co quyen truy cap</h2>
+                <p>Ban khong duoc phep su dung chuc nang nay.</p>
+            </div>
+        </body>
+        </html>
+    `);
+});
 app.get('/', (req, res) => {
   res.status(200).json({
     name: 'RBAC System',
