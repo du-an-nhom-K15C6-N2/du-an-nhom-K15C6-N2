@@ -242,7 +242,7 @@
 
             <div class="form-group">
                 <label>Môn học</label>
-                <select>
+                <select id="monHoc">
                     <option>Phân tích thiết kế hệ thống K23</option>
                     <option>Lập trình hướng đối tượng</option>
                 </select>
@@ -261,27 +261,83 @@
     </div>
 
 <script>
-    // Kiểm tra bảo mật: Nếu chưa đăng nhập mà gõ trực tiếp URL index.html thì đá về login
-    if (localStorage.getItem("isLoggedIn") !== "true") {
+    function getRemainingMs() {
+        return Math.max(0, Number(localStorage.getItem("sessionExpiresAt") || 0) - Date.now());
+    }
+
+    function formatRemainingTime(ms) {
+        const totalSeconds = Math.ceil(ms / 1000);
+        return `${String(Math.floor(totalSeconds / 60)).padStart(2, "0")}:${String(totalSeconds % 60).padStart(2, "0")}`;
+    }
+
+    function expireSession(message = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.") {
+        localStorage.setItem("logout_reason", "timeout");
+        localStorage.removeItem("isLoggedIn");
+        localStorage.removeItem("sessionToken");
+        localStorage.removeItem("sessionExpiresAt");
+        alert(`${message} Bản nháp của bạn vẫn được lưu để khôi phục sau khi đăng nhập.`);
         window.location.href = "login.html";
     }
 
-    // Thiết lập thời gian phiên (ví dụ 30 giây để kiểm thử nhanh)
-    let sessionTime = 30;
+    const sessionToken = localStorage.getItem("sessionToken");
+    if (localStorage.getItem("isLoggedIn") !== "true" || !sessionToken) {
+        window.location.href = "login.html";
+    }
+
     const statusBar = document.getElementById("statusBar");
     const statusText = document.getElementById("statusText");
     const noiDungNhap = document.getElementById("noiDungNhap");
+    const monHoc = document.getElementById("monHoc");
     const draftStatus = document.getElementById("draftStatus");
+    const apiHeaders = { "Authorization": `Bearer ${sessionToken}` };
+    let handlingExpiredSession = false;
+    let lastRenewalAt = 0;
 
-    // 1. Phục hồi dữ liệu đang nhập dở khi vào lại trang
-    window.onload = function() {
+    async function sessionRequest(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: { ...apiHeaders, ...(options.headers || {}) }
+        });
+        const result = await response.json();
+        if (response.status === 401 && result.code === "SESSION_EXPIRED") {
+            handlingExpiredSession = true;
+            expireSession(result.message);
+            throw new Error(result.message);
+        }
+        if (!response.ok) throw new Error(result.message || "Yêu cầu không thành công.");
+        return result;
+    }
+
+    window.onload = async function() {
         const savedDraft = localStorage.getItem("diem_danh_draft");
-        if (savedDraft) {
-            noiDungNhap.value = savedDraft;
+        if (savedDraft) noiDungNhap.value = savedDraft;
+        const savedCourse = localStorage.getItem("diem_danh_mon_hoc");
+        if (savedCourse) monHoc.value = savedCourse;
+
+        try {
+            const session = await sessionRequest("/api/session");
+            localStorage.setItem("sessionExpiresAt", String(session.expiresAt));
+        } catch (error) {
+            if (!handlingExpiredSession) expireSession();
         }
     };
 
-    // 2. Chống mất dữ liệu: Tự động lưu bản nháp khi người dùng gõ phím
+    async function refreshSessionActivity(force = false) {
+        if (handlingExpiredSession || (!force && Date.now() - lastRenewalAt < 10000)) return;
+        lastRenewalAt = Date.now();
+        try {
+            const session = await sessionRequest("/api/session/renew", { method: "POST" });
+            localStorage.setItem("sessionExpiresAt", String(session.expiresAt));
+        } catch (error) {
+            if (!handlingExpiredSession) expireSession();
+        }
+    }
+
+    document.addEventListener("mousemove", refreshSessionActivity, { passive: true });
+    document.addEventListener("keydown", refreshSessionActivity);
+    document.addEventListener("click", refreshSessionActivity);
+    document.addEventListener("scroll", refreshSessionActivity, { passive: true });
+
     noiDungNhap.addEventListener("input", function() {
         localStorage.setItem("diem_danh_draft", noiDungNhap.value);
         draftStatus.innerText = "💾 Đang lưu tự động...";
@@ -290,49 +346,57 @@
         }, 500);
     });
 
-    // 3. Đếm ngược thời gian phiên và xử lý hết hạn (Timeout)
+    monHoc.addEventListener("change", function() {
+        localStorage.setItem("diem_danh_mon_hoc", monHoc.value);
+    });
+
     const sessionTimer = setInterval(() => {
-        sessionTime--;
-        
-        if (sessionTime <= 10) {
-            statusBar.classList.add("danger");
-            statusText.innerHTML = `⚠️ <strong>Cảnh báo:</strong> Phiên sắp hết hạn sau <strong>${sessionTime}s</strong>!`;
-        } else {
-            statusText.innerHTML = `⏳ Phiên đăng nhập còn hiệu lực: <strong>${sessionTime}s</strong>`;
+        const remainingMs = getRemainingMs();
+        if (remainingMs <= 0) {
+            clearInterval(sessionTimer);
+            expireSession();
+            return;
         }
 
-        if (sessionTime <= 0) {
-            clearInterval(sessionTimer);
-            // Đánh dấu nguyên nhân hết hạn để trang login hiển thị cảnh báo
-            localStorage.setItem("logout_reason", "timeout");
-            localStorage.removeItem("isLoggedIn");
-            alert("Phiên làm việc đã hết hạn. Hệ thống đưa bạn về trang đăng nhập (Dữ liệu đang nhập dở của bạn vẫn được giữ nguyên).");
-            window.location.href = "login.html";
+        const remainingText = formatRemainingTime(remainingMs);
+        if (remainingMs <= 10 * 1000) {
+            statusBar.classList.add("danger");
+            statusText.innerHTML = `⚠️ <strong>Cảnh báo:</strong> Phiên sắp hết hạn sau <strong>${remainingText}</strong>!`;
+        } else {
+            statusText.innerHTML = `⏳ Phiên đăng nhập còn hiệu lực: <strong>${remainingText}</strong>`;
+            statusBar.classList.remove("danger");
         }
     }, 1000);
 
-    // 4. Gia hạn phiên khi có hoạt động hoặc bấm nút
     function giaHanPhien() {
-        sessionTime = 30; // Reset lại thời gian đếm ngược
-        statusBar.classList.remove("danger");
-        statusText.innerHTML = "✅ Phiên đã được gia hạn thành công!";
-        setTimeout(() => {
-            statusText.innerHTML = `⏳ Phiên đăng nhập còn hiệu lực: <strong>${sessionTime}s</strong>`;
-        }, 2000);
+        refreshSessionActivity(true).then(() => {
+            if (handlingExpiredSession) return;
+            statusBar.classList.remove("danger");
+            statusText.innerHTML = "✅ Phiên đã được gia hạn thành công!";
+        });
     }
 
-    // 5. Đăng xuất an toàn (Hủy phiên lập tức ở phía client/server)
-    function dangXuatAnToan() {
-        if (confirm("Bạn có chắc chắn muốn đăng xuất an toàn không?")) {
+    async function dangXuatAnToan() {
+        if (!confirm("Bạn có chắc chắn muốn đăng xuất an toàn không?")) return;
+        try {
+            await fetch("/api/session/logout", { method: "POST", headers: apiHeaders });
+        } finally {
             localStorage.removeItem("isLoggedIn");
-            localStorage.removeItem("diem_danh_draft"); // Xóa dữ liệu tạm khi đăng xuất hẳn trên máy chung
+            localStorage.removeItem("sessionToken");
+            localStorage.removeItem("sessionExpiresAt");
             window.location.href = "login.html";
         }
     }
 
-    function diemDanhThanhCong() {
-        alert("Điểm danh thành công!");
-        localStorage.removeItem("diem_danh_draft");
+    async function diemDanhThanhCong() {
+        try {
+            const result = await sessionRequest("/api/attendance", { method: "POST" });
+            alert(result.message);
+            localStorage.removeItem("diem_danh_draft");
+            localStorage.removeItem("diem_danh_mon_hoc");
+        } catch (error) {
+            if (!handlingExpiredSession) alert(error.message);
+        }
     }
 </script>
 

@@ -1,0 +1,28 @@
+{
+  "name": "quanly",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "node --test",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/du-an-nhom-K15C6-N2/quan-ly-diem-danh-S1-02.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/du-an-nhom-K15C6-N2/quan-ly-diem-danh-S1-02/issues"
+  },
+  "homepage": "https://github.com/du-an-nhom-K15C6-N2/quan-ly-diem-danh-S1-02#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "nodemailer": "^10.0.10"
+  }
+}

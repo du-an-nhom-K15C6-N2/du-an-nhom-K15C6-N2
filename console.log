@@ -1,0 +1,3 @@
+const resetLink = `http://localhost:3000/reset-password.html?token=${token}`;
+console.log("=== ĐƯỜNG DẪN ĐẶT LẠI Mật Khẩu ===");
+console.log(resetLink);
