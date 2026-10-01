@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#143b32">
+    <title>Đặt lại mật khẩu | DNKN 12</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main class="layout">
+      <aside class="identity-rail" aria-label="DNKN 12">
+        <a class="wordmark" href="/" aria-label="DNKN 12, trang chủ">
+          <span class="wordmark-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>DNKN <span class="wordmark-number">12</span></span>
+        </a>
+
+        <div class="rail-copy">
+          <p class="eyebrow"><span class="status-dot"></span> KHÔNG GIAN TÀI KHOẢN</p>
+          <h1>Trở lại<br>nhịp làm việc.</h1>
+          <p class="rail-description">Một bước ngắn để tiếp tục từ nơi bạn dừng lại.</p>
+          <div class="rail-rule" aria-hidden="true"><span></span><span></span><span></span></div>
+        </div>
+
+        <div class="rail-footer">
+          <span>DNKN 12</span>
+          <span>ACCOUNT SERVICES <span class="footer-mark">/</span> 01</span>
+        </div>
+        <span class="rail-index" aria-hidden="true">12</span>
+      </aside>
+
+      <section class="workspace" aria-labelledby="form-title">
+        <div class="workspace-topline">
+          <span class="mobile-wordmark">DNKN <span>12</span></span>
+          <span class="security-label"><span class="security-icon" aria-hidden="true"></span> KẾT NỐI AN TOÀN</span>
+        </div>
+
+        <div class="form-wrap">
+          <section id="request-view" class="form-view" hidden>
+            <p class="step-label"><span>01</span> <span class="step-divider"></span> XÁC MINH TÀI KHOẢN</p>
+            <h2 id="form-title">Đặt lại mật khẩu</h2>
+            <p class="form-intro">Nhập email đã đăng ký để nhận liên kết bảo mật.</p>
+
+            <form id="request-form" novalidate>
+              <label for="email">Địa chỉ email</label>
+              <input id="email" name="email" type="email" autocomplete="email" placeholder="ban@congty.vn" required maxlength="254">
+              <p class="field-note">Liên kết có hiệu lực trong 30 phút.</p>
+              <button class="primary-button" type="submit">
+                <span>Gửi liên kết đặt lại</span>
+                <span class="button-arrow" aria-hidden="true">&#8599;</span>
+              </button>
+              <p id="request-status" class="form-status" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <section id="reset-view" class="form-view" hidden>
+            <p class="step-label"><span>02</span> <span class="step-divider"></span> CẬP NHẬT BẢO MẬT</p>
+            <h2 id="form-title-reset">Tạo mật khẩu mới</h2>
+            <p class="form-intro">Chọn mật khẩu mới để bảo vệ tài khoản của bạn.</p>
+
+            <form id="reset-form" novalidate>
+              <div class="password-heading">
+                <label for="password">Mật khẩu mới</label>
+                <button class="visibility-toggle" type="button" data-toggle="password" aria-label="Hiện mật khẩu">Hiện</button>
+              </div>
+              <input id="password" name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+              <p class="field-note">Tối thiểu 12 ký tự.</p>
+
+              <label for="password-confirm">Nhập lại mật khẩu</label>
+              <input id="password-confirm" name="password-confirm" type="password" autocomplete="new-password" required minlength="12" maxlength="128">
+              <button class="primary-button reset-submit" type="submit">
+                <span>Cập nhật mật khẩu</span>
+                <span class="button-arrow" aria-hidden="true">&#8599;</span>
+              </button>
+              <a class="recovery-link" href="/">Yêu cầu liên kết mới</a>
+              <p id="reset-status" class="form-status" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <section id="result-view" class="form-view result-view" hidden aria-live="polite">
+            <p class="step-label"><span class="result-check" aria-hidden="true">&#10003;</span> HOÀN TẤT</p>
+            <h2 id="result-title">Kiểm tra hộp thư</h2>
+            <p id="result-message" class="form-intro"></p>
+            <a class="text-link" href="/">Quay lại <span aria-hidden="true">&#8594;</span></a>
+          </section>
+        </div>
+
+        <footer class="workspace-footer">
+          <span>BẢO MẬT TÀI KHOẢN</span>
+          <span class="footer-divider" aria-hidden="true"></span>
+          <span>DNKN 12 <span class="footer-year">&#169; 2026</span></span>
+        </footer>
+      </section>
+    </main>
+  </body>
+</html>
