@@ -1,6 +1,6 @@
 const rbacPolicy = require('../config/rbacPolicy');
 
-const seedRoles = Object.keys(rbacPolicy).map((role) => ({
+const seedRoles = rbacPolicy.ROLE_LIST.map((role) => ({
   role,
   permissions: rbacPolicy[role],
 }));

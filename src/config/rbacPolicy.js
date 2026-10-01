@@ -44,5 +44,7 @@ const rbacPolicy = {
   },
 };
 
+const ROLE_LIST = Object.freeze(Object.keys(rbacPolicy));
+Object.defineProperty(rbacPolicy, 'ROLE_LIST', { value: ROLE_LIST });
+
 module.exports = rbacPolicy;
-module.exports.ROLE_LIST = Object.keys(rbacPolicy);
