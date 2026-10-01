@@ -1,4 +1,9 @@
-const UserModel = require('../models/userModel');
+/**
+ * TTCS Classroom Security Application - User Controller
+ * Handles user management HTTP requests and responses
+ */
+
+const userService = require('../services/userService');
 
 class UserController {
   /**
@@ -9,7 +14,7 @@ class UserController {
     try {
       const { page = 1, pageSize = 20, search = '', role = 'all', status = 'all' } = req.query;
 
-      const result = UserModel.findAll({
+      const result = userService.getUsers({
         page: parseInt(page, 10) || 1,
         pageSize: parseInt(pageSize, 10) || 20,
         search,
@@ -33,10 +38,10 @@ class UserController {
    */
   static async getAllList(req, res, next) {
     try {
-      const users = UserModel.getAllRaw();
+      const users = userService.getUsers({ pageSize: 1000 });
       return res.status(200).json({
         success: true,
-        data: users
+        data: users.data
       });
     } catch (error) {
       next(error);
@@ -50,62 +55,51 @@ class UserController {
   static async getUserById(req, res, next) {
     try {
       const { id } = req.params;
-      const user = UserModel.findById(id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'Không tìm thấy tài khoản người dùng.'
-        });
-      }
+      const user = userService.getUserById(id);
 
       return res.status(200).json({
         success: true,
         data: user
       });
     } catch (error) {
-      next(error);
+      const statusCode = error.statusCode || 400;
+      return res.status(statusCode).json({
+        success: false,
+        code: error.code || 'USER_ERROR',
+        message: error.message
+      });
     }
   }
 
   /**
-   * Tạo tài khoản người dùng mới (AC1 & AC2)
+   * Tạo tài khoản người dùng mới kèm gửi email kích hoạt [DNKN-59]
    * POST /api/users
    */
   static async createUser(req, res, next) {
     try {
-      const { name, email, phone, role, status } = req.body;
+      const { name, email, phone, role, password, status } = req.body;
 
-      if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, message: 'Họ và tên không được để trống.' });
-      }
-      if (!email || !email.trim()) {
-        return res.status(400).json({ success: false, message: 'Địa chỉ email không được để trống.' });
-      }
-
-      // Kiểm tra định dạng email cơ bản
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email.trim())) {
-        return res.status(400).json({ success: false, message: 'Định dạng email không hợp lệ.' });
-      }
-
-      const newUser = UserModel.create({
+      const result = await userService.createUser({
         name,
         email,
-        phone: phone || '',
-        role: role || 'student',
-        status: status || 'active'
+        phone,
+        role,
+        password,
+        status
       });
 
       return res.status(201).json({
         success: true,
-        data: newUser,
-        message: `Tạo tài khoản thành công! Hệ thống đã gửi email kích hoạt kèm mật khẩu tạm tới ${newUser.email}.`
+        data: result.user,
+        activation: result.activation,
+        message: `Tạo tài khoản thành công! Hệ thống đã gửi email kích hoạt tới địa chỉ ${result.user.email}.`
       });
     } catch (error) {
-      return res.status(400).json({
+      const statusCode = error.statusCode || 400;
+      return res.status(statusCode).json({
         success: false,
-        message: error.message || 'Lỗi khi tạo người dùng.'
+        code: error.code || 'CREATE_USER_ERROR',
+        message: error.message || 'Lỗi khi tạo tài khoản người dùng.'
       });
     }
   }
@@ -119,14 +113,7 @@ class UserController {
       const { id } = req.params;
       const { name, email, phone, role, status } = req.body;
 
-      if (!name || !name.trim()) {
-        return res.status(400).json({ success: false, message: 'Họ và tên không được để trống.' });
-      }
-      if (!email || !email.trim()) {
-        return res.status(400).json({ success: false, message: 'Email không được để trống.' });
-      }
-
-      const updatedUser = UserModel.update(id, {
+      const updatedUser = userService.updateUser(id, {
         name,
         email,
         phone,
@@ -140,8 +127,10 @@ class UserController {
         message: 'Cập nhật thông tin tài khoản thành công!'
       });
     } catch (error) {
-      return res.status(400).json({
+      const statusCode = error.statusCode || 400;
+      return res.status(statusCode).json({
         success: false,
+        code: error.code || 'UPDATE_USER_ERROR',
         message: error.message || 'Lỗi khi cập nhật tài khoản.'
       });
     }
@@ -154,7 +143,7 @@ class UserController {
   static async toggleLock(req, res, next) {
     try {
       const { id } = req.params;
-      const updated = UserModel.toggleLock(id);
+      const updated = userService.toggleLock(id);
 
       const message = updated.status === 'locked'
         ? `Đã tạm khóa tài khoản ${updated.name}.`
@@ -166,8 +155,10 @@ class UserController {
         message
       });
     } catch (error) {
-      return res.status(400).json({
+      const statusCode = error.statusCode || 400;
+      return res.status(statusCode).json({
         success: false,
+        code: error.code || 'TOGGLE_LOCK_ERROR',
         message: error.message || 'Lỗi khi thay đổi trạng thái khóa.'
       });
     }
@@ -180,15 +171,17 @@ class UserController {
   static async deleteUser(req, res, next) {
     try {
       const { id } = req.params;
-      UserModel.delete(id);
+      userService.deleteUser(id);
 
       return res.status(200).json({
         success: true,
         message: 'Đã xóa tài khoản khỏi hệ thống thành công.'
       });
     } catch (error) {
-      return res.status(400).json({
+      const statusCode = error.statusCode || 400;
+      return res.status(statusCode).json({
         success: false,
+        code: error.code || 'DELETE_USER_ERROR',
         message: error.message || 'Lỗi khi xóa người dùng.'
       });
     }
@@ -200,7 +193,7 @@ class UserController {
    */
   static async resetData(req, res, next) {
     try {
-      const users = UserModel.reset();
+      const users = userService.resetData();
       return res.status(200).json({
         success: true,
         data: users,
