@@ -1,0 +1,20 @@
+{
+  "name": "dnkn-role-management",
+  "version": "1.0.0",
+  "description": "Gán / thu hồi nhiều vai trò cho người dùng (DNKN-17..75) - Node.js + Express + SQLite",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/auth.test.js test/assign.test.js test/revoke.test.js"
+  },
+  "keywords": ["rbac", "roles", "express", "sqlite"],
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "supertest": "^7.0.0"
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+dnkn.db
+dnkn.db-journal
+dnkn.db-wal
+dnkn.db-shm
+npm-debug.log*

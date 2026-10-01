@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý vai trò - DNKN</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">🛡️</div>
+        <div><h1>DNKN</h1><p>Quản lý vai trò</p></div>
+      </div>
+      <nav class="nav">
+        <a href="/index.html" class="active"><span class="ico">👥</span>Người dùng & vai trò</a>
+      </nav>
+      <div class="side-foot">Story DNKN-17 · Gán / thu hồi vai trò</div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <h2 id="pageTitle">Người dùng & vai trò</h2>
+        <div class="user-box">
+          <div style="text-align:right">
+            <div class="u-name" id="meName"></div>
+            <div class="u-sub" id="meRoles"></div>
+          </div>
+          <div class="avatar" id="meAvatar"></div>
+          <button class="btn outline sm" onclick="logout()">Đăng xuất</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="card">
+          <h3>Danh sách người dùng <span class="sub">— nhấn "Quản lý vai trò" để gán / thu hồi</span></h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Email</th><th>Vai trò hiện tại</th><th style="text-align:right">Hành động</th></tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>
