@@ -20,14 +20,17 @@ function setSession(token, user) { localStorage.setItem(TOKEN_KEY, token); local
 function clearSession() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem('dnkn_user'); }
 
 async function api(path, options = {}) {
+  // skipAuthRedirect: dùng cho chính trang đăng nhập — sai thông tin thì hiện lỗi
+  // tại chỗ, KHÔNG tải lại trang (nếu không thông báo lỗi sẽ bị mất).
+  const { skipAuthRedirect, ...fetchOpts } = options;
   const res = await fetch('/api' + path, {
     headers: {
       'Content-Type': 'application/json',
       ...(getToken() ? { Authorization: 'Bearer ' + getToken() } : {}),
     },
-    ...options,
+    ...fetchOpts,
   });
-  if (res.status === 401) {
+  if (res.status === 401 && !skipAuthRedirect) {
     clearSession();
     location.href = '/login.html';
     throw new Error('Phiên đăng nhập hết hạn');
