@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lịch sử thao tác - DNKN</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body data-page="audit">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+      <main class="content" id="content">
+        <div class="toolbar">
+          <div class="left"><h3 style="margin:0">Nhật ký gán / thu hồi vai trò</h3></div>
+          <div class="right">
+            <select id="filterAction" style="width:180px">
+              <option value="">Tất cả hành động</option>
+              <option value="assign">Gán vai trò</option>
+              <option value="revoke">Thu hồi vai trò</option>
+            </select>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Thời gian</th><th>Người thao tác</th><th>Hành động</th><th>Người dùng</th><th>Vai trò</th></tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/audit.js"></script>
+</body>
+</html>

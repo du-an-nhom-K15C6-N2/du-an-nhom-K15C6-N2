@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Người dùng - DNKN</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body data-page="users">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar" id="topbar"></header>
+      <main class="content" id="content">
+        <div class="toolbar">
+          <div class="left">
+            <div class="search-box">
+              <span class="search-ico">🔍</span>
+              <input class="input" id="search" placeholder="Tìm theo tên, email..." />
+            </div>
+            <select id="filterRole" style="width:200px"><option value="">Tất cả vai trò</option></select>
+          </div>
+          <div class="right">
+            <button class="btn primary" id="btnAdd">＋ Thêm người dùng</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Người dùng</th><th>Email</th><th>Vai trò</th><th>Ngày tạo</th><th style="text-align:right">Hành động</th></tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/js/common.js"></script>
+  <script src="/js/users.js"></script>
+</body>
+</html>

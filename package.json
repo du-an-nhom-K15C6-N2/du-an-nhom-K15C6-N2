@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/auth.test.js test/assign.test.js test/revoke.test.js"
+    "test": "node --test test/auth.test.js test/assign.test.js test/revoke.test.js test/management.test.js"
   },
   "keywords": ["rbac", "roles", "express", "sqlite"],
   "license": "MIT",
