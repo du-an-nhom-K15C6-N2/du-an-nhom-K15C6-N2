@@ -69,22 +69,22 @@ app.get('/profile', (req, res) => {
     {
       name: 'Trang chu',
       path: '/',
-      roles: ['USER', 'ADMIN']
+      roles: ['ADMIN', 'LECTURER', 'STUDENT']
     },
     {
       name: 'Ho so',
       path: '/profile',
-      roles: ['USER', 'ADMIN']
+      roles: ['ADMIN', 'LECTURER', 'STUDENT']
     },
     {
       name: 'Quan ly diem',
       path: '/api/v1/grades/update',
-      roles: ['ADMIN']
+      roles: ['ADMIN', 'LECTURER']
     },
     {
       name: 'Quan ly hoc phi',
       path: '/api/v1/tuition/update',
-      roles: ['ADMIN']
+      roles: ['ADMIN', 'ACCOUNTANT']
     }
   ];
 
