@@ -11,6 +11,8 @@ app.use(express.static(__dirname));
 
 const SESSION_TTL = 30 * 1000;
 const sessions = new Map();
+const DEMO_USERNAME = 'sv_k2301';
+const DEMO_PASSWORD = '123456';
 
 function requireSession(req, res, next) {
     const authorization = req.get('authorization') || '';
@@ -33,8 +35,18 @@ function requireSession(req, res, next) {
 
 app.post('/api/session/login', (req, res) => {
     const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
+
     if (!username) {
         return res.status(400).json({ success: false, message: 'Vui lòng nhập tài khoản.' });
+    }
+
+    if (username !== DEMO_USERNAME || password !== DEMO_PASSWORD) {
+        return res.status(401).json({
+            success: false,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Tài khoản hoặc mật khẩu không đúng.'
+        });
     }
 
     const token = crypto.randomBytes(32).toString('hex');

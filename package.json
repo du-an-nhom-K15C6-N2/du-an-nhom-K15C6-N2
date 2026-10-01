@@ -21,6 +21,7 @@
   "homepage": "https://github.com/du-an-nhom-K15C6-N2/quan-ly-diem-danh-S1-02#readme",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "body-parser": "^2.3.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "nodemailer": "^10.0.10"

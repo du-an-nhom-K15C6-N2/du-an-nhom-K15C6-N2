@@ -261,6 +261,10 @@
     </div>
 
 <script>
+    if (window.location.protocol === "file:") {
+        window.location.href = "http://localhost:3000/login.html";
+    }
+
     function getRemainingMs() {
         return Math.max(0, Number(localStorage.getItem("sessionExpiresAt") || 0) - Date.now());
     }

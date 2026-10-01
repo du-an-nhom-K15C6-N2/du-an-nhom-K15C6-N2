@@ -19,7 +19,7 @@ async function login() {
     const response = await fetch(`${baseUrl}/api/session/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'sv_k2301' })
+        body: JSON.stringify({ username: 'sv_k2301', password: '123456' })
     });
     assert.equal(response.status, 201);
     return response.json();
@@ -28,6 +28,31 @@ async function login() {
 function authorized(token) {
     return { Authorization: `Bearer ${token}` };
 }
+
+test('valid demo credentials create a server session, invalid credentials are rejected', async () => {
+    sessions.clear();
+
+    const validResponse = await fetch(`${baseUrl}/api/session/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'sv_k2301', password: '123456' })
+    });
+    const validBody = await validResponse.json();
+
+    assert.equal(validResponse.status, 201);
+    assert.ok(validBody.token);
+
+    const invalidResponse = await fetch(`${baseUrl}/api/session/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: 'sv_k2301', password: 'sai_mat_khau' })
+    });
+    const invalidBody = await invalidResponse.json();
+
+    assert.equal(invalidResponse.status, 401);
+    assert.equal(invalidBody.code, 'INVALID_CREDENTIALS');
+    assert.equal(sessions.has(validBody.token), true);
+});
 
 test('activity renews the server session and renewed token remains usable', async () => {
     sessions.clear();
