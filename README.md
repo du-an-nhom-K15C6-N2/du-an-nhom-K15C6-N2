@@ -2,7 +2,7 @@
 
 Hệ thống quản lý **phân quyền (RBAC) nhiều vai trò** cho người dùng. Triển khai story **DNKN-17**: quản trị hệ thống có thể **gán và thu hồi vai trò**, hỗ trợ một người dùng giữ **nhiều vai trò cùng lúc** (ví dụ: vừa là Giảng viên vừa là Quản lý đào tạo).
 
-Công nghệ: **Node.js + Express + SQLite** (module `node:sqlite` có sẵn, không cần driver native).
+Công nghệ: **Node.js + Express + SQLite** (thư viện `better-sqlite3`).
 
 ## ✨ Tính năng
 
@@ -17,7 +17,7 @@ Công nghệ: **Node.js + Express + SQLite** (module `node:sqlite` có sẵn, kh
 
 ## 🚀 Cách chạy
 
-Yêu cầu: **Node.js từ 22.5 trở lên** (đã test trên Node 24).
+Yêu cầu: **Node.js từ 18 trở lên** (đã test trên Node 18/20/22/24).
 
 ```bash
 npm install

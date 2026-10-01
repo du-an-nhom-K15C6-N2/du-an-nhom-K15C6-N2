@@ -1,5 +1,5 @@
-// Cơ sở dữ liệu SQLite (dùng module có sẵn trong Node >= 22.5)
-const { DatabaseSync } = require('node:sqlite');
+// Cơ sở dữ liệu SQLite (better-sqlite3 — chạy được trên Node 18+)
+const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
 // Các vai trò của hệ thống
@@ -20,7 +20,7 @@ const USERS = [
 
 // Tạo kết nối + bảng (path = ':memory:' khi chạy kiểm thử)
 function createDb(path = ':memory:') {
-  const db = new DatabaseSync(path);
+  const db = new Database(path);
   db.exec('PRAGMA foreign_keys = ON;');
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
