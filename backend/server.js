@@ -21,6 +21,10 @@ app.use(loggerMiddleware);
 
 // 2. STATIC FILES SERVING (FRONTEND)
 app.use(express.static(config.FRONTEND_DIR));
+app.use(express.static(path.join(config.FRONTEND_DIR, 'css')));
+app.use(express.static(path.join(config.FRONTEND_DIR, 'js')));
+app.use('/css', express.static(path.join(config.FRONTEND_DIR, 'css')));
+app.use('/js', express.static(path.join(config.FRONTEND_DIR, 'js')));
 
 // 3. API ROUTES
 app.use('/api', apiRoutes);
@@ -46,6 +50,14 @@ const server = app.listen(PORT, () => {
   console.log(`💻 Giao diện Frontend: http://localhost:${PORT}`);
   console.log(`🔌 API Base Endpoint: http://localhost:${PORT}/api`);
   console.log(`======================================================\n`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Cổng ${PORT} đang bị chiếm dụng bởi tiến trình khác.`);
+  } else {
+    console.error(`❌ Lỗi server:`, err);
+  }
 });
 
 module.exports = { app, server };
