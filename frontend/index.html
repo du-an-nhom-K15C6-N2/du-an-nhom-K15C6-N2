@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
 </head>
@@ -35,16 +36,19 @@
     </div>
     <div class="demo-toolbar-body" id="demo-toolbar-content">
       <div class="demo-group">
-        <span class="demo-group-label">Chuyển nhanh màn hình đồ án:</span>
+        <span class="demo-group-label">Chuyển nhanh kiểm thử vai trò:</span>
         <div class="demo-pill-group">
-          <button type="button" class="demo-pill" onclick="app.showLoginView()">
-            🔐 Đăng nhập
+          <button type="button" class="demo-pill pill-admin" onclick="app.demoQuickSwitchAdmin()">
+            👑 Quản trị viên (Admin)
           </button>
-          <button type="button" class="demo-pill pill-admin" onclick="app.switchToAdminUserManagement()">
-            👥 Quản lý User
+          <button type="button" class="demo-pill pill-student" onclick="app.demoQuickSwitchRole('student')">
+            👨‍🎓 Học sinh
           </button>
-          <button type="button" class="demo-pill pill-student" onclick="app.fillPreset('student')">
-            👨‍🎓 SV
+          <button type="button" class="demo-pill" onclick="app.demoQuickSwitchRole('teacher')">
+            👨‍🏫 Giảng viên
+          </button>
+          <button type="button" class="demo-pill" onclick="app.logout()">
+            🚪 Đăng xuất (Về Login)
           </button>
         </div>
       </div>
@@ -71,7 +75,7 @@
   <!-- Navigation Bar -->
   <header class="app-header">
     <div class="container header-container">
-      <div class="brand-logo" onclick="app.showLoginView()">
+      <div class="brand-logo" onclick="app.handleBrandClick()">
         <div class="logo-icon-wrapper">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
@@ -84,12 +88,9 @@
         </div>
       </div>
 
-      <!-- Center Navigation Tabs for Quick Review -->
-      <nav class="header-nav-tabs">
-        <button type="button" class="nav-tab-btn active" id="tab-nav-login" onclick="app.showLoginView()">
-          🔐 Màn hình Đăng nhập
-        </button>
-        <button type="button" class="nav-tab-btn" id="tab-nav-users" onclick="app.switchToAdminUserManagement()">
+      <!-- Center Navigation Tabs: CHỈ HIỂN THỊ TRONG TÀI KHOẢN QUẢN TRỊ VIÊN -->
+      <nav class="header-nav-tabs" id="header-nav-tabs" style="display: none;">
+        <button type="button" class="nav-tab-btn active" id="tab-nav-users" onclick="app.switchToAdminUserManagement()">
           👥 Quản lý Người dùng
         </button>
       </nav>
@@ -753,6 +754,13 @@
     </div>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (typeof app === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'app.js';
+      document.body.appendChild(s);
+    }
+  </script>
 </body>
 </html>

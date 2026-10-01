@@ -600,11 +600,24 @@
       document.getElementById('portal-teacher').style.display = 'none';
       document.getElementById('portal-user-management').style.display = 'none';
 
-      // Update Nav Tabs
-      const tabLogin = document.getElementById('tab-nav-login');
+      // Cập nhật hiển thị thanh điều hướng:
+      // MỤC "QUẢN LÝ NGƯỜI DÙNG" CHỈ HIỂN THỊ KHI TÀI KHOẢN LÀ QUẢN TRỊ VIÊN (ADMIN)
+      const headerNav = document.getElementById('header-nav-tabs');
       const tabUsers = document.getElementById('tab-nav-users');
-      if (tabLogin) tabLogin.classList.remove('active');
-      if (tabUsers) tabUsers.classList.remove('active');
+
+      if (user && user.role === 'admin') {
+        if (headerNav) headerNav.style.display = 'flex';
+        if (tabUsers) {
+          tabUsers.style.display = 'inline-flex';
+          tabUsers.classList.add('active');
+        }
+      } else {
+        if (headerNav) headerNav.style.display = 'none';
+        if (tabUsers) {
+          tabUsers.style.display = 'none';
+          tabUsers.classList.remove('active');
+        }
+      }
 
       // Update User menu badge
       const userMenu = document.getElementById('user-menu-wrapper');
@@ -626,7 +639,6 @@
       if (user.role === 'admin') {
         // Quản trị viên -> Điều hướng trực tiếp vào Màn hình Quản lý người dùng!
         document.getElementById('portal-user-management').style.display = 'block';
-        if (tabUsers) tabUsers.classList.add('active');
         this.loadUsersTable();
       } else if (user.role === 'teacher') {
         document.getElementById('portal-teacher').style.display = 'block';
@@ -647,25 +659,46 @@
       document.getElementById('portal-teacher').style.display = 'none';
       document.getElementById('portal-user-management').style.display = 'none';
 
-      const tabLogin = document.getElementById('tab-nav-login');
+      // Ẩn thanh tab điều hướng Quản lý người dùng khi ở màn hình đăng nhập
+      const headerNav = document.getElementById('header-nav-tabs');
       const tabUsers = document.getElementById('tab-nav-users');
-      if (tabLogin) tabLogin.classList.add('active');
-      if (tabUsers) tabUsers.classList.remove('active');
+      if (headerNav) headerNav.style.display = 'none';
+      if (tabUsers) {
+        tabUsers.style.display = 'none';
+        tabUsers.classList.remove('active');
+      }
     },
 
     switchToAdminUserManagement: function () {
+      // Bảo vệ phân quyền: chỉ admin mới được vào màn hình quản lý người dùng
+      if (!this.currentUser || this.currentUser.role !== 'admin') {
+        this.showToast('Chỉ tài khoản Quản trị viên mới có quyền truy cập Quản lý Người dùng.', 'warning');
+        return;
+      }
+
       document.getElementById('auth-section').style.display = 'none';
       document.getElementById('portal-student').style.display = 'none';
       document.getElementById('portal-teacher').style.display = 'none';
       document.getElementById('portal-user-management').style.display = 'block';
 
-      const tabLogin = document.getElementById('tab-nav-login');
+      const headerNav = document.getElementById('header-nav-tabs');
       const tabUsers = document.getElementById('tab-nav-users');
-      if (tabLogin) tabLogin.classList.remove('active');
-      if (tabUsers) tabUsers.classList.add('active');
+      if (headerNav) headerNav.style.display = 'flex';
+      if (tabUsers) {
+        tabUsers.style.display = 'inline-flex';
+        tabUsers.classList.add('active');
+      }
 
       this.loadUsersTable();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    handleBrandClick: function () {
+      if (this.currentUser) {
+        this.routeToRolePortal(this.currentUser);
+      } else {
+        this.showLoginView();
+      }
     },
 
     logout: function () {
@@ -673,6 +706,15 @@
       localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       const userMenu = document.getElementById('user-menu-wrapper');
       if (userMenu) userMenu.style.display = 'none';
+
+      const headerNav = document.getElementById('header-nav-tabs');
+      const tabUsers = document.getElementById('tab-nav-users');
+      if (headerNav) headerNav.style.display = 'none';
+      if (tabUsers) {
+        tabUsers.style.display = 'none';
+        tabUsers.classList.remove('active');
+      }
+
       this.showLoginView();
       this.showToast('Bạn đã đăng xuất an toàn khỏi hệ thống.', 'info');
     },
@@ -684,10 +726,12 @@
           const user = JSON.parse(savedUserJson);
           this.currentUser = user;
           this.routeToRolePortal(user);
+          return;
         } catch (e) {
           localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
         }
       }
+      this.showLoginView();
     },
 
     // ------------------------------------------
@@ -1070,6 +1114,24 @@
     // ------------------------------------------
     // DEMO & EVALUATION SHORTCUTS
     // ------------------------------------------
+    demoQuickSwitchAdmin: function () {
+      const users = MockApi.getUsersStorage();
+      const admin = users.find(u => u.role === 'admin') || INITIAL_USERS[0];
+      this.currentUser = admin;
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(admin));
+      this.routeToRolePortal(admin);
+      this.showToast('Đã đăng nhập tài khoản Quản trị viên (Hiển thị tab Quản lý Người dùng)', 'success');
+    },
+
+    demoQuickSwitchRole: function (roleKey) {
+      const users = MockApi.getUsersStorage();
+      const user = users.find(u => u.role === roleKey) || users[0];
+      this.currentUser = user;
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+      this.routeToRolePortal(user);
+      this.showToast(`Đã chuyển sang vai trò ${user.roleLabel} (Ẩn tab Quản lý Người dùng)`, 'info');
+    },
+
     fillPreset: function (roleKey) {
       this.showLoginView();
       const users = MockApi.getUsersStorage();

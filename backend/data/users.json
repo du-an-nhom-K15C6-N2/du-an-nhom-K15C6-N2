@@ -34,8 +34,8 @@
     "name": "Lê Thị Thu Thảo",
     "email": "thao.le@edu.vn",
     "phone": "0934567890",
-    "role": "assistant",
-    "roleLabel": "Trợ giảng",
+    "role": "teacher",
+    "roleLabel": "Giảng viên",
     "status": "active",
     "statusLabel": "Đang hoạt động"
   },
