@@ -17,6 +17,7 @@ class AuthController {
       }
 
       const user = UserModel.findByEmail(email);
+     const LoginAttemptService = require('../services/loginAttemptService');
 
       // Chấp nhận mật khẩu mẫu '123456' hoặc 'Password123!'
       const isPasswordCorrect = (password === '123456' || password === 'Password123!');
