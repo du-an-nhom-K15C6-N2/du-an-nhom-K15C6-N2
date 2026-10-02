@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="vi">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="theme-color" content="#f4f3ef">
+	<title>Thiết kế endpoint khoá tài khoản | Quản trị hệ thống</title>
+	<style>
+		:root {
+			color-scheme: light;
+			--canvas: #f4f3ef;
+			--surface: #ffffff;
+			--ink: #202923;
+			--muted: #737c75;
+			--line: #e3e5df;
+			--green: #28634b;
+			--green-soft: #e8f1eb;
+			--red: #a93d32;
+			--red-soft: #f8eae7;
+			--amber: #8c621d;
+			--amber-soft: #f7f0de;
+			--shadow: 0 10px 28px rgba(27, 39, 31, .12);
+		}
+
+		* { box-sizing: border-box; }
+		body { margin: 0; min-width: 0; background: var(--canvas); color: var(--ink); font-family: "Segoe UI", Tahoma, sans-serif; font-size: 14px; }
+		button, input, select, textarea { font: inherit; }
+		button { cursor: pointer; }
+		.app-shell { min-height: 100vh; }
+		.topbar { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; background: #fff; border-bottom: 1px solid var(--line); }
+		.brand { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+		.brand-mark { width: 28px; height: 28px; display: grid; place-items: center; color: white; background: var(--green); border-radius: 5px; font-family: Georgia, serif; }
+		.topbar-right { display: flex; align-items: center; gap: 12px; color: var(--muted); }
+		.user-chip { display: flex; align-items: center; gap: 9px; padding-left: 14px; border-left: 1px solid var(--line); color: var(--ink); font-weight: 600; }
+		.avatar { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; background: #e7ece7; color: var(--green); font-size: 12px; font-weight: 700; }
+		.layout { display: grid; grid-template-columns: 204px minmax(0, 1fr); min-height: calc(100vh - 60px); }
+		.sidebar { padding: 20px 12px; background: #eeefea; border-right: 1px solid var(--line); }
+		.workspace-label { padding: 0 12px 10px; color: #8a918b; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+		.nav-link { display: flex; align-items: center; gap: 10px; margin: 2px 0; padding: 9px 10px; border-radius: 4px; color: #56615a; text-decoration: none; font-size: 12px; }
+		.nav-link.active { background: #fff; color: var(--green); font-weight: 650; box-shadow: 0 1px 2px rgba(20, 30, 22, .05); }
+		.nav-icon { width: 18px; text-align: center; font-size: 15px; }
+		.sidebar-rule { height: 1px; margin: 19px 9px 15px; background: #dfe2dc; }
+		.sidebar-note { margin: 0 12px; color: #858c86; font-size: 11px; line-height: 1.6; }
+		main { width: 100%; max-width: 1500px; margin: 0 auto; padding: 28px 32px 40px; }
+		.page-view[hidden] { display: none; }
+		.breadcrumb { color: var(--muted); font-size: 12px; }
+		.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin: 8px 0 20px; }
+		h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 28px; font-weight: 500; letter-spacing: 0; }
+		.page-subtitle { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+		.heading-meta { color: var(--muted); font-size: 12px; white-space: nowrap; }
+		.summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+		.class-summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: -6px 0 18px; }
+		.summary { padding: 13px 15px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; }
+		.summary-label { color: var(--muted); font-size: 12px; }
+		.summary-value { margin-top: 6px; font-family: Georgia, "Times New Roman", serif; font-size: 24px; }
+		.summary-detail { float: right; margin-top: 9px; color: var(--muted); font-size: 10px; }
+		.summary-value.is-alert { color: var(--red); }
+		.summary-value.is-handover { color: var(--amber); }
+		.handover-banner { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; padding: 11px 14px; border: 1px solid #eadcb8; border-left: 3px solid #c39337; background: var(--amber-soft); }
+		.banner-mark { color: var(--amber); font-weight: 700; }
+		.banner-copy { flex: 1; color: #604b27; font-size: 12px; line-height: 1.5; }
+		.banner-copy strong { color: #4f3b1a; }
+		.banner-link { border: 0; background: transparent; color: #725115; font-size: 12px; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+		.overview-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; }
+		.overview-list { padding: 0 16px; }
+		.overview-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #eef0ec; }
+		.overview-row:last-child { border-bottom: 0; }
+		.overview-row-title { font-size: 11px; font-weight: 650; }
+		.overview-row-meta { margin-top: 4px; color: var(--muted); font-size: 10px; }
+		.overview-link { color: var(--green); font-size: 11px; font-weight: 650; text-decoration: none; }
+		.overview-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+		.overview-event { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 11px 0; border-bottom: 1px solid #eef0ec; }
+		.overview-event:last-child { border-bottom: 0; }
+		.overview-event-title { font-size: 11px; font-weight: 650; }
+		.overview-event-meta { margin-top: 4px; color: var(--muted); font-size: 10px; }
+		.content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 290px; align-items: start; gap: 14px; }
+		.endpoint-panel { margin-top: 14px; }
+		.endpoint-content { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); gap: 18px; padding: 16px; }
+		.endpoint-method { display: inline-block; margin-right: 8px; padding: 4px 7px; border-radius: 3px; background: var(--green-soft); color: var(--green); font-size: 10px; font-weight: 700; }
+		.endpoint-path { font-family: Consolas, "Courier New", monospace; font-size: 12px; font-weight: 700; overflow-wrap: anywhere; }
+		.endpoint-copy { margin: 12px 0 0; color: #59635b; font-size: 11px; line-height: 1.6; }
+		.endpoint-code { margin: 8px 0 0; padding: 11px; overflow-x: auto; border: 1px solid var(--line); border-radius: 4px; background: #f7f8f5; color: #35443a; font: 11px/1.55 Consolas, "Courier New", monospace; }
+		.endpoint-note { margin-top: 12px; padding: 10px 11px; border-left: 3px solid var(--amber); background: var(--amber-soft); color: #604b27; font-size: 11px; line-height: 1.5; }
+		.auth-fields input { width: 100%; min-height: 36px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; }
+		.password-field { display: flex; gap: 8px; }
+		.password-field input { flex: 1; min-width: 0; }
+		.password-toggle { width: 40px; min-height: 36px; display: grid; place-items: center; margin-bottom: 12px; padding: 7px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: #465149; }
+		.password-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+		.endpoint-followup { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 16px; border-top: 1px solid var(--line); }
+		.requirement-copy, .qa-list { margin: 8px 0 0; color: #59635b; font-size: 11px; line-height: 1.6; }
+		.qa-panel { margin-top: 14px; }
+		.qa-content { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 16px; }
+		.qa-case { padding-top: 12px; border-top: 1px solid #eef0ec; }
+		.qa-case:first-child, .qa-case:nth-child(2) { padding-top: 0; border-top: 0; }
+		.panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; }
+		.classes-panel { margin-top: 18px; }
+		.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+		.panel-title { margin: 0; font-size: 13px; font-weight: 700; }
+		.panel-count { margin-left: 6px; color: var(--muted); font-size: 12px; font-weight: 400; }
+		.filters { display: flex; gap: 8px; }
+		.search-wrap { position: relative; }
+		.search-wrap input { width: 196px; padding: 8px 10px 8px 31px; border: 1px solid var(--line); border-radius: 4px; outline: none; font-size: 12px; }
+		.search-wrap input:focus, select:focus, textarea:focus { border-color: #779b84; box-shadow: 0 0 0 2px rgba(40, 99, 75, .1); }
+		.search-symbol { position: absolute; top: 7px; left: 10px; color: #8a918b; }
+		select { min-width: 112px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 4px; background: white; color: #475149; font-size: 12px; }
+		.table-scroll { overflow-x: auto; }
+		table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+		th { padding: 9px 12px; background: #fafbf9; color: #828a83; font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+		td { padding: 11px 12px; border-top: 1px solid #eef0ec; font-size: 11px; }
+		tbody tr { transition: background .15s ease; }
+		tbody tr:hover, tbody tr.selected { background: #f7f9f6; }
+		.person-cell { display: flex; align-items: center; gap: 10px; }
+		.person-name { font-size: 11px; font-weight: 650; }
+		.person-email { margin-top: 3px; color: var(--muted); font-size: 10px; }
+		.role { color: #626c64; }
+		.status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 20px; font-size: 10px; font-weight: 650; }
+		.status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+		.status.active { background: var(--green-soft); color: var(--green); }
+		.status.locked { background: var(--red-soft); color: var(--red); }
+		.status.handover-needed { background: var(--amber-soft); color: var(--amber); }
+		.reason-preview { max-width: 200px; overflow: hidden; color: #737c75; text-overflow: ellipsis; }
+		.action-button { min-height: 30px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: #435047; font-size: 11px; font-weight: 650; }
+		.action-button:hover { border-color: #aebbb0; background: #f9faf8; }
+		.action-button.lock { color: var(--red); }
+		.action-button.unlock { color: var(--green); }
+		.row-actions { display: flex; gap: 6px; }
+		.empty-state { padding: 30px; color: var(--muted); text-align: center; }
+		.detail-panel { position: sticky; top: 16px; }
+		.detail-content { padding: 18px; }
+		.detail-person { display: flex; align-items: center; gap: 12px; padding-bottom: 17px; border-bottom: 1px solid var(--line); }
+		.detail-person .avatar { width: 40px; height: 40px; font-size: 13px; }
+		.detail-name { font-weight: 700; }
+		.detail-email { margin-top: 4px; color: var(--muted); font-size: 11px; }
+		.detail-section { padding: 16px 0; border-bottom: 1px solid var(--line); }
+		.detail-label { margin-bottom: 8px; color: #858c86; font-size: 10px; font-weight: 700; letter-spacing: .55px; text-transform: uppercase; }
+		.detail-value { font-size: 12px; line-height: 1.55; }
+		.detail-muted { color: var(--muted); }
+		.session-row { display: flex; justify-content: space-between; color: #56615a; font-size: 12px; }
+		.session-count { color: var(--green); font-weight: 700; }
+		.session-count.revoked { color: var(--red); }
+		.course-list { display: grid; gap: 8px; }
+		.course-item { padding: 9px 10px; background: #f7f8f5; border-radius: 3px; font-size: 11px; }
+		.course-item small { display: block; margin-top: 4px; color: var(--muted); }
+		.course-warning { color: var(--amber); }
+		.detail-actions { display: flex; gap: 8px; padding-top: 16px; }
+		.detail-actions button { flex: 1; min-height: 34px; }
+		.audit-entry { padding: 9px 0; border-bottom: 1px solid #eef0ec; }
+		.audit-entry:last-child { border: 0; }
+		.audit-action { font-size: 11px; font-weight: 650; }
+		.audit-time { margin-top: 4px; color: var(--muted); font-size: 10px; }
+		.audit-reason { margin-top: 5px; color: #59635b; font-size: 11px; line-height: 1.45; }
+		.activity-panel { margin-top: 18px; }
+		.activity-list { padding: 0 18px; }
+		.activity-item { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(150px, 1.4fr) minmax(160px, 1.5fr); gap: 16px; padding: 13px 0; border-bottom: 1px solid #eef0ec; }
+		.activity-item:last-child { border-bottom: 0; }
+		.activity-account { font-size: 12px; font-weight: 650; }
+		.activity-details { color: #59635b; font-size: 11px; line-height: 1.5; }
+		.activity-time { color: var(--muted); font-size: 10px; }
+		dialog { width: min(440px, calc(100% - 32px)); padding: 0; border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); }
+		dialog::backdrop { background: rgba(24, 34, 27, .42); }
+		.modal-head { padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+		.modal-head h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 21px; font-weight: 500; }
+		.modal-head p { margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+		.modal-body { padding: 18px 22px; }
+		.modal-user { margin-bottom: 16px; padding: 11px 12px; background: #f6f7f4; border-radius: 4px; font-size: 12px; font-weight: 650; }
+		label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 650; }
+		textarea { display: block; width: 100%; min-height: 94px; resize: vertical; padding: 10px; border: 1px solid #d9ded8; border-radius: 4px; outline: none; }
+		.field-help { display: flex; justify-content: space-between; margin-top: 6px; color: var(--muted); font-size: 10px; }
+		.error-message { min-height: 18px; margin-top: 5px; color: var(--red); font-size: 11px; }
+		.modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 13px 22px 18px; }
+		.button-secondary, .button-primary { min-height: 35px; padding: 7px 13px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: #465149; font-size: 12px; font-weight: 650; }
+		.button-primary { border-color: var(--green); background: var(--green); color: white; }
+		.button-primary.danger { border-color: var(--red); background: var(--red); }
+		.toast { position: fixed; right: 24px; bottom: 22px; z-index: 5; max-width: min(420px, calc(100% - 32px)); padding: 12px 16px; border-radius: 4px; background: #25372d; color: white; box-shadow: var(--shadow); font-size: 12px; opacity: 0; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease; pointer-events: none; }
+		.toast.visible { opacity: 1; transform: translateY(0); }
+		.footer-note { margin-top: 18px; color: #858c86; font-size: 10px; line-height: 1.5; }
+		@media (max-width: 1120px) {
+			main { padding: 24px 22px 34px; }
+			.content-grid { grid-template-columns: minmax(0, 1fr) 260px; }
+			.panel-heading { align-items: flex-start; flex-direction: column; }
+			.filters { width: 100%; }
+			.search-wrap { flex: 1; }
+			.search-wrap input { width: 100%; }
+		}
+		@media (max-width: 820px) {
+			.layout { grid-template-columns: 58px minmax(0, 1fr); }
+			.sidebar { padding: 20px 8px; }
+			.workspace-label, .nav-link span:not(.nav-icon), .sidebar-rule, .sidebar-note { display: none; }
+			.nav-link { justify-content: center; padding: 11px 4px; }
+			.nav-icon { width: auto; }
+			main { padding: 25px 18px 36px; }
+			.content-grid { grid-template-columns: 1fr; }
+			.endpoint-content { grid-template-columns: 1fr; }
+			.endpoint-followup, .qa-content { grid-template-columns: 1fr; }
+			.overview-grid { grid-template-columns: 1fr; }
+			.detail-panel { position: static; }
+			.page-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+			.heading-meta { white-space: normal; }
+		}
+		@media (max-width: 560px) {
+			.topbar { height: 56px; padding: 0 14px; }
+			.topbar-right > span:first-child { display: none; }
+			.layout { min-height: calc(100vh - 56px); }
+			h1 { font-size: 25px; }
+			.summary-grid { gap: 8px; }
+			.class-summary-grid { gap: 8px; }
+			.summary { padding: 11px 10px; }
+			.summary-label { font-size: 10px; }
+			.summary-value { font-size: 22px; }
+			.summary-detail { display: none; }
+			.filters { flex-direction: column; }
+			select { width: 100%; }
+			.handover-banner { align-items: flex-start; }
+			.banner-link { padding: 0; white-space: nowrap; }
+			th, td { padding-right: 11px; padding-left: 11px; }
+			.activity-item { grid-template-columns: 1fr; gap: 5px; }
+		}
+	</style>
+</head>
+<body>
+	<div class="app-shell" hidden>
+		<header class="topbar">
+			<div class="brand"><span class="brand-mark">A</span><span>Academy Admin</span></div>
+			<div class="topbar-right"><span>Quản trị hệ thống</span><div class="user-chip"><span class="avatar">AD</span><span>Admin</span></div></div>
+		</header>
+		<div class="layout">
+			<aside class="sidebar" aria-label="Điều hướng chính">
+				<div class="workspace-label">Không gian làm việc</div>
+				<a class="nav-link active" href="#overview" aria-current="page"><span class="nav-icon">⌂</span><span>Tổng quan</span></a>
+				<a class="nav-link" href="#accounts"><span class="nav-icon">◉</span><span>Tài khoản</span></a>
+				<a class="nav-link" href="#classes"><span class="nav-icon">▤</span><span>Lớp học</span></a>
+				<a class="nav-link" href="#activity"><span class="nav-icon">≡</span><span>Nhật ký hoạt động</span></a>
+				<div class="sidebar-rule"></div>
+				<p class="sidebar-note">Quản lý quyền truy cập và trạng thái tài khoản trong hệ thống.</p>
+			</aside>
+			<main>
+				<div class="breadcrumb">Quản trị hệ thống / <span id="breadcrumb-page">Tổng quan</span></div>
+				<div class="page-heading"><div><h1 id="view-title">Tổng quan hệ thống</h1><p class="page-subtitle" id="view-subtitle">Theo dõi tài khoản và các lớp học cần bàn giao.</p></div><div class="heading-meta">Cập nhật lần cuối: <span id="last-updated">--</span></div></div>
+				<section class="page-view" id="overview">
+				<section class="summary-grid" aria-label="Tổng quan tài khoản">
+					<div class="summary"><span class="summary-label">Tổng tài khoản</span><span class="summary-detail">Tất cả người dùng</span><div class="summary-value" id="total-count">0</div></div>
+					<div class="summary"><span class="summary-label">Đang hoạt động</span><span class="summary-detail">Có thể đăng nhập</span><div class="summary-value" id="active-count">0</div></div>
+					<div class="summary"><span class="summary-label">Đang bị khoá</span><span class="summary-detail">Đã thu hồi phiên</span><div class="summary-value is-alert" id="locked-count">0</div></div>
+				</section>
+				<section class="class-summary-grid" aria-label="Tổng quan lớp học">
+					<div class="summary"><span class="summary-label">Tổng lớp học</span><span class="summary-detail">Theo giảng viên phụ trách</span><div class="summary-value" id="class-count">0</div></div>
+					<div class="summary"><span class="summary-label">Cần bàn giao</span><span class="summary-detail">Giảng viên bị khoá</span><div class="summary-value is-handover" id="handover-count">0</div></div>
+					<div class="summary"><span class="summary-label">Giảng viên phụ trách</span><span class="summary-detail">Đang hoạt động</span><div class="summary-value" id="teacher-count">0</div></div>
+				</section>
+				<section class="handover-banner" id="handover" aria-live="polite"><span class="banner-mark">!</span><div class="banner-copy" id="handover-copy"></div><button class="banner-link" id="handover-filter" type="button">Xem lớp học</button></section>
+				<div class="overview-grid">
+					<section class="panel" aria-label="Lớp học cần bàn giao">
+						<div class="panel-heading"><h2 class="panel-title">Lớp cần bàn giao</h2><a class="overview-link" href="#classes">Xem tất cả</a></div>
+						<div class="overview-list" id="overview-handover-list"></div>
+					</section>
+					<section class="panel" aria-label="Hoạt động gần đây">
+						<div class="panel-heading"><h2 class="panel-title">Hoạt động gần đây</h2><a class="overview-link" href="#activity">Nhật ký</a></div>
+						<div class="overview-list" id="overview-activity-list"></div>
+					</section>
+				</div>
+				</section>
+				<section class="page-view" id="accounts" hidden>
+				<div class="content-grid">
+					<section class="panel" aria-label="Danh sách tài khoản">
+						<div class="panel-heading"><h2 class="panel-title">Danh sách tài khoản <span class="panel-count" id="visible-count"></span></h2><div class="filters"><div class="search-wrap"><span class="search-symbol" aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Tìm tên hoặc email" aria-label="Tìm tên hoặc email"></div><select id="status-filter" aria-label="Lọc theo trạng thái"><option value="all">Tất cả trạng thái</option><option value="active">Đang hoạt động</option><option value="locked">Đang bị khoá</option><option value="handover">Cần bàn giao</option></select></div></div>
+						<div class="table-scroll"><table><thead><tr><th>Người dùng</th><th>Vai trò</th><th>Trạng thái</th><th>Lý do khoá</th><th>Thời điểm khoá</th><th>Thao tác</th></tr></thead><tbody id="account-rows"></tbody></table><div class="empty-state" id="empty-state" hidden>Không tìm thấy tài khoản phù hợp.</div></div>
+					</section>
+					<aside class="panel detail-panel" aria-label="Chi tiết tài khoản"><div class="panel-heading"><h2 class="panel-title">Chi tiết tài khoản</h2></div><div class="detail-content" id="detail-content"></div></aside>
+				</div>
+				<section class="panel endpoint-panel" aria-labelledby="endpoint-title">
+					<div class="panel-heading"><h2 class="panel-title" id="endpoint-title">Thiết kế endpoint khoá tài khoản</h2></div>
+					<div class="endpoint-content">
+						<div>
+							<div><span class="endpoint-method">POST</span><code class="endpoint-path">/api/admin/accounts/{accountId}/lock</code></div>
+							<p class="endpoint-copy">Chỉ quản trị viên đã xác thực và có quyền quản lý tài khoản được gọi endpoint. Máy chủ ghi trạng thái khoá cùng lý do, sau đó thu hồi mọi token phiên đang hoạt động trước khi trả kết quả.</p>
+							<pre class="endpoint-code"><code>Request
+{
+  "reason": "Vi phạm chính sách hệ thống"
+}
+
+Response 200
+{
+  "accountId": "u-1001",
+  "status": "locked",
+  "lockedAt": "2026-10-02T09:30:00Z",
+  "revokedSessions": 2
+}</code></pre>
+						</div>
+						<div>
+							<h3 class="panel-title">Điều kiện hiệu lực</h3>
+							<p class="endpoint-copy">Đăng nhập phải kiểm tra trạng thái tài khoản ở phía máy chủ và từ chối cấp token nếu tài khoản đã khoá. Mọi yêu cầu đã xác thực phải kiểm tra phiên hoặc phiên bản thu hồi ở phía máy chủ; không chỉ xác minh chữ ký JWT, để phiên cũ mất hiệu lực ngay sau khi khoá.</p>
+							<p class="endpoint-copy">Trả <code>401</code> nếu chưa xác thực, <code>403</code> nếu không đủ quyền, <code>404</code> nếu không tìm thấy tài khoản và <code>422</code> nếu thiếu lý do khoá.</p>
+							<div class="endpoint-note">Backend hiện kiểm tra trạng thái tài khoản khi đăng nhập, thu hồi phiên đang hoạt động và lưu lịch sử/cảnh báo vào dữ liệu server.</div>
+						</div>
+					</div>
+				</section>
+				<div class="endpoint-followup">
+					<section>
+						<h3 class="panel-title">[BE] Xây dựng API mở khoá tài khoản người dùng</h3>
+						<p class="requirement-copy"><span class="endpoint-method">POST</span><code class="endpoint-path">/api/admin/accounts/{accountId}/unlock</code></p>
+						<p class="requirement-copy">Chỉ mở khoá sau khi quản trị viên xác nhận. Backend đổi trạng thái về hoạt động, ghi nhật ký mở khoá và giữ nguyên lịch sử khoá trước đó. Phiên đã thu hồi không được khôi phục; người dùng đăng nhập lại để tạo phiên mới.</p>
+					</section>
+					<section>
+						<h3 class="panel-title">[BE] Bắt buộc nhập và lưu lý do khoá tài khoản</h3>
+						<p class="requirement-copy">Từ chối lý do rỗng sau khi loại bỏ khoảng trắng, giới hạn tối đa 500 ký tự; lưu lý do, người thao tác và thời điểm vào nhật ký kiểm toán để tra cứu lại.</p>
+					</section>
+					<section>
+						<h3 class="panel-title">[BE] Thiết kế cơ chế cảnh báo lớp học do giảng viên bị khoá phụ trách cần bàn giao</h3>
+						<p class="requirement-copy">Khi khoá giảng viên, đánh dấu các lớp đang phụ trách là cần bàn giao. Tạo/cập nhật cảnh báo theo mã lớp và trạng thái bàn giao để thao tác khoá lặp lại không sinh cảnh báo trùng.</p>
+					</section>
+					<section>
+						<h3 class="panel-title">[FE] Hiển thị trạng thái tài khoản bị khoá và lý do khoá trong danh sách/chi tiết</h3>
+						<p class="requirement-copy">Danh sách và chi tiết hiển thị trạng thái, lý do và thời điểm khoá; nhật ký thao tác giữ lại cả thời điểm mở khoá và lý do khoá ban đầu.</p>
+					</section>
+				</div>
+				<section class="panel qa-panel" aria-labelledby="qa-title">
+					<div class="panel-heading"><h2 class="panel-title" id="qa-title">Kịch bản kiểm thử nghiệm thu</h2></div>
+					<div class="qa-content">
+						<div class="qa-case">
+							<h3 class="panel-title">[QA] Kiểm thử luồng khoá/mở khoá tài khoản và thu hồi phiên đăng nhập</h3>
+							<ul class="qa-list"><li>Khoá với lý do hợp lệ: trạng thái chuyển sang bị khoá, lý do và lịch sử được lưu.</li><li>Bỏ trống hoặc chỉ nhập khoảng trắng: từ chối, không đổi trạng thái và không ghi lịch sử.</li><li>Kiểm tra đăng nhập bị từ chối và phiên đang mở bị vô hiệu hoá sau khi khoá.</li><li>Huỷ xác nhận mở khoá: không thay đổi dữ liệu; xác nhận mở khoá: trạng thái hoạt động, có nhật ký và đăng nhập lại được.</li></ul>
+						</div>
+						<div class="qa-case">
+							<h3 class="panel-title">[QA] Kiểm thử cảnh báo bàn giao lớp học khi tài khoản phụ trách bị khoá</h3>
+							<ul class="qa-list"><li>Khoá giảng viên đang phụ trách lớp: mỗi lớp được đánh dấu cần bàn giao và xuất hiện trong cảnh báo.</li><li>Khoá lặp lại, tải lại hoặc render lại danh sách: không tạo cảnh báo trùng cho cùng lớp.</li><li>Mở khoá tài khoản: xác nhận trạng thái bàn giao theo quy tắc nghiệp vụ, không tự xoá lịch sử cảnh báo.</li></ul>
+						</div>
+					</div>
+				</section>
+				</section>
+				<section class="page-view" id="classes" hidden>
+				<section class="panel classes-panel" aria-label="Danh sách lớp học">
+					<div class="panel-heading">
+						<h2 class="panel-title">Lớp học <span class="panel-count" id="class-visible-count"></span></h2>
+						<div class="filters">
+							<div class="search-wrap"><span class="search-symbol" aria-hidden="true">⌕</span><input id="class-search" type="search" placeholder="Tìm lớp hoặc giảng viên" aria-label="Tìm lớp học hoặc giảng viên"></div>
+							<select id="class-filter" aria-label="Lọc trạng thái lớp học"><option value="all">Tất cả lớp học</option><option value="handover">Cần bàn giao</option><option value="assigned">Đang phụ trách</option></select>
+						</div>
+					</div>
+					<div class="table-scroll">
+						<table><thead><tr><th>Mã lớp</th><th>Lớp học</th><th>Giảng viên phụ trách</th><th>Trạng thái bàn giao</th></tr></thead><tbody id="class-rows"></tbody></table>
+						<div class="empty-state" id="class-empty-state" hidden>Không tìm thấy lớp học phù hợp.</div>
+					</div>
+				</section>
+				</section>
+				<section class="page-view" id="activity" hidden>
+				<section class="panel activity-panel" aria-label="Nhật ký hoạt động">
+					<div class="panel-heading"><h2 class="panel-title">Nhật ký hoạt động</h2><span class="panel-count" id="activity-count"></span></div>
+					<div class="activity-list" id="activity-rows"></div>
+				</section>
+				</section>
+			</main>
+		</div>
+	</div>
+	<dialog id="admin-auth-dialog" aria-labelledby="admin-auth-title">
+		<form id="admin-login-form">
+			<div class="modal-head"><h2 id="admin-auth-title">Đăng nhập quản trị</h2><p>Nhập thông tin quản trị được cấu hình khi khởi động server.</p></div>
+			<div class="modal-body auth-fields">
+				<label for="admin-email">Email quản trị</label><input id="admin-email" type="email" value="admin@academy.local" autocomplete="username" required>
+				<label for="admin-password">Mật khẩu</label><div class="password-field"><input id="admin-password" type="password" autocomplete="current-password" required><button class="password-toggle" id="toggle-admin-password" type="button" aria-label="Hiện mật khẩu" aria-pressed="false" title="Hiện mật khẩu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle><path id="eye-slash" d="m3 3 18 18" hidden></path></svg></button></div>
+				<div class="error-message" id="admin-login-error" role="alert"></div>
+			</div>
+			<div class="modal-footer"><button class="button-primary" type="submit" id="admin-login-submit">Đăng nhập</button></div>
+		</form>
+	</dialog>
+	<dialog id="lock-dialog" aria-labelledby="dialog-title">
+		<form id="lock-form"><div class="modal-head"><h2 id="dialog-title">Khoá tài khoản</h2><p id="dialog-description">Người dùng sẽ không thể tiếp tục sử dụng tài khoản.</p></div><div class="modal-body"><div class="modal-user" id="dialog-user"></div><label for="lock-reason">Lý do khoá <span style="color: var(--red)">*</span></label><textarea id="lock-reason" maxlength="500" placeholder="Nhập lý do cụ thể để lưu vào lịch sử thao tác" required></textarea><div class="field-help"><span>Bắt buộc, tối đa 500 ký tự</span><span id="reason-count">0/500</span></div><div class="error-message" id="form-error" role="alert"></div></div><div class="modal-footer"><button class="button-secondary" type="button" id="cancel-dialog">Huỷ</button><button class="button-primary danger" type="submit" id="confirm-lock">Xác nhận khoá</button></div></form>
+	</dialog>
+	<div class="toast" id="toast" role="status" aria-live="polite"></div>
+	<script>
+		let state = { accounts: [], audit: [], classes: [], updatedAt: null };
+		let adminToken = sessionStorage.getItem("academy-admin-token");
+		let selectedId = null;
+		let pendingLockId = null;
+		let toastTimer;
+		const accountRows = document.getElementById("account-rows");
+		const detailContent = document.getElementById("detail-content");
+		const dialog = document.getElementById("lock-dialog");
+		const authDialog = document.getElementById("admin-auth-dialog");
+		const appShell = document.querySelector(".app-shell");
+		const adminPasswordInput = document.getElementById("admin-password");
+		const passwordToggle = document.getElementById("toggle-admin-password");
+		const eyeSlash = document.getElementById("eye-slash");
+		passwordToggle.addEventListener("click", () => {
+			const revealPassword = adminPasswordInput.type === "password";
+			adminPasswordInput.type = revealPassword ? "text" : "password";
+			eyeSlash.hidden = revealPassword;
+			const label = revealPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu";
+			passwordToggle.setAttribute("aria-label", label);
+			passwordToggle.setAttribute("title", label);
+			passwordToggle.setAttribute("aria-pressed", String(revealPassword));
+		});
+
+		async function apiRequest(path, options = {}) {
+			const headers = new Headers(options.headers || {});
+			if (options.body) headers.set("Content-Type", "application/json");
+			if (adminToken) headers.set("Authorization", `Bearer ${adminToken}`);
+			const response = await fetch(path, { ...options, headers });
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				if (response.status === 401 && adminToken) {
+					adminToken = null;
+					sessionStorage.removeItem("academy-admin-token");
+					showLogin();
+				}
+				throw new Error(data.message || "Không thể hoàn tất yêu cầu.");
+			}
+			return data;
+		}
+
+		async function loadState() {
+			const [accountsResult, classesResult, auditResult] = await Promise.all([
+				apiRequest("/api/accounts"),
+				apiRequest("/api/classes"),
+				apiRequest("/api/audit")
+			]);
+			state = {
+				accounts: accountsResult.accounts,
+				classes: classesResult.classes,
+				audit: auditResult.audit,
+				updatedAt: accountsResult.updatedAt
+			};
+			if (!state.accounts.some(account => account.id === selectedId)) selectedId = state.accounts[0]?.id ?? null;
+			render();
+		}
+
+		function showLogin() {
+			appShell.hidden = true;
+			if (!authDialog.open) authDialog.showModal();
+		}
+
+		function escapeHtml(value) {
+			return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+		}
+
+		function initials(name) {
+			return name.split(/\s+/).slice(-2).map(part => part[0]).join("").toLocaleUpperCase("vi");
+		}
+
+		function formatDate(value) {
+			if (!value) return "Chưa có";
+			return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+		}
+
+		function getHandoverCourses(account) {
+			return state.classes.filter(classRecord => classRecord.instructor.id === account.id && classRecord.needsHandover).map(classRecord => classRecord.name);
+		}
+
+		function getClassRecords() {
+			return state.classes;
+		}
+
+		function render() {
+			const search = document.getElementById("search").value.trim().toLocaleLowerCase("vi");
+			const filter = document.getElementById("status-filter").value;
+			const locked = state.accounts.filter(account => account.locked);
+			const classes = getClassRecords();
+			const handovers = classes.filter(classRecord => classRecord.needsHandover);
+			document.getElementById("total-count").textContent = state.accounts.length;
+			document.getElementById("active-count").textContent = state.accounts.length - locked.length;
+			document.getElementById("locked-count").textContent = locked.length;
+			document.getElementById("class-count").textContent = classes.length;
+			document.getElementById("handover-count").textContent = handovers.length;
+			document.getElementById("teacher-count").textContent = new Set(classes.filter(classRecord => !classRecord.instructor.locked).map(classRecord => classRecord.instructor.id)).size;
+			document.getElementById("last-updated").textContent = formatDate(state.updatedAt);
+			document.getElementById("handover-copy").innerHTML = handovers.length
+				? `<strong>${handovers.length} lớp học cần được bàn giao.</strong> ${[...new Set(handovers.map(item => item.instructor.name))].map(escapeHtml).join(", ")} đang phụ trách các lớp này.`
+				: "<strong>Không có lớp học nào đang chờ bàn giao.</strong>";
+			document.getElementById("handover-filter").disabled = handovers.length === 0;
+			const filtered = state.accounts.filter(account => {
+				const matchesSearch = `${account.name} ${account.email}`.toLocaleLowerCase("vi").includes(search);
+				const matchesFilter = filter === "all" || (filter === "locked" && account.locked) || (filter === "active" && !account.locked) || (filter === "handover" && getHandoverCourses(account).length > 0);
+				return matchesSearch && matchesFilter;
+			});
+			document.getElementById("visible-count").textContent = `${filtered.length} người dùng`;
+			document.getElementById("empty-state").hidden = filtered.length > 0;
+			accountRows.innerHTML = filtered.map(account => `
+				<tr data-account-id="${escapeHtml(account.id)}" class="${account.id === selectedId ? "selected" : ""}">
+					<td><div class="person-cell"><span class="avatar">${escapeHtml(initials(account.name))}</span><div><div class="person-name">${escapeHtml(account.name)}</div><div class="person-email">${escapeHtml(account.email)}</div></div></div></td>
+					<td class="role">${escapeHtml(account.role)}</td><td><span class="status ${account.locked ? "locked" : "active"}">${account.locked ? "Đang bị khoá" : "Hoạt động"}</span></td>
+						<td class="reason-preview" title="${escapeHtml(account.reason)}">${account.locked ? escapeHtml(account.reason || "Không có lý do") : "-"}</td>
+						<td>${account.locked ? escapeHtml(formatDate(account.lockedAt)) : "-"}</td>
+					<td><div class="row-actions"><button class="action-button ${account.locked ? "unlock" : "lock"}" type="button" data-action="${account.locked ? "unlock" : "lock"}" data-id="${escapeHtml(account.id)}">${account.locked ? "Mở khoá" : "Khoá"}</button></div></td>
+				</tr>`).join("");
+			if (!filtered.some(account => account.id === selectedId)) selectedId = filtered[0]?.id ?? null;
+			renderDetail(state.accounts.find(account => account.id === selectedId));
+			renderClasses(classes);
+			renderActivity();
+			renderOverview(handovers);
+		}
+
+		function renderOverview(handovers) {
+			const handoverList = document.getElementById("overview-handover-list");
+			const recentActivity = document.getElementById("overview-activity-list");
+			const accountNames = new Map(state.accounts.map(account => [account.id, account.name]));
+			handoverList.innerHTML = handovers.length
+				? handovers.slice(0, 4).map(classRecord => `<div class="overview-row"><div><div class="overview-row-title">${escapeHtml(classRecord.name)}</div><div class="overview-row-meta">${escapeHtml(classRecord.id)} · ${escapeHtml(classRecord.instructor.name)}</div></div><span class="status handover-needed">Cần bàn giao</span></div>`).join("")
+				: '<div class="empty-state">Không có lớp học chờ bàn giao.</div>';
+			const entries = state.audit.slice(0, 4);
+			recentActivity.innerHTML = entries.length
+				? entries.map(entry => `<div class="overview-event"><div><div class="overview-event-title">${escapeHtml(entry.action)} · ${escapeHtml(accountNames.get(entry.accountId) || "Tài khoản không còn tồn tại")}</div><div class="overview-event-meta">${escapeHtml(entry.actorName || "Admin")} · ${escapeHtml(formatDate(entry.at))}</div></div>${entry.reason ? `<span class="overview-row-meta">${escapeHtml(entry.reason)}</span>` : ""}</div>`).join("")
+				: '<div class="empty-state">Chưa có hoạt động gần đây.</div>';
+		}
+
+		function renderClasses(classes) {
+			const search = document.getElementById("class-search").value.trim().toLocaleLowerCase("vi");
+			const filter = document.getElementById("class-filter").value;
+			const filtered = classes.filter(classRecord => {
+				const matchesSearch = `${classRecord.id} ${classRecord.name} ${classRecord.instructor.name}`.toLocaleLowerCase("vi").includes(search);
+				const matchesFilter = filter === "all" || (filter === "handover" && classRecord.needsHandover) || (filter === "assigned" && !classRecord.needsHandover);
+				return matchesSearch && matchesFilter;
+			});
+			document.getElementById("class-visible-count").textContent = `${filtered.length}/${classes.length} lớp học`;
+			document.getElementById("class-empty-state").hidden = filtered.length > 0;
+			document.getElementById("class-rows").innerHTML = filtered.map(classRecord => `
+				<tr>
+					<td>${escapeHtml(classRecord.id)}</td>
+					<td>${escapeHtml(classRecord.name)}</td>
+					<td>${escapeHtml(classRecord.instructor.name)}</td>
+					<td><span class="status ${classRecord.needsHandover ? "handover-needed" : "active"}">${classRecord.needsHandover ? "Cần bàn giao" : "Đang phụ trách"}</span></td>
+				</tr>`).join("");
+		}
+
+		function renderDetail(account) {
+			if (!account) {
+				detailContent.innerHTML = '<div class="empty-state">Chọn một tài khoản để xem chi tiết.</div>';
+				return;
+			}
+			const courses = account.courses.length ? `<div class="course-list">${account.courses.map((course, index) => {
+				const classRecord = state.classes.find(item => item.id === `CLS-${account.id}-${index + 1}`);
+				return `<div class="course-item">${escapeHtml(course)}${classRecord?.needsHandover ? '<small class="course-warning">Cần bàn giao</small>' : '<small>Đang phụ trách</small>'}</div>`;
+			}).join("")}</div>` : '<div class="detail-value detail-muted">Không phụ trách lớp học</div>';
+			const history = state.audit.filter(entry => entry.accountId === account.id).slice(0, 4);
+			detailContent.innerHTML = `
+				<div class="detail-person"><span class="avatar">${escapeHtml(initials(account.name))}</span><div><div class="detail-name">${escapeHtml(account.name)}</div><div class="detail-email">${escapeHtml(account.email)}</div></div></div>
+				<div class="detail-section"><div class="detail-label">Trạng thái</div><span class="status ${account.locked ? "locked" : "active"}">${account.locked ? "Đang bị khoá" : "Hoạt động"}</span><div class="detail-value detail-muted" style="margin-top: 9px">Vai trò: ${escapeHtml(account.role)}</div></div>
+				${account.locked ? `<div class="detail-section"><div class="detail-label">Lý do khoá</div><div class="detail-value">${escapeHtml(account.reason || "Không có lý do")}</div><div class="detail-value detail-muted" style="margin-top: 7px">Thời điểm: ${escapeHtml(formatDate(account.lockedAt))}</div></div>` : ""}
+				<div class="detail-section"><div class="detail-label">Phiên đăng nhập</div><div class="session-row"><span>${account.locked ? "Phiên đã thu hồi" : "Phiên đang hoạt động"}</span><span class="session-count ${account.locked ? "revoked" : ""}">${account.activeSessions}</span></div></div>
+				<div class="detail-section"><div class="detail-label">Lớp học phụ trách</div>${courses}</div>
+				<div class="detail-section"><div class="detail-label">Lịch sử thao tác</div>${history.length ? history.map(entry => `<div class="audit-entry"><div class="audit-action">${escapeHtml(entry.action)}</div><div class="audit-time">${escapeHtml(entry.actorName || "Admin")} · ${escapeHtml(formatDate(entry.at))}</div>${entry.reason ? `<div class="audit-reason">${escapeHtml(entry.reason)}</div>` : ""}</div>`).join("") : '<div class="detail-value detail-muted">Chưa có thao tác khoá/mở khoá.</div>'}</div>
+				<div class="detail-actions"><button class="action-button ${account.locked ? "unlock" : "lock"}" type="button" data-action="${account.locked ? "unlock" : "lock"}" data-id="${escapeHtml(account.id)}">${account.locked ? "Mở khoá tài khoản" : "Khoá tài khoản"}</button></div>`;
+		}
+
+		function renderActivity() {
+			const entries = state.audit.slice(0, 20);
+			const accountNames = new Map(state.accounts.map(account => [account.id, account.name]));
+			document.getElementById("activity-count").textContent = `${entries.length} thao tác gần nhất`;
+			document.getElementById("activity-rows").innerHTML = entries.length
+				? entries.map(entry => `<div class="activity-item"><div><div class="audit-action">${escapeHtml(entry.action)}</div><div class="activity-time">${escapeHtml(formatDate(entry.at))}</div></div><div class="activity-account">${escapeHtml(accountNames.get(entry.accountId) || "Tài khoản không còn tồn tại")}</div><div class="activity-details">Người thực hiện: ${escapeHtml(entry.actorName || "Admin")}${entry.reason ? `<br>Lý do: ${escapeHtml(entry.reason)}` : ""}</div></div>`).join("")
+				: '<div class="empty-state">Chưa có lịch sử thao tác.</div>';
+		}
+
+		function showToast(message) {
+			const toast = document.getElementById("toast");
+			toast.textContent = message;
+			toast.classList.add("visible");
+			clearTimeout(toastTimer);
+			toastTimer = setTimeout(() => toast.classList.remove("visible"), 3200);
+		}
+
+		function openLockDialog(account) {
+			pendingLockId = account.id;
+			document.getElementById("dialog-title").textContent = "Khoá tài khoản";
+			document.getElementById("dialog-description").textContent = account.courses.length ? "Các phiên đăng nhập sẽ bị thu hồi. Lớp học người dùng phụ trách sẽ được đánh dấu cần bàn giao." : "Các phiên đăng nhập của người dùng sẽ bị thu hồi.";
+			document.getElementById("dialog-user").textContent = `${account.name} · ${account.email}`;
+			document.getElementById("lock-reason").value = "";
+			document.getElementById("reason-count").textContent = "0/500";
+			document.getElementById("form-error").textContent = "";
+			dialog.showModal();
+			document.getElementById("lock-reason").focus();
+		}
+
+		async function lockAccount(account, reason) {
+			await apiRequest(`/api/admin/accounts/${encodeURIComponent(account.id)}/lock`, {
+				method: "POST",
+				body: JSON.stringify({ reason })
+			});
+			await loadState();
+			showToast("Đã khoá tài khoản và thu hồi các phiên đăng nhập.");
+		}
+
+		async function unlockAccount(account) {
+			if (!window.confirm(`Mở khoá tài khoản ${account.name}? Người dùng sẽ có thể đăng nhập lại.`)) return;
+			try {
+				await apiRequest(`/api/admin/accounts/${encodeURIComponent(account.id)}/unlock`, { method: "POST" });
+				await loadState();
+				showToast("Đã mở khoá tài khoản.");
+			} catch (error) {
+				showToast(error.message);
+			}
+		}
+
+		document.addEventListener("click", event => {
+			const actionButton = event.target.closest("[data-action]");
+			if (actionButton) {
+				const account = state.accounts.find(item => item.id === actionButton.dataset.id);
+				if (!account) return;
+				selectedId = account.id;
+				if (actionButton.dataset.action === "lock") {
+					openLockDialog(account);
+					render();
+				} else {
+					unlockAccount(account);
+				}
+				return;
+			}
+			const row = event.target.closest("tr[data-account-id]");
+			if (row) { selectedId = row.dataset.accountId; render(); }
+		});
+
+		document.getElementById("search").addEventListener("input", render);
+		document.getElementById("status-filter").addEventListener("change", render);
+		document.getElementById("class-search").addEventListener("input", render);
+		document.getElementById("class-filter").addEventListener("change", render);
+		document.getElementById("handover-filter").addEventListener("click", () => {
+			document.getElementById("class-filter").value = "handover";
+			document.getElementById("class-search").value = "";
+			location.hash = "classes";
+			render();
+			document.getElementById("classes").scrollIntoView({ behavior: "smooth" });
+		});
+		function updateActiveNavigation() {
+			const activeHash = location.hash || "#overview";
+			const activePage = activeHash.slice(1);
+			const pageContent = {
+				overview: ["Tổng quan", "Tổng quan hệ thống", "Theo dõi tài khoản và các lớp học cần bàn giao."],
+				accounts: ["Tài khoản", "Thiết kế endpoint khoá tài khoản", "Quản trị hệ thống, chặn đăng nhập và thu hồi phiên đang mở."],
+				classes: ["Lớp học", "Lớp học", "Theo dõi giảng viên phụ trách và tình trạng bàn giao."],
+				activity: ["Nhật ký hoạt động", "Nhật ký hoạt động", "Tra cứu lịch sử khóa và mở khóa tài khoản."]
+			};
+			const page = pageContent[activePage] ? activePage : "overview";
+			const [breadcrumb, title, subtitle] = pageContent[page];
+			document.querySelectorAll(".page-view").forEach(view => { view.hidden = view.id !== page; });
+			document.getElementById("breadcrumb-page").textContent = breadcrumb;
+			document.getElementById("view-title").textContent = title;
+			document.getElementById("view-subtitle").textContent = subtitle;
+			document.querySelectorAll(".nav-link[href^='#']").forEach(link => {
+				const isActive = link.hash === `#${page}`;
+				link.classList.toggle("active", isActive);
+				if (isActive) link.setAttribute("aria-current", "page");
+				else link.removeAttribute("aria-current");
+			});
+		}
+
+		document.querySelectorAll(".nav-link[href^='#']").forEach(link => link.addEventListener("click", updateActiveNavigation));
+		window.addEventListener("hashchange", updateActiveNavigation);
+		updateActiveNavigation();
+		document.getElementById("lock-reason").addEventListener("input", event => {
+			document.getElementById("reason-count").textContent = `${event.target.value.length}/500`;
+			document.getElementById("form-error").textContent = "";
+		});
+		document.getElementById("cancel-dialog").addEventListener("click", () => dialog.close());
+		document.getElementById("admin-login-form").addEventListener("submit", async event => {
+			event.preventDefault();
+			const submitButton = document.getElementById("admin-login-submit");
+			const errorMessage = document.getElementById("admin-login-error");
+			errorMessage.textContent = "";
+			submitButton.disabled = true;
+			try {
+				const result = await apiRequest("/api/admin/login", {
+					method: "POST",
+					body: JSON.stringify({
+						email: document.getElementById("admin-email").value.trim(),
+						password: document.getElementById("admin-password").value
+					})
+				});
+				adminToken = result.token;
+				sessionStorage.setItem("academy-admin-token", adminToken);
+				authDialog.close();
+				appShell.hidden = false;
+				await loadState();
+			} catch (error) {
+				errorMessage.textContent = error.message;
+				showLogin();
+			} finally {
+				submitButton.disabled = false;
+			}
+		});
+		document.getElementById("lock-form").addEventListener("submit", async event => {
+			event.preventDefault();
+			const reason = document.getElementById("lock-reason").value.trim();
+			if (!reason) {
+				document.getElementById("form-error").textContent = "Vui lòng nhập lý do khoá tài khoản.";
+				document.getElementById("lock-reason").focus();
+				return;
+			}
+			const account = state.accounts.find(item => item.id === pendingLockId);
+			if (!account || account.locked) { dialog.close(); return; }
+			const submitButton = document.getElementById("confirm-lock");
+			submitButton.disabled = true;
+			try {
+				await lockAccount(account, reason);
+				dialog.close();
+			} catch (error) {
+				document.getElementById("form-error").textContent = error.message;
+			} finally {
+				submitButton.disabled = false;
+			}
+		});
+
+		async function initializeAdmin() {
+			if (!adminToken) {
+				showLogin();
+				return;
+			}
+			try {
+				await loadState();
+				appShell.hidden = false;
+			} catch {
+				adminToken = null;
+				sessionStorage.removeItem("academy-admin-token");
+				showLogin();
+			}
+		}
+
+		initializeAdmin();
+	</script>
+</body>
+</html>
