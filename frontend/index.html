@@ -23,55 +23,6 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <!-- Quick Demo & Testing Helper Toolbar (Can be minimized) -->
-  <aside class="demo-toolbar" id="demo-toolbar" aria-label="Công cụ kiểm thử">
-    <div class="demo-toolbar-header">
-      <div class="demo-toolbar-title">
-        <span class="pulse-indicator"></span>
-        <strong>Thanh Kiểm Thử Nghiệm Thu Đồ Án</strong>
-      </div>
-      <button type="button" class="btn-icon-subtle" id="toggle-toolbar-btn" title="Thu gọn/Mở rộng">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
-      </button>
-    </div>
-    <div class="demo-toolbar-body" id="demo-toolbar-content">
-      <div class="demo-group">
-        <span class="demo-group-label">Chuyển nhanh kiểm thử vai trò:</span>
-        <div class="demo-pill-group">
-          <button type="button" class="demo-pill pill-admin" onclick="app.demoQuickSwitchAdmin()">
-            👑 Quản trị viên (Admin)
-          </button>
-          <button type="button" class="demo-pill pill-student" onclick="app.demoQuickSwitchRole('student')">
-            👨‍🎓 Học sinh
-          </button>
-          <button type="button" class="demo-pill" onclick="app.demoQuickSwitchRole('teacher')">
-            👨‍🏫 Giảng viên
-          </button>
-          <button type="button" class="demo-pill" onclick="app.logout()">
-            🚪 Đăng xuất (Về Login)
-          </button>
-        </div>
-      </div>
-      <div class="demo-group">
-        <span class="demo-group-label">Test kiểm thử Đăng nhập (AC 1-2-3):</span>
-        <div class="demo-btn-group">
-          <button type="button" class="demo-action-btn btn-fail-test" onclick="app.simulateFailedAttempt()">
-            ❌ Nhập sai +1 lần (Test AC2)
-          </button>
-          <button type="button" class="demo-action-btn btn-lockout-trigger" onclick="app.simulateLockout()">
-            ⚡ Kích hoạt khóa 15p (Test AC3)
-          </button>
-          <button type="button" class="demo-action-btn btn-reset-test" onclick="app.resetSecurityLock()">
-            🔄 Reset khóa / Làm mới
-          </button>
-        </div>
-      </div>
-      <div class="demo-toolbar-footer">
-        <span>Trạng thái: <strong id="debug-status-text">Bình thường (0/5 lần sai)</strong></span>
-      </div>
-    </div>
-  </aside>
-
   <!-- Navigation Bar -->
   <header class="app-header">
     <div class="container header-container">
@@ -282,44 +233,6 @@
               </svg>
             </button>
           </form>
-
-          <!-- Pre-filled quick account switcher pills -->
-          <div class="quick-credentials-section">
-            <div class="divider">
-              <span>Chọn nhanh tài khoản mẫu để kiểm thử</span>
-            </div>
-            <div class="credentials-grid">
-              <div class="cred-card" onclick="app.fillPreset('student')">
-                <div class="cred-header">
-                  <span class="cred-role-badge badge-student">Học sinh</span>
-                  <span class="cred-tag">Vai trò 1</span>
-                </div>
-                <div class="cred-email">student@edu.vn</div>
-                <div class="cred-pwd">Mật khẩu: <code>123456</code></div>
-                <div class="cred-desc">Vào Cổng Học Viên riêng tư</div>
-              </div>
-
-              <div class="cred-card" onclick="app.fillPreset('teacher')">
-                <div class="cred-header">
-                  <span class="cred-role-badge badge-teacher">Giảng viên</span>
-                  <span class="cred-tag">Vai trò 2</span>
-                </div>
-                <div class="cred-email">teacher@edu.vn</div>
-                <div class="cred-pwd">Mật khẩu: <code>123456</code></div>
-                <div class="cred-desc">Vào Quản lý lớp & Bảng điểm</div>
-              </div>
-
-              <div class="cred-card" onclick="app.fillPreset('admin')">
-                <div class="cred-header">
-                  <span class="cred-role-badge badge-admin">Quản trị viên</span>
-                  <span class="cred-tag">Vai trò 3</span>
-                </div>
-                <div class="cred-email">admin@edu.vn</div>
-                <div class="cred-pwd">Mật khẩu: <code>123456</code></div>
-                <div class="cred-desc">Vào Màn hình Quản lý người dùng</div>
-              </div>
-            </div>
-          </div>
 
           <!-- Acceptance Criteria Checklist -->
           <div class="criteria-checklist">

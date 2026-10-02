@@ -1290,18 +1290,6 @@
         .replace(/'/g, '&#39;');
     },
 
-    setupEventListeners: function () {
-      const toggleToolbarBtn = document.getElementById('toggle-toolbar-btn');
-      const toolbar = document.getElementById('demo-toolbar');
-      if (toggleToolbarBtn && toolbar) {
-        toggleToolbarBtn.addEventListener('click', () => {
-          toolbar.classList.toggle('minimized');
-          toggleToolbarBtn.innerHTML = toolbar.classList.contains('minimized') 
-            ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>'
-            : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>';
-        });
-      }
-    }
   };
 
   // Gắn vào window để gọi từ các sự kiện HTML inline onclick
