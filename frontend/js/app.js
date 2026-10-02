@@ -99,6 +99,16 @@
         const users = this.getUsersStorage();
         const target = users.find(u => u.email.toLowerCase() === email.toLowerCase());
         const isPasswordCorrect = (password === '123456' || password === 'Password123!');
+        const savedFails = Number(localStorage.getItem(STORAGE_KEYS.FAILED_ATTEMPTS) || '0');
+        const lockoutExpiry = Number(localStorage.getItem(STORAGE_KEYS.LOCKOUT_EXPIRY) || '0');
+
+        if (lockoutExpiry && lockoutExpiry > Date.now()) {
+          return {
+            success: false,
+            code: 'ACCOUNT_LOCKED',
+            message: 'Tài khoản đang bị khóa tạm thời do nhập sai 5 lần liên tiếp. Vui lòng thử lại sau 15 phút.'
+          };
+        }
 
         if (target && isPasswordCorrect) {
           if (target.status === 'locked') {
@@ -108,18 +118,33 @@
               message: 'Tài khoản của bạn đã bị khóa.'
             };
           }
+          localStorage.removeItem(STORAGE_KEYS.FAILED_ATTEMPTS);
+          localStorage.removeItem(STORAGE_KEYS.LOCKOUT_EXPIRY);
           return {
             success: true,
             user: target,
             message: 'Đăng nhập thành công'
           };
-        } else {
+        }
+
+        const nextFails = savedFails + 1;
+        if (nextFails >= 5) {
+          const expiry = Date.now() + 15 * 60 * 1000;
+          localStorage.setItem(STORAGE_KEYS.FAILED_ATTEMPTS, '5');
+          localStorage.setItem(STORAGE_KEYS.LOCKOUT_EXPIRY, String(expiry));
           return {
             success: false,
-            code: 'INVALID_CREDENTIALS',
-            message: 'Email hoặc mật khẩu không đúng'
+            code: 'ACCOUNT_LOCKED',
+            message: 'Đã nhập sai 5 lần liên tiếp! Tài khoản bị tạm khóa 15 phút.'
           };
         }
+
+        localStorage.setItem(STORAGE_KEYS.FAILED_ATTEMPTS, String(nextFails));
+        return {
+          success: false,
+          code: 'INVALID_CREDENTIALS',
+          message: 'Email hoặc mật khẩu không đúng'
+        };
       }
     },
 

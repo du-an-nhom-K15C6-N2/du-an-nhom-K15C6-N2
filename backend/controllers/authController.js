@@ -1,4 +1,5 @@
 const UserModel = require('../models/userModel');
+const LoginAttemptService = require('../services/loginAttemptService');
 
 class AuthController {
   /**
@@ -16,29 +17,51 @@ class AuthController {
         });
       }
 
-      const user = UserModel.findByEmail(email);
-     const LoginAttemptService = require('../services/loginAttemptService');
+      const normalizedEmail = String(email).trim().toLowerCase();
 
-      // Chấp nhận mật khẩu mẫu '123456' hoặc 'Password123!'
-      const isPasswordCorrect = (password === '123456' || password === 'Password123!');
-
-      if (!user || !isPasswordCorrect) {
-        // Tiêu chí AC2: Lỗi luôn là 'Email hoặc mật khẩu không đúng' để tránh lộ thông tin người dùng
-        return res.status(401).json({
+      if (LoginAttemptService.isLocked(normalizedEmail)) {
+        return res.status(403).json({
           success: false,
-          code: 'INVALID_CREDENTIALS',
-          message: 'Email hoặc mật khẩu không đúng'
+          code: 'ACCOUNT_LOCKED',
+          message: 'Tài khoản đang bị khóa tạm thời vì nhập sai 5 lần liên tiếp. Vui lòng thử lại sau 15 phút.'
         });
       }
 
+      const user = UserModel.findByEmail(normalizedEmail);
+
       // Kiểm tra tài khoản có bị khóa trong hệ thống hay không
-      if (user.status === 'locked') {
+      if (user && user.status === 'locked') {
         return res.status(403).json({
           success: false,
           code: 'ACCOUNT_LOCKED',
           message: 'Tài khoản của bạn hiện đang bị khóa trong hệ thống. Vui lòng liên hệ quản trị viên.'
         });
       }
+
+      // Chấp nhận mật khẩu mẫu '123456' hoặc 'Password123!'
+      const isPasswordCorrect = (password === '123456' || password === 'Password123!');
+
+      if (!user || !isPasswordCorrect) {
+        const failedAttemptState = LoginAttemptService.recordFailedAttempt(normalizedEmail);
+
+        if (failedAttemptState.lockedUntil && failedAttemptState.lockedUntil > Date.now()) {
+          return res.status(403).json({
+            success: false,
+            code: 'ACCOUNT_LOCKED',
+            message: 'Tài khoản đã nhập sai 5 lần liên tiếp. Hệ thống đã khóa tạm thời trong 15 phút.'
+          });
+        }
+
+        // Tiêu chí AC2: Lỗi luôn là 'Email hoặc mật khẩu không đúng' để tránh lộ thông tin người dùng
+        return res.status(401).json({
+          success: false,
+          code: 'INVALID_CREDENTIALS',
+          message: 'Email hoặc mật khẩu không đúng',
+          remainingAttempts: Math.max(0, LoginAttemptService.MAX_ATTEMPTS - failedAttemptState.count)
+        });
+      }
+
+      LoginAttemptService.resetAttempts(normalizedEmail);
 
       // Đăng nhập thành công (AC1)
       return res.status(200).json({
