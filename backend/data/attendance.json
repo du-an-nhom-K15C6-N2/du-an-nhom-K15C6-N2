@@ -1,0 +1,15 @@
+[
+  {
+    "id": "51b3a802-c285-4d27-a9f6-8799f45d0d25",
+    "className": "k23l",
+    "studentId": "usr_009",
+    "studentName": "Vũ Quốc Khánh",
+    "studentEmail": "khanh.vq@edu.vn",
+    "attendanceDate": "2026-10-04",
+    "status": "absent",
+    "note": "",
+    "createdBy": "usr_001",
+    "createdByName": "Giáp Văn Hiếu",
+    "createdAt": "2026-10-04T15:38:24.145Z"
+  }
+]

@@ -34,3 +34,22 @@ Yêu cầu hệ thống
 - Node.js 
 - Database: MySQL / PostgreSQL đã được cài đặt và cấu hình.
 - Git
+
+## Chạy ứng dụng
+
+Mở terminal tại thư mục `du-an-nhom-K15C6-N2`, sau đó chạy:
+
+```bash
+npm install
+npm start
+```
+
+Mở `http://localhost:3000`. Lệnh `npm start` sẽ build frontend rồi khởi động backend cùng API. Trong VS Code, có thể nhấn F5 để tự chạy ứng dụng và mở trang.
+
+Tài khoản mẫu phát triển dùng mật khẩu `12345678` (ví dụ: `admin@edu.vn`, `teacher@edu.vn` hoặc `student@edu.vn`). Mật khẩu được lưu dưới dạng hash. Mật khẩu mặc định này chỉ dùng trong môi trường phát triển, không dùng trong production.
+
+Chạy kiểm thử bằng:
+
+```bash
+npm test
+```
