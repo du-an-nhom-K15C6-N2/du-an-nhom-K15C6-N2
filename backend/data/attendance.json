@@ -1,0 +1,28 @@
+[
+  {
+    "id": "7b7f9532-0047-461b-a872-b179eae3a1b8",
+    "className": "k23e",
+    "studentId": "usr_muqov664",
+    "studentName": "TRAN MANH HUNG",
+    "studentEmail": "hung@edu.vn",
+    "attendanceDate": "2026-10-04",
+    "status": "present",
+    "note": "",
+    "createdBy": "usr_001",
+    "createdByName": "Giáp Văn Hiếu",
+    "createdAt": "2026-10-04T07:25:25.805Z"
+  },
+  {
+    "id": "4f01ed66-3ef5-4454-8ef9-353651cf5bb8",
+    "className": "k23l",
+    "studentId": "usr_mutka14e",
+    "studentName": "NGO TRUNG HIEU",
+    "studentEmail": "trung@edu.vn",
+    "attendanceDate": "2026-10-04",
+    "status": "absent",
+    "note": "chuyển sinh",
+    "createdBy": "usr_001",
+    "createdByName": "Giáp Văn Hiếu",
+    "createdAt": "2026-10-04T08:31:25.553Z"
+  }
+]
