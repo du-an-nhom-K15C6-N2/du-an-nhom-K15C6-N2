@@ -9,7 +9,11 @@ const LOCK_TIMEOUT_MS = 5000;
 const STALE_LOCK_AGE_MS = 60_000;
 
 function emptyStore() {
-  return { revokedTokens: {}, revokedSessions: {} };
+  return {
+    revokedTokens: {},
+    revokedSessions: {},
+    activeSessions: {}
+  };
 }
 
 function readStore() {
@@ -122,5 +126,50 @@ function revokeSession(sessionId, expiresAt) {
     writeStore(store);
   });
 }
+function registerSession(userId, sessionId, expiresAt) {
+  withStoreLock(() => {
+    const store = readStore();
 
-module.exports = { isRevoked, revokeToken, revokeSession };
+    if (!store.activeSessions || typeof store.activeSessions !== 'object') {
+      store.activeSessions = {};
+    }
+
+    if (!store.activeSessions[userId]) {
+      store.activeSessions[userId] = {};
+    }
+
+    store.activeSessions[userId][sessionId] = expiresAt;
+
+    writeStore(store);
+  });
+}
+
+function revokeOtherSessions(userId, currentSessionId) {
+  withStoreLock(() => {
+    const store = readStore();
+
+    if (!store.activeSessions || typeof store.activeSessions !== 'object') {
+      store.activeSessions = {};
+    }
+
+    const userSessions = store.activeSessions[userId] || {};
+
+    for (const [sessionId, expiresAt] of Object.entries(userSessions)) {
+      if (sessionId !== currentSessionId) {
+        store.revokedSessions[sessionId] = expiresAt;
+        delete userSessions[sessionId];
+      }
+    }
+
+    store.activeSessions[userId] = userSessions;
+
+    writeStore(store);
+  });
+}
+module.exports = {
+  isRevoked,
+  revokeToken,
+  revokeSession,
+  registerSession,
+  revokeOtherSessions
+};

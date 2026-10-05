@@ -43,9 +43,19 @@ function requireSession(req, res, next) {
   req.session = { ...session, user: UserModel.toPublicUser(user) };
   next();
 }
-
+function revokeOtherSessions(userId, currentToken) {
+  for (const [token, session] of sessions.entries()) {
+    if (
+      session.user?.id === userId &&
+      token !== currentToken
+    ) {
+      sessions.delete(token);
+    }
+  }
+}
 module.exports = {
   SESSION_TTL,
   sessions,
-  requireSession
+  requireSession,
+  revokeOtherSessions
 };

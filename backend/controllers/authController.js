@@ -10,6 +10,8 @@ const {
   TOKEN_LIFETIME_SECONDS
 } = require('../security/token');
 
+const sessionStore = require('../security/sessionStore');
+
 const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student']);
 const RESET_TOKEN_TTL = 30 * 60 * 1000;
 const resetTokens = new Map();
@@ -175,6 +177,17 @@ class AuthController {
         });
       }
 
+      const passwordPolicy =
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+      if (!passwordPolicy.test(newPassword)) {
+        return res.status(400).json({
+          success: false,
+          code: 'WEAK_PASSWORD',
+          message: 'Mật khẩu mới phải có chữ hoa, chữ thường, số và ký tự đặc biệt.'
+        });
+      }
+
       const isCurrentPasswordCorrect = await verifyPassword(currentPassword, req.user.passwordHash);
       if (!isCurrentPasswordCorrect) {
         return res.status(400).json({
@@ -184,8 +197,23 @@ class AuthController {
         });
       }
 
+      const isSamePassword =
+        await verifyPassword(newPassword, req.user.passwordHash);
+
+      if (isSamePassword) {
+        return res.status(400).json({
+          success: false,
+          code: 'PASSWORD_UNCHANGED',
+          message: 'Mật khẩu mới phải khác mật khẩu hiện tại.'
+        });
+      }
       const passwordHash = await hashPassword(newPassword);
       UserModel.setPassword(req.user.id, passwordHash);
+      sessionStore.revokeOtherSessions(
+        req.user.id,
+        req.sessionId
+      );
+
       LoginAttemptService.resetAttempts(req.user.email);
 
       return res.status(200).json({

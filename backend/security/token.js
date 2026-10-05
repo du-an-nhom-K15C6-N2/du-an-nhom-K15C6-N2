@@ -14,6 +14,12 @@ function sign(value) {
 
 function createToken(user, sessionId = crypto.randomUUID(), lifetimeSeconds = TOKEN_LIFETIME_SECONDS) {
   const now = Math.floor(Date.now() / 1000);
+
+  sessionStore.registerSession(
+    user.id,
+    sessionId,
+    now + lifetimeSeconds
+  );
   const header = base64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const payload = base64Url(JSON.stringify({
     sub: user.id,
