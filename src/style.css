@@ -1107,3 +1107,141 @@ body {
   20%, 60% { transform: translateX(-6px); }
   40%, 80% { transform: translateX(6px); }
 }
+/* ========================================================
+   DNKN-14: Role Navigation Bar - Glassmorphism Theme
+   ======================================================== */
+.role-navigation-bar {
+  margin: 1.25rem 0;
+  padding: 0.75rem 1rem;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.role-nav-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.role-nav-item {
+  list-style: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.role-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.95rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.role-nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.role-nav-link.is-active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
+  border-color: #3b82f6;
+  color: #60a5fa;
+  font-weight: 600;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+}
+
+.nav-item-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Tối ưu hiển thị cho màn hình di động (từ 360px trở lên) */
+@media (max-width: 640px) {
+  .role-navigation-bar {
+    padding: 0.6rem 0.75rem;
+    margin: 1rem 0;
+  }
+
+  .role-nav-list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px !important;
+    scrollbar-width: none;
+  }
+
+  .role-nav-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .role-nav-link {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.8rem;
+  }
+}/* ========================================================
+   DNKN-39: Access Denied State (403 Forbidden Notification)
+   ======================================================== */
+.access-denied-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 14px;
+  color: #fca5a5;
+}
+
+.denied-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.denied-content h4 {
+  margin: 0 0 0.35rem 0;
+  color: #ef4444;
+  font-size: 1.05rem;
+}
+
+.denied-content p {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.btn-safe-return {
+  padding: 0.45rem 0.9rem;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-safe-return:hover {
+  background: #dc2626;
+}

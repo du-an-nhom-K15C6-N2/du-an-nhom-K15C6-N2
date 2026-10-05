@@ -1,0 +1,95 @@
+/**
+ * DNKN-14 / DNKN-39: Menu điều hướng và Xử lý trạng thái không có quyền truy cập
+ */
+
+const ALL_NAV_ITEMS = [
+  { id: 'dashboard', label: 'Bảng điều khiển', icon: '📊', roles: ['ADMIN', 'TEACHER', 'ASSISTANT', 'STUDENT', 'MANAGER', 'USER'] },
+  { id: 'attendance', label: 'Điểm danh lớp học', icon: '📝', roles: ['ADMIN', 'TEACHER', 'ASSISTANT'] },
+  { id: 'class-management', label: 'Quản lý lớp học', icon: '🏫', roles: ['ADMIN', 'TEACHER'] },
+  { id: 'user-management', label: 'Quản lý người dùng', icon: '👥', roles: ['ADMIN'] },
+  { id: 'system-logs', label: 'Nhật ký hệ thống', icon: '🛡️', roles: ['ADMIN'] },
+  { id: 'my-courses', label: 'Lớp học của tôi', icon: '🎓', roles: ['STUDENT'] },
+  { id: 'my-tasks', label: 'Nhiệm vụ được giao', icon: '💼', roles: ['USER', 'STUDENT'] },
+  { id: 'approval', label: 'Phê duyệt yêu cầu', icon: '📑', roles: ['MANAGER', 'ADMIN'] },
+  { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', icon: '🔐', roles: ['ADMIN', 'TEACHER', 'ASSISTANT', 'STUDENT', 'MANAGER', 'USER'] }
+];
+
+export function createRoleNavigation(role) {
+  const currentRole = (role || 'USER').toUpperCase();
+  const authorizedItems = ALL_NAV_ITEMS.filter(item => item.roles.includes(currentRole));
+
+  const navElement = document.createElement('nav');
+  navElement.className = 'role-navigation-bar glass-panel';
+  navElement.id = 'role-nav-bar';
+  navElement.setAttribute('aria-label', 'Menu chức năng theo quyền');
+
+  navElement.innerHTML = `
+    <ul class="role-nav-list">
+      ${authorizedItems.map((item, index) => `
+        <li class="role-nav-item">
+          <button type="button" class="role-nav-link ${index === 0 ? 'is-active' : ''}" data-nav-id="${item.id}">
+            <span class="nav-item-icon">${item.icon}</span>
+            <span class="nav-item-label">${item.label}</span>
+          </button>
+        </li>
+      `).join('')}
+    </ul>
+  `;
+
+  // Xử lý chuyển tab & kiểm tra quyền (DNKN-39)
+  const buttons = navElement.querySelectorAll('.role-nav-link');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const navId = btn.dataset.navId;
+      const targetItem = ALL_NAV_ITEMS.find(item => item.id === navId);
+
+      // Nếu cố tình truy cập chức năng không có quyền
+      if (!targetItem || !targetItem.roles.includes(currentRole)) {
+        showAccessDeniedBanner(targetItem?.label || 'Chức năng này', currentRole);
+        return;
+      }
+
+      buttons.forEach(b => b.classList.remove('is-active'));
+      btn.classList.add('is-active');
+
+      // Ẩn thông báo lỗi nếu chọn lại menu hợp lệ
+      const errorBanner = document.querySelector('#access-denied-banner');
+      if (errorBanner) errorBanner.remove();
+    });
+  });
+
+  return navElement;
+}
+
+// DNKN-39: Hiển thị thông báo khi không có quyền truy cập
+export function showAccessDeniedBanner(featureName, role) {
+  let existingBanner = document.querySelector('#access-denied-banner');
+  if (existingBanner) existingBanner.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'access-denied-banner';
+  banner.className = 'access-denied-card glass-panel slide-down';
+  banner.innerHTML = `
+    <div class="denied-icon">🚫</div>
+    <div class="denied-content">
+      <h4>Truy cập bị từ chối (403 Forbidden)</h4>
+      <p>Vai trò <strong>${role}</strong> của bạn không có quyền truy cập vào <strong>${featureName}</strong>.</p>
+      <button type="button" class="btn-safe-return" id="btn-safe-return">Quay về Bảng điều khiển an toàn</button>
+    </div>
+  `;
+
+  const mainContent = document.querySelector('.dash-main-content');
+  if (mainContent) {
+    mainContent.prepend(banner);
+  }
+
+  // Điều hướng an toàn khi người dùng ấn nút
+  banner.querySelector('#btn-safe-return').addEventListener('click', () => {
+    banner.remove();
+    const defaultBtn = document.querySelector('[data-nav-id="dashboard"]');
+    if (defaultBtn) {
+      document.querySelectorAll('.role-nav-link').forEach(b => b.classList.remove('is-active'));
+      defaultBtn.classList.add('is-active');
+    }
+  });
+}

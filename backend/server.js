@@ -72,6 +72,51 @@ app.use((req, res, next) => {
 
 // 5. ERROR HANDLING MIDDLEWARES
 app.use(notFoundHandler);
+// DNKN-42: API cung cap du lieu quyen va vai tro cho giao dien dieu huong
+app.get('/api/auth/permissions', (req, res) => {
+  const role = (req.query.role || req.headers['x-user-role'] || 'USER').toUpperCase();
+
+  const roleNavigationMap = {
+    ADMIN: [
+      { id: 'dashboard', label: 'Bảng điều khiển', path: '/admin/dashboard' },
+      { id: 'attendance', label: 'Điểm danh lớp học', path: '/admin/attendance' },
+      { id: 'class-management', label: 'Quản lý lớp học', path: '/admin/classes' },
+      { id: 'user-management', label: 'Quản lý người dùng', path: '/admin/users' },
+      { id: 'system-logs', label: 'Nhật ký hệ thống', path: '/admin/logs' },
+      { id: 'approval', label: 'Phê duyệt yêu cầu', path: '/admin/approvals' },
+      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
+    ],
+    TEACHER: [
+      { id: 'dashboard', label: 'Bảng điều khiển', path: '/teacher/dashboard' },
+      { id: 'attendance', label: 'Điểm danh lớp học', path: '/teacher/attendance' },
+      { id: 'class-management', label: 'Quản lý lớp học', path: '/teacher/classes' },
+      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
+    ],
+    ASSISTANT: [
+      { id: 'dashboard', label: 'Bảng điều khiển', path: '/assistant/dashboard' },
+      { id: 'attendance', label: 'Điểm danh lớp học', path: '/assistant/attendance' },
+      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
+    ],
+    STUDENT: [
+      { id: 'dashboard', label: 'Bảng điều khiển', path: '/student/dashboard' },
+      { id: 'my-courses', label: 'Lớp học của tôi', path: '/student/courses' },
+      { id: 'my-tasks', label: 'Nhiệm vụ được giao', path: '/student/tasks' },
+      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
+    ],
+    USER: [
+      { id: 'dashboard', label: 'Bảng điều khiển', path: '/user/dashboard' },
+      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
+    ]
+  };
+
+  const navItems = roleNavigationMap[role] || roleNavigationMap['USER'];
+
+  return res.json({
+    success: true,
+    role: role,
+    navigation: navItems
+  });
+});
 app.use(errorHandler);
 
 function startServer() {

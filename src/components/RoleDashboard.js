@@ -8,6 +8,7 @@ import { getAuthSession } from '../core/storage.js';
 import { clearFormDraft, restoreFormDrafts } from '../core/formDrafts.js';
 import { createAttendanceRecord, getAttendanceRecords, getAttendanceStudents } from '../core/attendanceService.js';
 import { changePasswordApi } from '../core/authService.js';
+import { createRoleNavigation } from './RoleNavigation.js';
 
 export function renderRoleDashboard(container) {
   function getLocalToday() {
@@ -19,6 +20,7 @@ export function renderRoleDashboard(container) {
     const state = authState.getState();
     const session = getAuthSession();
     const user = state.user || session.user;
+    const displayName = user?.fullName || user?.name || (user?.email ? user.email.split('@')[0] : 'Người dùng');
     const role = (state.role || session.role || 'USER').toUpperCase();
     const targetNav = state.navigationTarget || { path: '/portal/home', title: 'Không gian làm việc' };
 
@@ -134,7 +136,7 @@ export function renderRoleDashboard(container) {
             <div class="user-pill glass-panel">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(user.fullName)}" class="user-avatar" />
               <div class="user-meta">
-                <span class="user-name">${escapeHtml(user.fullName)}</span>
+                <span class="user-name">${escapeHtml(user?.fullName || user?.name || (user?.email ? user.email.split('@')[0] : 'Quản trị viên'))}</span>
                 <span class="user-email">${escapeHtml(user.email)}</span>
               </div>
               <span class="role-badge ${currentMeta.badgeClass}">${role}</span>
@@ -309,7 +311,10 @@ export function renderRoleDashboard(container) {
       notice.textContent = 'Đã khôi phục bản nháp biểu mẫu từ phiên làm việc trước.';
       mainContent?.prepend(notice);
     }
-
+    const mainContentArea = container.querySelector('.dash-main-content');
+    if (mainContentArea) {
+      mainContentArea.before(createRoleNavigation(role));
+    }
     bindEvents();
   }
 
