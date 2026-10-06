@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const config = require('../config/app.config');
+const UserModel = require('./userModel');
 
 function readRecords() {
   if (!fs.existsSync(config.ATTENDANCE_DATA_FILE)) return [];
@@ -23,7 +24,7 @@ function writeRecords(records) {
 class AttendanceModel {
   static listForUser(user) {
     const records = readRecords()
-      .filter(record => user.role === 'admin' || record.createdBy === user.id)
+      .filter(record => UserModel.getRoles(user).includes('admin') || record.createdBy === user.id)
       .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
     return records.slice(0, 50);
   }

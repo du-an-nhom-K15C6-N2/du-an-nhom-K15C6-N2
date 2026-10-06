@@ -60,6 +60,22 @@
   const ACTIVE_WINDOW_MS = 20 * 60 * 1000;
   const MAX_CONSECUTIVE_FAILS = 5;
   const PAGE_SIZE_DEFAULT = 20; // 20 dòng/trang theo AC4
+  const ROLE_LABELS = {
+    admin: 'Quản trị viên',
+    teacher: 'Giảng viên',
+    assistant: 'Trợ giảng',
+    student: 'Học sinh / Sinh viên',
+    manager: 'Quản lý đào tạo'
+  };
+
+  function roleLabelFor(role) {
+    return ROLE_LABELS[role] || role;
+  }
+
+  function hasRole(user, ...roles) {
+    const currentRoles = Array.isArray(user?.roles) ? user.roles : [user?.role];
+    return roles.some(role => currentRoles.includes(role));
+  }
 
   let lockoutTimerInterval = null;
   let sessionRefreshInterval = null;
@@ -254,6 +270,15 @@
         console.warn('Lỗi gọi API PUT /api/users/:id:', err);
         throw err;
       }
+    },
+
+    getCurrentUser: async function () {
+      const response = await fetch('/api/auth/me', { headers: getAuthHeaders() });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Không thể làm mới vai trò tài khoản.');
+      }
+      return result.user;
     },
 
     /**
@@ -754,7 +779,20 @@
     // ------------------------------------------
     // ROLE ROUTING & NAVIGATION
     // ------------------------------------------
-    routeToRolePortal: function (user) {
+    routeToRolePortal: async function (user) {
+      try {
+        user = await ApiService.getCurrentUser();
+        this.currentUser = user;
+        if (localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        } else if (sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)) {
+          sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        }
+      } catch (error) {
+        this.showToast(error.message || 'Không thể làm mới quyền tài khoản.', 'error');
+        return;
+      }
+
       document.getElementById('auth-section').style.display = 'none';
       document.getElementById('portal-student').style.display = 'none';
       document.getElementById('portal-teacher').style.display = 'none';
@@ -767,7 +805,7 @@
       const tabUsers = document.getElementById('tab-nav-users');
       const tabAttendance = document.getElementById('tab-nav-attendance');
 
-      if (user && user.role === 'admin') {
+      if (hasRole(user, 'admin')) {
         if (headerNav) headerNav.style.display = 'flex';
         if (tabUsers) {
           tabUsers.style.display = 'inline-flex';
@@ -792,7 +830,7 @@
       if (userMenu) userMenu.style.display = 'flex';
       if (navName) navName.textContent = user.name;
       if (navRole) {
-        navRole.textContent = user.roleLabel;
+        navRole.textContent = user.roleLabel || (user.roleLabels || []).join(', ');
         navRole.className = `user-role-badge badge-${user.role}`;
       }
       if (navAvatar) {
@@ -800,13 +838,11 @@
         navAvatar.textContent = parts[parts.length - 1].substring(0, 2).toUpperCase();
       }
 
-      if (user.role === 'admin') {
+      if (hasRole(user, 'admin')) {
         // Quản trị viên -> Điều hướng trực tiếp vào Màn hình Quản lý người dùng!
         document.getElementById('portal-user-management').style.display = 'block';
         this.loadUsersTable();
-      } else if (user.role === 'teacher') {
-        this.switchToAttendance();
-      } else if (user.role === 'assistant') {
+      } else if (hasRole(user, 'teacher', 'assistant')) {
         this.switchToAttendance();
       } else {
         document.getElementById('portal-student').style.display = 'block';
@@ -839,9 +875,15 @@
       }
     },
 
-    switchToAdminUserManagement: function () {
+    switchToAdminUserManagement: async function () {
+      try {
+        this.currentUser = await ApiService.getCurrentUser();
+      } catch (error) {
+        this.showToast(error.message || 'Không thể xác thực quyền hiện tại.', 'error');
+        return;
+      }
       // Bảo vệ phân quyền: chỉ admin mới được vào màn hình quản lý người dùng
-      if (!this.currentUser || this.currentUser.role !== 'admin') {
+      if (!hasRole(this.currentUser, 'admin')) {
         this.showToast('Chỉ tài khoản Quản trị viên mới có quyền truy cập Quản lý Người dùng.', 'warning');
         return;
       }
@@ -869,8 +911,14 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
-    switchToAttendance: function () {
-      if (!this.currentUser || !['admin', 'teacher', 'assistant'].includes(this.currentUser.role)) {
+    switchToAttendance: async function () {
+      try {
+        this.currentUser = await ApiService.getCurrentUser();
+      } catch (error) {
+        this.showToast(error.message || 'Không thể xác thực quyền hiện tại.', 'error');
+        return;
+      }
+      if (!hasRole(this.currentUser, 'admin', 'teacher', 'assistant')) {
         this.showToast('Bạn không có quyền truy cập chức năng điểm danh.', 'warning');
         return;
       }
@@ -885,7 +933,7 @@
       const headerNav = document.getElementById('header-nav-tabs');
       const tabUsers = document.getElementById('tab-nav-users');
       const tabAttendance = document.getElementById('tab-nav-attendance');
-      if (this.currentUser.role === 'admin') {
+      if (hasRole(this.currentUser, 'admin')) {
         if (headerNav) headerNav.style.display = 'flex';
         if (tabUsers) tabUsers.classList.remove('active');
         if (tabAttendance) {
@@ -1186,7 +1234,7 @@
           tbody.innerHTML = data.map((u, index) => {
             const rowNumber = (pagination.currentPage - 1) * pagination.pageSize + index + 1;
             const statusBadgeClass = u.status === 'active' ? 'status-active' : (u.status === 'locked' ? 'status-locked' : 'status-pending');
-            const roleBadgeClass = `badge-${u.role}`;
+            const roles = Array.isArray(u.roles) && u.roles.length ? u.roles : [u.role];
 
             return `
               <tr id="user-row-${u.id}">
@@ -1194,7 +1242,9 @@
                 <td class="user-name-cell">${this.escapeHtml(u.name)}</td>
                 <td class="user-email-cell">${this.escapeHtml(u.email)}</td>
                 <td><code>${this.escapeHtml(u.phone)}</code></td>
-                <td><span class="cred-role-badge ${roleBadgeClass}">${this.escapeHtml(u.roleLabel)}</span></td>
+                <td><div class="user-role-list">${roles.map(role => `
+                  <span class="cred-role-badge badge-${this.escapeHtml(role)}">${this.escapeHtml(roleLabelFor(role))}</span>
+                `).join('')}</div></td>
                 <td>
                   <span class="status-badge ${statusBadgeClass}">
                     <span class="badge-dot"></span>
@@ -1329,17 +1379,19 @@
     openAddUserModal: function () {
       const modal = document.getElementById('user-form-modal');
       const title = document.getElementById('user-modal-title');
+      const subtitle = document.getElementById('user-modal-subtitle');
       const idInput = document.getElementById('form-user-id');
       const nameInput = document.getElementById('form-fullname');
       const emailInput = document.getElementById('form-email');
       const phoneInput = document.getElementById('form-phone');
-      const passwordInput = document.getElementById('form-password');
-      const confirmPasswordInput = document.getElementById('form-confirm-password');
-      const roleSelect = document.getElementById('form-role');
       const statusSelect = document.getElementById('form-status');
+      const statusGroup = document.getElementById('form-status-group');
+      const infoLabel = document.getElementById('user-form-info-label');
+      const securityNote = document.getElementById('user-form-security-note');
       const modalAlert = document.getElementById('modal-error-alert');
 
       if (title) title.textContent = 'Thêm Tài Khoản Mới';
+      if (subtitle) subtitle.textContent = 'Hệ thống tự tạo mật khẩu tạm và gửi liên kết kích hoạt đến email.';
       if (idInput) idInput.value = '';
       if (nameInput) nameInput.value = '';
       if (emailInput) {
@@ -1347,10 +1399,11 @@
         emailInput.disabled = false;
       }
       if (phoneInput) phoneInput.value = '';
-      if (passwordInput) passwordInput.value = '';
-      if (confirmPasswordInput) confirmPasswordInput.value = '';
-      if (roleSelect) roleSelect.value = 'student';
-      if (statusSelect) statusSelect.value = 'active';
+      if (statusSelect) statusSelect.value = 'pending';
+      this.setRoleCheckboxes(['student']);
+      if (statusGroup) statusGroup.style.display = 'none';
+      if (infoLabel) infoLabel.textContent = '🔐 Kích hoạt:';
+      if (securityNote) securityNote.textContent = 'Mật khẩu tạm được tạo tự động, gửi qua email và chỉ đăng nhập được sau khi kích hoạt.';
       if (modalAlert) modalAlert.style.display = 'none';
 
       this.clearModalErrors();
@@ -1370,17 +1423,19 @@
 
       const modal = document.getElementById('user-form-modal');
       const title = document.getElementById('user-modal-title');
+      const subtitle = document.getElementById('user-modal-subtitle');
       const idInput = document.getElementById('form-user-id');
       const nameInput = document.getElementById('form-fullname');
       const emailInput = document.getElementById('form-email');
       const phoneInput = document.getElementById('form-phone');
-      const passwordInput = document.getElementById('form-password');
-      const confirmPasswordInput = document.getElementById('form-confirm-password');
-      const roleSelect = document.getElementById('form-role');
       const statusSelect = document.getElementById('form-status');
+      const statusGroup = document.getElementById('form-status-group');
+      const infoLabel = document.getElementById('user-form-info-label');
+      const securityNote = document.getElementById('user-form-security-note');
       const modalAlert = document.getElementById('modal-error-alert');
 
       if (title) title.textContent = `Chỉnh Sửa Tài Khoản: ${user.name}`;
+      if (subtitle) subtitle.textContent = 'Cập nhật thông tin và quyền truy cập của tài khoản.';
       if (idInput) idInput.value = user.id;
       if (nameInput) nameInput.value = user.name;
       if (emailInput) {
@@ -1388,20 +1443,24 @@
         emailInput.disabled = false;
       }
       if (phoneInput) phoneInput.value = user.phone;
-      if (passwordInput) {
-        passwordInput.value = '';
-        passwordInput.removeAttribute('required');
-      }
-      if (confirmPasswordInput) {
-        confirmPasswordInput.value = '';
-        confirmPasswordInput.removeAttribute('required');
-      }
-      if (roleSelect) roleSelect.value = user.role;
+      this.setRoleCheckboxes(Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role]);
       if (statusSelect) statusSelect.value = user.status;
+      if (statusGroup) statusGroup.style.display = '';
+      if (infoLabel) infoLabel.textContent = 'Trạng thái:';
+      if (securityNote) securityNote.textContent = 'Tài khoản ở trạng thái “Chờ kích hoạt” sẽ không thể đăng nhập cho đến khi người dùng xác nhận liên kết email.';
       if (modalAlert) modalAlert.style.display = 'none';
 
       this.clearModalErrors();
       if (modal) modal.style.display = 'flex';
+    },
+
+    setRoleCheckboxes: function (roles) {
+      document.querySelectorAll('input[name="user-role"]').forEach(input => {
+        input.checked = roles.includes(input.value);
+        input.disabled = input.value === 'admin'
+          && this.currentUser?.id === document.getElementById('form-user-id')?.value
+          && roles.includes('admin');
+      });
     },
 
     closeUserModal: function () {
@@ -1413,13 +1472,9 @@
       const errName = document.getElementById('err-fullname');
       const errEmail = document.getElementById('err-email');
       const errPhone = document.getElementById('err-phone');
-      const errPassword = document.getElementById('err-password');
-      const errConfirmPassword = document.getElementById('err-confirm-password');
       if (errName) errName.textContent = '';
       if (errEmail) errEmail.textContent = '';
       if (errPhone) errPhone.textContent = '';
-      if (errPassword) errPassword.textContent = '';
-      if (errConfirmPassword) errConfirmPassword.textContent = '';
     },
 
     handleUserFormSubmit: async function (e) {
@@ -1429,22 +1484,22 @@
       const name = document.getElementById('form-fullname').value.trim();
       const email = document.getElementById('form-email').value.trim();
       const phone = document.getElementById('form-phone').value.trim();
-      const role = document.getElementById('form-role').value;
+      const roles = [...document.querySelectorAll('input[name="user-role"]:checked')]
+        .map(input => input.value);
       const status = document.getElementById('form-status').value;
-      const password = document.getElementById('form-password')?.value || '';
-      const confirmPassword = document.getElementById('form-confirm-password')?.value || '';
 
       // Validate Client
       let hasError = false;
       const errName = document.getElementById('err-fullname');
       const errEmail = document.getElementById('err-email');
       const errPhone = document.getElementById('err-phone');
-      const errPassword = document.getElementById('err-password');
-      const errConfirmPassword = document.getElementById('err-confirm-password');
+      const errRole = document.getElementById('err-role');
       const modalAlert = document.getElementById('modal-error-alert');
       const modalErrorText = document.getElementById('modal-error-text');
 
       if (modalAlert) modalAlert.style.display = 'none';
+      if (errRole) errRole.textContent = roles.length ? '' : 'Vui lòng chọn ít nhất một vai trò.';
+      if (!roles.length) hasError = true;
 
       if (!name) {
         if (errName) errName.textContent = 'Vui lòng nhập họ và tên.';
@@ -1475,28 +1530,6 @@
         if (errPhone) errPhone.textContent = '';
       }
 
-      if (!id) {
-        if (!password) {
-          if (errPassword) errPassword.textContent = 'Vui lòng nhập mật khẩu.';
-          hasError = true;
-        } else if (password.length < 8) {
-          if (errPassword) errPassword.textContent = 'Mật khẩu phải có ít nhất 8 ký tự.';
-          hasError = true;
-        } else {
-          if (errPassword) errPassword.textContent = '';
-        }
-
-        if (!confirmPassword) {
-          if (errConfirmPassword) errConfirmPassword.textContent = 'Vui lòng xác nhận mật khẩu.';
-          hasError = true;
-        } else if (confirmPassword !== password) {
-          if (errConfirmPassword) errConfirmPassword.textContent = 'Mật khẩu xác nhận không khớp.';
-          hasError = true;
-        } else {
-          if (errConfirmPassword) errConfirmPassword.textContent = '';
-        }
-      }
-
       if (hasError) return;
 
       // Loading spinner in modal
@@ -1511,13 +1544,13 @@
       try {
         if (id) {
           // UPDATE
-          const res = await MockApi.updateUser(id, { name, email, phone, role, status });
+          const res = await MockApi.updateUser(id, { name, email, phone, roles, status });
           this.showToast(res.message, 'success');
           this.closeUserModal();
           this.loadUsersTable();
         } else {
           // CREATE (AC1 & AC2)
-          const res = await MockApi.createUser({ name, email, phone, role, status, password });
+          const res = await MockApi.createUser({ name, email, phone, roles });
           this.showToast(res.message, 'success');
           this.closeUserModal();
           this.loadUsersTable();

@@ -24,6 +24,7 @@ function createToken(user, sessionId = crypto.randomUUID(), lifetimeSeconds = TO
   const payload = base64Url(JSON.stringify({
     sub: user.id,
     role: user.role,
+    roles: Array.isArray(user.roles) ? user.roles : [user.role],
     sid: sessionId,
     jti: crypto.randomUUID(),
     iat: now,

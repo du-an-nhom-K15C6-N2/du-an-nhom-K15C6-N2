@@ -1017,6 +1017,35 @@ body {
 .badge-teacher { background: var(--role-teacher-bg); color: var(--role-teacher-color); }
 .badge-admin { background: var(--role-admin-bg); color: var(--role-admin-color); }
 .badge-assistant { background: var(--role-assistant-bg); color: var(--role-assistant-color); }
+.badge-manager { background: var(--role-teacher-bg); color: var(--role-teacher-color); }
+
+.user-role-list,
+.role-checkbox-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.role-checkbox-list {
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.role-checkbox-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.role-checkbox-list input:disabled {
+  cursor: not-allowed;
+}
 
 .cred-tag {
   font-size: 0.65rem;

@@ -285,7 +285,7 @@
         <div class="admin-notice-card">
           <div class="notice-icon">💡</div>
           <div class="notice-text">
-            <strong>Tiêu chí nghiệm thu AC1:</strong> Khi thêm tài khoản mới thành công, hệ thống sẽ mô phỏng gửi email kích hoạt kèm mật khẩu tạm thời về hòm thư người dùng. Trường hợp trùng Email sẽ bị từ chối với thông báo lỗi cụ thể (AC2).
+            <strong>Quy trình cấp tài khoản:</strong> Tài khoản mới ở trạng thái chờ kích hoạt. Hệ thống gửi liên kết kích hoạt và mật khẩu tạm qua email; email trùng sẽ bị từ chối.
           </div>
         </div>
 
@@ -318,6 +318,7 @@
                 <option value="teacher">Giảng viên</option>
                 <option value="admin">Quản trị viên</option>
                 <option value="assistant">Trợ giảng</option>
+                <option value="manager">Quản lý đào tạo</option>
               </select>
             </div>
 
@@ -527,7 +528,7 @@
           <div class="modal-icon-badge">👤</div>
           <div>
             <h3 class="modal-title" id="user-modal-title">Thêm Tài Khoản Mới</h3>
-            <p class="modal-subtitle">Hệ thống sẽ gửi email kích hoạt và mật khẩu tạm thời (AC1).</p>
+            <p class="modal-subtitle" id="user-modal-subtitle">Hệ thống tự tạo mật khẩu tạm và gửi liên kết kích hoạt đến email.</p>
           </div>
         </div>
         <button type="button" class="btn-modal-close" onclick="app.closeUserModal()" aria-label="Đóng">&times;</button>
@@ -598,67 +599,27 @@
             </div>
 
             <!-- Vai trò -->
-            <div class="form-group">
-              <label for="form-role" class="form-label">
-                <span>Vai trò người dùng</span>
-                <span class="required-star">*</span>
-              </label>
-              <select id="form-role" class="form-select" required>
-                <option value="student">Học sinh / Sinh viên</option>
-                <option value="teacher">Giảng viên</option>
-                <option value="assistant">Trợ giảng</option>
-                <option value="admin">Quản trị viên</option>
-              </select>
+            <div class="form-group form-col-span-2">
+              <span class="form-label">Vai trò người dùng</span>
+              <div id="form-role-options" class="role-checkbox-list">
+                <label><input type="checkbox" name="user-role" value="student"> Học sinh / Sinh viên</label>
+                <label><input type="checkbox" name="user-role" value="teacher"> Giảng viên</label>
+                <label><input type="checkbox" name="user-role" value="assistant"> Trợ giảng</label>
+                <label><input type="checkbox" name="user-role" value="manager"> Quản lý đào tạo</label>
+                <label><input type="checkbox" name="user-role" value="admin"> Quản trị viên</label>
+              </div>
               <span class="field-error-msg" id="err-role"></span>
             </div>
 
-            <!-- Mật khẩu -->
-            <div class="form-group">
-              <label for="form-password" class="form-label">
-                <span>Mật khẩu</span>
-                <span class="required-star">*</span>
-              </label>
-              <input 
-                type="password" 
-                id="form-password" 
-                class="form-input" 
-                placeholder="Ít nhất 8 ký tự" 
-                minlength="8" 
-                maxlength="1024" 
-                autocomplete="new-password"
-                required
-              >
-              <span class="field-error-msg" id="err-password"></span>
-            </div>
-
-            <!-- Xác nhận mật khẩu -->
-            <div class="form-group">
-              <label for="form-confirm-password" class="form-label">
-                <span>Xác nhận mật khẩu</span>
-                <span class="required-star">*</span>
-              </label>
-              <input 
-                type="password" 
-                id="form-confirm-password" 
-                class="form-input" 
-                placeholder="Nhập lại mật khẩu" 
-                minlength="8" 
-                maxlength="1024" 
-                autocomplete="new-password"
-                required
-              >
-              <span class="field-error-msg" id="err-confirm-password"></span>
-            </div>
-
             <!-- Trạng thái -->
-            <div class="form-group form-col-span-2">
+            <div class="form-group form-col-span-2" id="form-status-group">
               <label for="form-status" class="form-label">
                 <span>Trạng thái tài khoản</span>
                 <span class="required-star">*</span>
               </label>
               <select id="form-status" class="form-select" required>
                 <option value="active">Đang hoạt động (Kích hoạt ngay)</option>
-                <option value="pending">Chờ kích hoạt (Gửi email mật khẩu tạm)</option>
+                <option value="pending">Chờ kích hoạt</option>
                 <option value="locked">Tạm khóa tài khoản</option>
               </select>
             </div>
@@ -667,8 +628,8 @@
 
           <!-- Security Notice -->
           <div class="modal-info-box">
-            <span class="info-badge">🔐 Mật khẩu:</span>
-            <span>Mật khẩu có ít nhất 8 ký tự, bắt buộc phải nhập khi tạo tài khoản mới.</span>
+            <span class="info-badge" id="user-form-info-label">🔐 Kích hoạt:</span>
+            <span id="user-form-security-note">Mật khẩu tạm được tạo tự động, gửi qua email và chỉ đăng nhập được sau khi kích hoạt.</span>
           </div>
         </div>
 

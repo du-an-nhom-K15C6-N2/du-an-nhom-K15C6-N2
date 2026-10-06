@@ -1,13 +1,16 @@
 const db = require('../config/db.config');
 const config = require('../config/app.config');
 const { hashPasswordSync } = require('../security/password');
+const crypto = require('crypto');
 
 const ROLE_MAP = {
   admin: 'Quản trị viên',
   teacher: 'Giảng viên',
   student: 'Học sinh',
-  assistant: 'Trợ giảng'
+  assistant: 'Trợ giảng',
+  manager: 'Quản lý đào tạo'
 };
+const ALLOWED_ROLES = new Set(Object.keys(ROLE_MAP));
 
 const STATUS_MAP = {
   active: 'Đang hoạt động',
@@ -16,6 +19,17 @@ const STATUS_MAP = {
 };
 
 class UserModel {
+  static getRoles(user) {
+    if (Array.isArray(user?.roles)) {
+      return [...new Set(user.roles.filter(role => ALLOWED_ROLES.has(role)))];
+    }
+    return ALLOWED_ROLES.has(user?.role) ? [user.role] : [];
+  }
+
+  static getRoleLabels(roles) {
+    return roles.map(role => ROLE_MAP[role]);
+  }
+
   /**
    * Lấy danh sách người dùng có hỗ trợ tìm kiếm, lọc vai trò, trạng thái và phân trang (AC3 & AC4)
    */
@@ -34,7 +48,7 @@ class UserModel {
 
     // 2. Lọc theo vai trò (AC3)
     if (role && role !== 'all') {
-      users = users.filter(u => u.role === role);
+      users = users.filter(u => UserModel.getRoles(u).includes(role));
     }
 
     // 3. Lọc theo trạng thái (AC3)
@@ -74,8 +88,20 @@ class UserModel {
 
   static toPublicUser(user) {
     if (!user) return null;
-    const { passwordHash, password, ...publicUser } = user;
-    return publicUser;
+    const {
+      passwordHash,
+      password,
+      activationTokenHash,
+      activationExpiresAt,
+      ...publicUser
+    } = user;
+    const roles = UserModel.getRoles(user);
+    return {
+      ...publicUser,
+      roles,
+      roleLabels: UserModel.getRoleLabels(roles),
+      roleLabel: UserModel.getRoleLabels(roles).join(', ')
+    };
   }
 
   /**
@@ -97,7 +123,7 @@ class UserModel {
 
   static findActiveStudents() {
     return db.readUsers()
-      .filter(user => user.role === 'student' && user.status === 'active')
+      .filter(user => UserModel.getRoles(user).includes('student') && user.status === 'active')
       .map(({ id, name, email }) => ({ id, name, email }));
   }
 
@@ -114,19 +140,23 @@ class UserModel {
       throw new Error(`Email '${userData.email}' đã tồn tại trong hệ thống. Vui lòng sử dụng email khác.`);
     }
 
-    const role = userData.role || 'student';
-    const status = userData.status || 'active';
+    const roles = userData.roles || [userData.role || 'student'];
+    const role = roles[0];
+    const status = 'pending';
 
     const newUser = {
-      id: 'usr_' + Date.now().toString(36),
+      id: `usr_${crypto.randomBytes(8).toString('hex')}`,
       name: userData.name.trim(),
       email: cleanEmail,
       phone: (userData.phone || '').trim(),
       role: role,
-      roleLabel: ROLE_MAP[role] || role,
+      roles,
+      roleLabel: UserModel.getRoleLabels(roles).join(', '),
       status: status,
       statusLabel: STATUS_MAP[status] || status,
-      passwordHash: userData.passwordHash
+      passwordHash: userData.passwordHash,
+      activationTokenHash: userData.activationTokenHash,
+      activationExpiresAt: userData.activationExpiresAt
     };
 
     // Thêm lên đầu danh sách
@@ -134,6 +164,54 @@ class UserModel {
     db.writeUsers(users);
 
     return newUser;
+  }
+
+  static activateByToken(tokenHash) {
+    const users = db.readUsers();
+    const user = users.find(candidate =>
+      candidate.activationTokenHash === tokenHash
+      && candidate.status === 'pending'
+      && candidate.activationExpiresAt > Date.now()
+    );
+    if (!user) return null;
+
+    user.status = 'active';
+    user.statusLabel = STATUS_MAP.active;
+    delete user.activationTokenHash;
+    delete user.activationExpiresAt;
+    db.writeUsers(users);
+    return user;
+  }
+
+  static setRoles(id, roles) {
+    const users = db.readUsers();
+    const user = users.find(candidate => candidate.id === id);
+    if (!user) throw new Error('Không tìm thấy tài khoản người dùng cần cập nhật.');
+    const uniqueRoles = [...new Set(roles)];
+    if (!uniqueRoles.length || uniqueRoles.some(role => !ALLOWED_ROLES.has(role))) {
+      throw new Error('Tài khoản phải có ít nhất một vai trò hợp lệ.');
+    }
+    user.roles = uniqueRoles;
+    user.role = uniqueRoles.includes(user.role) ? user.role : uniqueRoles[0];
+    user.roleLabel = UserModel.getRoleLabels(uniqueRoles).join(', ');
+    db.writeUsers(users);
+    return user;
+  }
+
+  static assignRole(id, role) {
+    const user = this.findById(id);
+    if (!user) throw new Error('Không tìm thấy tài khoản người dùng cần cập nhật.');
+    const roles = this.getRoles(user);
+    if (!roles.includes(role)) roles.push(role);
+    return this.setRoles(id, roles);
+  }
+
+  static revokeRole(id, role) {
+    const user = this.findById(id);
+    if (!user) throw new Error('Không tìm thấy tài khoản người dùng cần cập nhật.');
+    const roles = this.getRoles(user).filter(existingRole => existingRole !== role);
+    if (!roles.length) throw new Error('Không thể thu hồi vai trò cuối cùng của tài khoản.');
+    return this.setRoles(id, roles);
   }
 
   /**
@@ -153,7 +231,15 @@ class UserModel {
       throw new Error(`Email '${userData.email}' đã được sử dụng bởi một tài khoản khác.`);
     }
 
-    const role = userData.role || users[index].role;
+    const roles = userData.roles
+      ? [...new Set(userData.roles)]
+      : userData.role
+        ? [userData.role]
+        : UserModel.getRoles(users[index]);
+    if (!roles.length || roles.some(role => !ALLOWED_ROLES.has(role))) {
+      throw new Error('Tài khoản phải có ít nhất một vai trò hợp lệ.');
+    }
+    const role = roles.includes(users[index].role) ? users[index].role : roles[0];
     const status = userData.status || users[index].status;
 
     users[index] = {
@@ -162,10 +248,15 @@ class UserModel {
       email: cleanEmail,
       phone: (userData.phone || '').trim(),
       role: role,
-      roleLabel: ROLE_MAP[role] || role,
+      roles,
+      roleLabel: UserModel.getRoleLabels(roles).join(', '),
       status: status,
       statusLabel: STATUS_MAP[status] || status
     };
+    if (status === 'active') {
+      delete users[index].activationTokenHash;
+      delete users[index].activationExpiresAt;
+    }
 
     db.writeUsers(users);
     return users[index];
@@ -232,7 +323,7 @@ class UserModel {
       throw new Error('Mật khẩu quản trị viên ban đầu phải có ít nhất 8 ký tự.');
     }
     const admin = this.findByEmail(email);
-    if (!admin || admin.role !== 'admin') {
+    if (!admin || !this.getRoles(admin).includes('admin')) {
       throw new Error('Không tìm thấy tài khoản quản trị viên để cấp mật khẩu ban đầu.');
     }
     if (!admin.passwordHash) {

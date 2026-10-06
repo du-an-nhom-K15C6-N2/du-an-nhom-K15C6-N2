@@ -62,6 +62,9 @@ app.use((req, res, next) => {
     if (req.path === '/reset-password' || req.path === '/reset-password.html') {
       return res.sendFile(resolveHtmlFile('reset-password.html'));
     }
+    if (req.path === '/activate-account' || req.path === '/activate-account.html') {
+      return res.sendFile(resolveHtmlFile('activate-account.html'));
+    }
     if (req.path === '/session-demo' || req.path === '/session-demo.html') {
       return res.sendFile(resolveHtmlFile('session-demo.html'));
     }

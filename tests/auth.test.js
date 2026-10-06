@@ -16,6 +16,7 @@ let dataFile;
 let sessionStoreFile;
 let loginAttemptStoreFile;
 let attendanceDataFile;
+let originalNodeEnv;
 
 async function api(pathname, options = {}) {
   const response = await fetch(`${baseUrl}${pathname}`, options);
@@ -44,6 +45,10 @@ test('root URL serves the original EduClass portal login interface', async () =>
   assert.match(html, /EduClass/);
   assert.match(html, /id="auth-section"/);
   assert.match(html, /id="attempt-meter-container"/);
+
+  const activationPage = await fetch(`${baseUrl}/activate-account.html`);
+  assert.equal(activationPage.status, 200);
+  assert.match(await activationPage.text(), /Kích hoạt tài khoản/);
 });
 
 test('unknown API routes return the shared resource-not-found error shape', async () => {
@@ -57,6 +62,8 @@ test('unknown API routes return the shared resource-not-found error shape', asyn
 });
 
 before(async () => {
+  originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'test';
   tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ttcs-auth-test-'));
   dataFile = path.join(tempDir, 'users.json');
   sessionStoreFile = path.join(tempDir, 'revoked-sessions.json');
@@ -120,6 +127,8 @@ after(async () => {
   delete process.env.LOGIN_ATTEMPT_STORE_FILE;
   delete process.env.ATTENDANCE_DATA_FILE;
   delete process.env.AUTH_TOKEN_SECRET;
+  if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = originalNodeEnv;
 });
 
 test('passwords are stored as hashes and only the correct password verifies', async () => {
@@ -469,11 +478,80 @@ test('user APIs require an authenticated admin and never expose password hashes'
     email: 'admin@test.edu',
     password: 'Admin@12345'
   }));
+
+  const selfRoleRevoke = await api('/api/users/admin-1/roles/admin', {
+    method: 'DELETE',
+    headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
+  });
+  assert.equal(selfRoleRevoke.response.status, 403);
+  assert.equal(selfRoleRevoke.data.code, 'CANNOT_REVOKE_OWN_ADMIN_ROLE');
+
+  const selfRoleReplace = await api('/api/users/admin-1', jsonRequest({
+    name: 'Test Admin',
+    email: 'admin@test.edu',
+    phone: '',
+    roles: ['teacher']
+  }, adminLogin.token, 'PUT'));
+  assert.equal(selfRoleReplace.response.status, 403);
+  assert.equal(selfRoleReplace.data.code, 'CANNOT_REVOKE_OWN_ADMIN_ROLE');
+
+  const assignManager = await api('/api/users/student-1/roles', jsonRequest({
+    role: 'manager'
+  }, adminLogin.token));
+  assert.equal(assignManager.response.status, 200);
+  assert.deepEqual(assignManager.data.data.roles, ['student', 'manager']);
+
+  const assignTeacher = await api('/api/users/student-1/roles', jsonRequest({
+    role: 'teacher'
+  }, adminLogin.token));
+  assert.equal(assignTeacher.response.status, 200);
+  assert.deepEqual(assignTeacher.data.data.roles, ['student', 'manager', 'teacher']);
+
+  const refreshedMe = await api('/api/auth/me', {
+    headers: { Authorization: ['Bearer', studentLogin.token].join(' ') }
+  });
+  assert.deepEqual(refreshedMe.data.user.roles, ['student', 'manager', 'teacher']);
+
+  const immediateTeacherAccess = await api('/api/attendance/students', {
+    headers: { Authorization: ['Bearer', studentLogin.token].join(' ') }
+  });
+  assert.equal(immediateTeacherAccess.response.status, 200);
+
+  const managerFilter = await api('/api/users?role=manager', {
+    headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
+  });
+  assert.ok(managerFilter.data.data.some(user => user.id === 'student-1'));
+
+  const revokeTeacher = await api('/api/users/student-1/roles/teacher', {
+    method: 'DELETE',
+    headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
+  });
+  assert.equal(revokeTeacher.response.status, 200);
+  assert.deepEqual(revokeTeacher.data.data.roles, ['student', 'manager']);
+
+  const immediateTeacherRevocation = await api('/api/attendance/students', {
+    headers: { Authorization: ['Bearer', studentLogin.token].join(' ') }
+  });
+  assert.equal(immediateTeacherRevocation.response.status, 403);
+
   const adminUsers = await api('/api/users', {
     headers: { Authorization: `Bearer ${adminLogin.token}` }
   });
   assert.equal(adminUsers.response.status, 200);
+  assert.equal(adminUsers.data.pagination.pageSize, 20);
   assert.equal(adminUsers.data.data.some(user => 'passwordHash' in user), false);
+
+  const filteredUsers = await api('/api/users?search=teacher%40test.edu&role=teacher&status=active', {
+    headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
+  });
+  assert.equal(filteredUsers.response.status, 200);
+  assert.equal(filteredUsers.data.data.length, 1);
+  assert.equal(filteredUsers.data.data[0].email, 'teacher@test.edu');
+
+  const invalidPagination = await api('/api/users?pageSize=0', {
+    headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
+  });
+  assert.equal(invalidPagination.response.status, 400);
 
   const missingUser = await api('/api/users/not-a-real-user', {
     headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
@@ -483,17 +561,94 @@ test('user APIs require an authenticated admin and never expose password hashes'
   assert.equal(missingUser.data.errorType, 'not-found');
   assert.equal(missingUser.data.resource, 'user');
 
-  const created = await api('/api/users', jsonRequest({
-    name: 'New Student',
-    email: 'new@test.edu',
-    role: 'student',
-    password: 'NewStudent@123'
-  }, adminLogin.token));
+  const capturedLogs = [];
+  const originalConsoleInfo = console.info;
+  console.info = message => capturedLogs.push(message);
+  let created;
+  try {
+    created = await api('/api/users', jsonRequest({
+      name: 'New Student',
+      email: 'new@test.edu',
+      role: 'student',
+      phone: '0912345678'
+    }, adminLogin.token));
+  } finally {
+    console.info = originalConsoleInfo;
+  }
   assert.equal(created.response.status, 201);
   assert.equal('passwordHash' in created.data.data, false);
+  assert.equal('activationTokenHash' in created.data.data, false);
+  assert.equal(created.data.data.status, 'pending');
+  assert.match(created.data.message, /SMTP chưa cấu hình/i);
+
   const users = JSON.parse(await fs.readFile(dataFile, 'utf8'));
   const newUser = users.find(user => user.email === 'new@test.edu');
-  assert.equal(await verifyPassword('NewStudent@123', newUser.passwordHash), true);
+  const temporaryPassword = capturedLogs[0].match(/Mật khẩu tạm: (.+)$/)[1];
+  const activationUrl = capturedLogs[0].match(/https?:\/\/[^ ]+/)[0];
+  const activationToken = new URL(activationUrl).searchParams.get('token');
+  assert.equal(await verifyPassword(temporaryPassword, newUser.passwordHash), true);
+  assert.match(newUser.activationTokenHash, /^[a-f0-9]{64}$/);
+  assert.notEqual(newUser.activationTokenHash, activationToken);
+
+  for (const search of ['New%20Student', '0912345678']) {
+    const matchingUsers = await api(`/api/users?search=${search}&role=student&status=pending`, {
+      headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
+    });
+    assert.equal(matchingUsers.response.status, 200);
+    assert.equal(matchingUsers.data.pagination.totalRecords, 1);
+    assert.equal(matchingUsers.data.data[0].email, 'new@test.edu');
+  }
+
+  const duplicateEmail = await api('/api/users', jsonRequest({
+    name: 'Duplicate Student',
+    email: 'NEW@test.edu',
+    role: 'student'
+  }, adminLogin.token));
+  assert.equal(duplicateEmail.response.status, 409);
+  assert.equal(duplicateEmail.data.code, 'EMAIL_ALREADY_EXISTS');
+  assert.match(duplicateEmail.data.message, /đã tồn tại trong hệ thống/i);
+
+  const updatedUser = await api(`/api/users/${created.data.data.id}`, jsonRequest({
+    name: 'Updated New Student',
+    email: 'new@test.edu',
+    phone: '0987654321',
+    role: 'teacher',
+    status: 'pending'
+  }, adminLogin.token, 'PUT'));
+  assert.equal(updatedUser.response.status, 200);
+  assert.equal(updatedUser.data.data.name, 'Updated New Student');
+  assert.equal(updatedUser.data.data.phone, '0987654321');
+  assert.equal(updatedUser.data.data.role, 'teacher');
+
+  const duplicateUpdatedEmail = await api(`/api/users/${created.data.data.id}`, jsonRequest({
+    name: 'Updated New Student',
+    email: 'admin@test.edu',
+    phone: '0987654321',
+    role: 'teacher',
+    status: 'pending'
+  }, adminLogin.token, 'PUT'));
+  assert.equal(duplicateUpdatedEmail.response.status, 409);
+  assert.equal(duplicateUpdatedEmail.data.code, 'EMAIL_ALREADY_EXISTS');
+
+  const pendingLogin = await api('/api/auth/login', jsonRequest({
+    email: 'new@test.edu',
+    password: temporaryPassword
+  }));
+  assert.equal(pendingLogin.response.status, 403);
+  assert.equal(pendingLogin.data.code, 'ACCOUNT_PENDING');
+
+  const activation = await api('/api/users/activate', jsonRequest({ token: activationToken }));
+  assert.equal(activation.response.status, 200);
+  assert.equal(activation.data.success, true);
+  const repeatedActivation = await api('/api/users/activate', jsonRequest({ token: activationToken }));
+  assert.equal(repeatedActivation.response.status, 400);
+  assert.equal(repeatedActivation.data.code, 'INVALID_ACTIVATION_TOKEN');
+
+  const activatedLogin = await api('/api/auth/login', jsonRequest({
+    email: 'new@test.edu',
+    password: temporaryPassword
+  }));
+  assert.equal(activatedLogin.response.status, 200);
 
   const reset = await api('/api/users/student-1/password', {
     method: 'PATCH',

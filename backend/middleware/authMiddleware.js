@@ -33,14 +33,6 @@ const requireAuth = (req, res, next) => {
     });
   }
 
-  if (claims.role !== user.role) {
-    return res.status(401).json({
-      success: false,
-      code: 'SESSION_EXPIRED',
-      message: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.'
-    });
-  }
-
   req.authToken = token;
   req.tokenExpiry = claims.exp;
   req.sessionId = claims.sid;
@@ -49,14 +41,16 @@ const requireAuth = (req, res, next) => {
 };
 
 const requireRoles = (roles, { featureName = 'chức năng này', message } = {}) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) {
+  const userRoles = UserModel.getRoles(req.user);
+  if (!req.user || !roles.some(role => userRoles.includes(role))) {
     return res.status(403).json({
       success: false,
       code: 'ACCESS_FORBIDDEN',
       errorType: 'forbidden',
       message: message || 'Bạn không có quyền truy cập chức năng này.',
       featureName,
-      role: req.user?.role || null
+      role: userRoles[0] || null,
+      roles: userRoles
     });
   }
   next();

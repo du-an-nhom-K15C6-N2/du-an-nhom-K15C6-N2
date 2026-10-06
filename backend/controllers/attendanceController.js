@@ -59,7 +59,7 @@ class AttendanceController {
       const student = studentId === undefined
         ? UserModel.findByEmail(studentEmail.trim().toLowerCase())
         : UserModel.findById(studentId.trim());
-      if (!student || student.role !== 'student' || student.status !== 'active') {
+      if (!student || !UserModel.getRoles(student).includes('student') || student.status !== 'active') {
         return res.status(404).json({
           success: false,
           code: 'RESOURCE_NOT_FOUND',

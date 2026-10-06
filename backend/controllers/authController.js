@@ -12,7 +12,7 @@ const {
 
 const sessionStore = require('../security/sessionStore');
 
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student']);
+const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student', 'manager']);
 const RESET_TOKEN_TTL = 30 * 60 * 1000;
 const resetTokens = new Map();
 
@@ -111,7 +111,8 @@ class AuthController {
             : 'Tài khoản hiện không thể đăng nhập.'
         });
       }
-      if (!ALLOWED_ROLES.has(user.role)) {
+      const roles = UserModel.getRoles(user);
+      if (!roles.some(role => ALLOWED_ROLES.has(role))) {
         return res.status(403).json({
           success: false,
           code: 'ROLE_NOT_SUPPORTED',
@@ -130,7 +131,9 @@ class AuthController {
           email: user.email,
           phone: user.phone,
           role: user.role,
-          roleLabel: user.roleLabel,
+          roleLabel: UserModel.getRoleLabels(roles).join(', '),
+          roles,
+          roleLabels: UserModel.getRoleLabels(roles),
           avatar: user.avatar || null
         },
         token: createToken(user),

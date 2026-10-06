@@ -4,7 +4,7 @@ const LoginAttemptService = require('../services/loginAttemptService');
 const UserModel = require('../models/userModel');
 const { verifyPassword } = require('../security/password');
 
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student']);
+const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student', 'manager']);
 
 class SessionController {
   /**
@@ -73,7 +73,7 @@ class SessionController {
             : 'Tài khoản hiện không thể đăng nhập.'
         });
       }
-      if (!ALLOWED_ROLES.has(user.role)) {
+      if (!UserModel.getRoles(user).some(role => ALLOWED_ROLES.has(role))) {
         return res.status(403).json({
           success: false,
           code: 'ROLE_NOT_SUPPORTED',
