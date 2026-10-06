@@ -26,8 +26,9 @@ form.addEventListener('submit', async (event) => {
         (_, i) => localStorage.key(i)
     ).find(key => key && key.includes('dkn_auth_token'));
 
-    const token = localStorage.getItem(localStorage.key(7));
-
+    const token = tokenKey
+        ? localStorage.getItem(tokenKey)
+        : null;
 
     if (!token) {
         message.textContent = 'Bạn chưa đăng nhập.';

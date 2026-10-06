@@ -201,6 +201,88 @@ test('changing a password requires the current password and invalidates the old 
   assert.equal(restoreTestPassword.response.status, 200);
 });
 
+test('changing password rejects the same password', async () => {
+  const login = await api('/api/auth/login', jsonRequest({
+    email: 'teacher@test.edu',
+    password: 'Teacher@12345'
+  }));
+
+  const response = await api('/api/auth/change-password', jsonRequest({
+    currentPassword: 'Teacher@12345',
+    newPassword: 'Teacher@12345'
+  }, login.data.token, 'PATCH'));
+
+  assert.equal(response.response.status, 400);
+  assert.equal(response.data.code, 'PASSWORD_UNCHANGED');
+});
+
+test('changing password rejects weak passwords', async () => {
+  const login = await api('/api/auth/login', jsonRequest({
+    email: 'teacher@test.edu',
+    password: 'Teacher@12345'
+  }));
+
+  const weakPasswords = [
+    'lowercase@123',
+    'UPPERCASE@123',
+    'NoNumber@abc',
+    'NoSpecial123'
+  ];
+
+  for (const newPassword of weakPasswords) {
+    const response = await api('/api/auth/change-password', jsonRequest({
+      currentPassword: 'Teacher@12345',
+      newPassword
+    }, login.data.token, 'PATCH'));
+
+    assert.equal(response.response.status, 400);
+    assert.equal(response.data.code, 'WEAK_PASSWORD');
+  }
+});
+test('changing password revokes other active sessions', async () => {
+  const firstLogin = await api('/api/auth/login', jsonRequest({
+    email: 'teacher@test.edu',
+    password: 'Teacher@12345'
+  }));
+
+  const secondLogin = await api('/api/auth/login', jsonRequest({
+    email: 'teacher@test.edu',
+    password: 'Teacher@12345'
+  }));
+
+  assert.equal(firstLogin.response.status, 200);
+  assert.equal(secondLogin.response.status, 200);
+
+  const changePassword = await api('/api/auth/change-password', jsonRequest({
+    currentPassword: 'Teacher@12345',
+    newPassword: 'UpdatedTeacher@123'
+  }, firstLogin.data.token, 'PATCH'));
+
+  assert.equal(changePassword.response.status, 200);
+
+  const currentSessionCheck = await api('/api/auth/me', {
+    headers: {
+      Authorization: `Bearer ${firstLogin.data.token}`
+    }
+  });
+
+  const otherSessionCheck = await api('/api/auth/me', {
+    headers: {
+      Authorization: `Bearer ${secondLogin.data.token}`
+    }
+  });
+
+  assert.equal(currentSessionCheck.response.status, 200);
+  assert.notEqual(otherSessionCheck.response.status, 200);
+
+  const restorePassword = await api('/api/auth/change-password', jsonRequest({
+    currentPassword: 'UpdatedTeacher@123',
+    newPassword: 'Teacher@12345'
+  }, firstLogin.data.token, 'PATCH'));
+
+  assert.equal(restorePassword.response.status, 200);
+});
+
 test('attendance API protects roles, validates records, and persists entries', async () => {
   const { data: studentLogin } = await api('/api/auth/login', jsonRequest({
     email: 'student@test.edu',
@@ -517,8 +599,8 @@ test('restored form drafts remain available until the form is successfully saved
     .map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]);
 
   try {
-    class MockForm {}
-    class MockSelect {}
+    class MockForm { }
+    class MockSelect { }
     const storage = new Map();
     const field = {
       name: 'className',

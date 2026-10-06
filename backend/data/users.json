@@ -30,7 +30,7 @@
     "roleLabel": "Quản trị viên",
     "status": "active",
     "statusLabel": "Đang hoạt động",
-    "passwordHash": "scrypt$c5ee8451f4dbb7ccf7730b34b42874a6$90b27cac7268d2fd2bf129f2bfaeecbc0d2bbe1814e18c356532e94bdf612a0a9c7ddbc03b117b218d39831941d697b1bad4bcc60302cca281b9276deab31fb2"
+    "passwordHash": "scrypt$fd34cedd3ac0375e676a462aa72aa1fc$42e02084d779e5ea3714f6c20ab211d412e395be0929986d5751286f8a25818f640b6176d1c37da1c5523de91b900961130789033d4747a577675dd8a2fed073"
   },
   {
     "id": "usr_002",

@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="vi" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đồ Án TTCS - Hệ Thống Quản Lý Lớp Học & Quản Trị Người Dùng</title>
-  <meta name="description" content="Đồ án Thực tập cơ sở: Module Đăng nhập an toàn (EP-01) và Màn hình Quản lý người dùng phân quyền.">
+  <meta name="description"
+    content="Đồ án Thực tập cơ sở: Module Đăng nhập an toàn (EP-01) và Màn hình Quản lý người dùng phân quyền.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
 </head>
+
 <body>
   <!-- Ambient background glow elements -->
   <div class="bg-mesh" aria-hidden="true">
@@ -28,7 +33,8 @@
     <div class="container header-container">
       <div class="brand-logo" onclick="app.handleBrandClick()">
         <div class="logo-icon-wrapper">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
             <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
           </svg>
@@ -52,8 +58,16 @@
       <div class="header-actions">
         <!-- Theme Toggle -->
         <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Chuyển đổi giao diện Sáng/Tối">
-          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="12" cy="12" r="5" />
+            <path
+              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
         </button>
 
         <!-- Authenticated User Profile Dropdown (Dynamic) -->
@@ -65,9 +79,14 @@
               <span class="user-role-badge" id="nav-role-badge">Quản trị viên</span>
             </div>
           </div>
-          <button type="button" class="btn-change-password" onclick="app.showChangePasswordModal()">Đổi mật khẩu</button>
+          <button type="button" class="btn-change-password" onclick="app.showChangePasswordModal()">Đổi mật
+            khẩu</button>
           <button type="button" class="btn-logout" id="logout-btn" onclick="app.logout()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
             <span>Đăng xuất</span>
           </button>
         </div>
@@ -83,7 +102,7 @@
          ==================================================================== -->
     <section class="auth-section" id="auth-section">
       <div class="auth-card-container">
-        
+
         <!-- Requirement Badge / User Story Header -->
         <div class="requirement-callout">
           <div class="callout-pill">Yêu cầu EP-01</div>
@@ -94,13 +113,15 @@
           <!-- Card Header -->
           <div class="auth-card-header">
             <div class="auth-icon-circle">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
             <h1 class="auth-title">Đăng Nhập Hệ Thống</h1>
-            <p class="auth-subtitle">Vui lòng nhập email và mật khẩu của bạn để truy cập không gian làm việc an toàn.</p>
+            <p class="auth-subtitle">Vui lòng nhập email và mật khẩu của bạn để truy cập không gian làm việc an toàn.
+            </p>
           </div>
 
           <!-- Lockout Alert Box (AC 3: Bị khóa tạm 15 phút) -->
@@ -114,7 +135,8 @@
             </div>
             <div class="lockout-details">
               <h3 class="lockout-title">Tài Khoản Đã Bị Tạm Khóa An Toàn!</h3>
-              <p class="lockout-desc">Bạn đã nhập sai 5 lần liên tiếp. Hệ thống đã kích hoạt khóa tạm thời <strong>15 phút</strong> để chống dò quét mật khẩu.</p>
+              <p class="lockout-desc">Bạn đã nhập sai 5 lần liên tiếp. Hệ thống đã kích hoạt khóa tạm thời <strong>15
+                  phút</strong> để chống dò quét mật khẩu.</p>
               <div class="lockout-timer-wrapper">
                 <span class="timer-label">Thời gian mở khóa sau:</span>
                 <span class="timer-countdown" id="lockout-timer-display">15:00</span>
@@ -133,7 +155,8 @@
             </div>
             <div class="error-text-content">
               <strong id="error-message-text">Email hoặc mật khẩu không đúng</strong>
-              <div class="attempts-hint" id="attempts-hint-text">Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.</div>
+              <div class="attempts-hint" id="attempts-hint-text">Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.
+              </div>
             </div>
           </div>
 
@@ -154,7 +177,7 @@
 
           <!-- Login Form -->
           <form class="auth-form" id="login-form" novalidate onsubmit="app.handleLogin(event)">
-            
+
             <!-- Email Field -->
             <div class="form-group">
               <label for="input-email" class="form-label">
@@ -168,15 +191,8 @@
                     <polyline points="22,6 12,13 2,6"></polyline>
                   </svg>
                 </div>
-                <input 
-                  type="email" 
-                  id="input-email" 
-                  name="email" 
-                  class="form-input" 
-                  placeholder="name@school.edu.vn" 
-                  autocomplete="username" 
-                  required
-                >
+                <input type="email" id="input-email" name="email" class="form-input" placeholder="name@school.edu.vn"
+                  autocomplete="username" required>
               </div>
               <span class="field-error-msg" id="email-field-error"></span>
             </div>
@@ -197,18 +213,22 @@
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                   </svg>
                 </div>
-                <input 
-                  type="password" 
-                  id="input-password" 
-                  name="password" 
-                  class="form-input" 
-                  placeholder="••••••••" 
-                  autocomplete="current-password" 
-                  required
-                >
-                <button type="button" class="btn-toggle-pwd" id="toggle-pwd-btn" onclick="app.togglePasswordVisibility()" aria-label="Hiển thị hoặc ẩn mật khẩu">
-                  <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+                <input type="password" id="input-password" name="password" class="form-input" placeholder="••••••••"
+                  autocomplete="current-password" required>
+                <button type="button" class="btn-toggle-pwd" id="toggle-pwd-btn"
+                  onclick="app.togglePasswordVisibility()" aria-label="Hiển thị hoặc ẩn mật khẩu">
+                  <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" style="display:none;">
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                    </path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
                 </button>
               </div>
               <span class="field-error-msg" id="password-field-error"></span>
@@ -222,7 +242,9 @@
                 <span class="checkbox-label">Ghi nhớ đăng nhập an toàn</span>
               </label>
               <div class="security-badge" title="Được bảo vệ bằng mã hóa End-to-End">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
                 <span>SSL Encrypted</span>
               </div>
             </div>
@@ -231,7 +253,8 @@
             <button type="submit" class="btn-submit" id="btn-submit-login">
               <span class="btn-spinner" id="login-spinner" style="display: none;"></span>
               <span class="btn-text" id="login-btn-text">Đăng Nhập Vào Hệ Thống</span>
-              <svg class="btn-icon" id="login-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="btn-icon" id="login-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
                 <line x1="5" y1="12" x2="19" y2="12"></line>
                 <polyline points="12 5 19 12 12 19"></polyline>
               </svg>
@@ -242,9 +265,12 @@
           <div class="criteria-checklist">
             <h4>Tiêu chuẩn chấp nhận EP-01:</h4>
             <ul>
-              <li class="check-item"><span class="check-icon">✓</span> <strong>AC1:</strong> Đăng nhập đúng điều hướng vào trang chủ tương ứng theo vai trò.</li>
-              <li class="check-item"><span class="check-icon">✓</span> <strong>AC2:</strong> Sai thông tin hiển thị chính xác: <code>"Email hoặc mật khẩu không đúng"</code> (không tiết lộ email tồn tại hay không).</li>
-              <li class="check-item"><span class="check-icon">✓</span> <strong>AC3:</strong> Khóa tạm 15 phút sau 5 lần sai liên tiếp kèm đồng hồ đếm ngược.</li>
+              <li class="check-item"><span class="check-icon">✓</span> <strong>AC1:</strong> Đăng nhập đúng điều hướng
+                vào trang chủ tương ứng theo vai trò.</li>
+              <li class="check-item"><span class="check-icon">✓</span> <strong>AC2:</strong> Sai thông tin hiển thị
+                chính xác: <code>"Email hoặc mật khẩu không đúng"</code> (không tiết lộ email tồn tại hay không).</li>
+              <li class="check-item"><span class="check-icon">✓</span> <strong>AC3:</strong> Khóa tạm 15 phút sau 5 lần
+                sai liên tiếp kèm đồng hồ đếm ngược.</li>
             </ul>
           </div>
 
@@ -257,14 +283,15 @@
          ==================================================================== -->
     <section class="portal-section" id="portal-user-management" style="display: none;">
       <div class="container">
-        
+
         <!-- Header / Banner Quản Trị -->
         <div class="role-hero admin-hero">
           <div class="role-hero-content">
             <div class="role-chip">Màn Hình Quản Trị Hệ Thống • Phân Quyền Nhân Sự</div>
             <h1 class="role-title">Quản Lý Tài Khoản Người Dùng</h1>
             <p class="role-subtitle">
-              Cấp quyền truy cập, chỉnh sửa thông tin và quản lý trạng thái tài khoản cho cán bộ, giảng viên và sinh viên mới.
+              Cấp quyền truy cập, chỉnh sửa thông tin và quản lý trạng thái tài khoản cho cán bộ, giảng viên và sinh
+              viên mới.
             </p>
           </div>
           <div class="security-privacy-stamp">
@@ -285,28 +312,27 @@
         <div class="admin-notice-card">
           <div class="notice-icon">💡</div>
           <div class="notice-text">
-            <strong>Tiêu chí nghiệm thu AC1:</strong> Khi thêm tài khoản mới thành công, hệ thống sẽ mô phỏng gửi email kích hoạt kèm mật khẩu tạm thời về hòm thư người dùng. Trường hợp trùng Email sẽ bị từ chối với thông báo lỗi cụ thể (AC2).
+            <strong>Tiêu chí nghiệm thu AC1:</strong> Khi thêm tài khoản mới thành công, hệ thống sẽ mô phỏng gửi email
+            kích hoạt kèm mật khẩu tạm thời về hòm thư người dùng. Trường hợp trùng Email sẽ bị từ chối với thông báo
+            lỗi cụ thể (AC2).
           </div>
         </div>
 
         <!-- Filter & Search Toolbar (Yêu cầu a: Search Bar, Dropdowns, Nút Thêm mới) -->
         <div class="management-toolbar-card">
           <div class="toolbar-left-group">
-            
+
             <!-- Search Bar -->
             <div class="search-input-wrapper">
-              <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input 
-                type="text" 
-                id="user-search-input" 
-                class="search-input" 
-                placeholder="Tìm kiếm theo Họ tên, Email, Số điện thoại..." 
-                oninput="app.handleUserSearch(event)"
-              >
-              <button type="button" class="btn-clear-search" id="clear-search-btn" onclick="app.clearSearch()" style="display:none;" title="Xóa tìm kiếm">×</button>
+              <input type="text" id="user-search-input" class="search-input"
+                placeholder="Tìm kiếm theo Họ tên, Email, Số điện thoại..." oninput="app.handleUserSearch(event)">
+              <button type="button" class="btn-clear-search" id="clear-search-btn" onclick="app.clearSearch()"
+                style="display:none;" title="Xóa tìm kiếm">×</button>
             </div>
 
             <!-- Role Filter Dropdown -->
@@ -374,7 +400,8 @@
           <!-- Pagination Section (Yêu cầu c: Phân trang mặc định 20 dòng/trang) -->
           <div class="pagination-footer" id="pagination-footer">
             <div class="pagination-info" id="pagination-info">
-              Hiển thị <strong id="page-start">1</strong> - <strong id="page-end">20</strong> trên tổng số <strong id="total-users-count">28</strong> tài khoản
+              Hiển thị <strong id="page-start">1</strong> - <strong id="page-end">20</strong> trên tổng số <strong
+                id="total-users-count">28</strong> tài khoản
             </div>
 
             <div class="pagination-controls" id="pagination-controls">
@@ -396,11 +423,14 @@
             <div class="role-chip">Cổng Học Viên • Dữ Liệu Được Bảo Mật Tuyệt Đối</div>
             <h1 class="role-title">Chào mừng, <span id="student-name">Nguyễn Văn An</span>!</h1>
             <p class="role-subtitle">
-              Mã sinh viên: <strong>SV2026-0812</strong> • Lớp: <strong>K15-CNTT02</strong> • Không gian học tập cá nhân an toàn (chỉ bạn và giảng viên mới có quyền xem điểm số).
+              Mã sinh viên: <strong>SV2026-0812</strong> • Lớp: <strong>K15-CNTT02</strong> • Không gian học tập cá nhân
+              an toàn (chỉ bạn và giảng viên mới có quyền xem điểm số).
             </p>
           </div>
           <div class="security-privacy-stamp">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
             <div>
               <strong>Bảo Vệ Điểm Số Cá Nhân</strong>
               <small>Chống nhìn trộm dữ liệu lớp học</small>
@@ -421,7 +451,7 @@
                 </div>
                 <span class="status-badge-secure">🔒 Bảo mật tuyệt đối</span>
               </div>
-              
+
               <div class="table-responsive">
                 <table class="data-table">
                   <thead>
@@ -508,7 +538,8 @@
           <div class="role-hero-content">
             <div class="role-chip">Quản Lý Lớp Học • Bảo Toàn Bản Nháp</div>
             <h1 class="role-title">Điểm danh lớp học</h1>
-            <p class="role-subtitle">Ghi nhận tình trạng tham dự. Nội dung đang nhập được lưu tạm trên thiết bị này để khôi phục nếu phiên đăng nhập hết hạn.</p>
+            <p class="role-subtitle">Ghi nhận tình trạng tham dự. Nội dung đang nhập được lưu tạm trên thiết bị này để
+              khôi phục nếu phiên đăng nhập hết hạn.</p>
           </div>
         </div>
         <div id="attendance-form-container"></div>
@@ -548,20 +579,14 @@
 
         <div class="modal-body">
           <div class="form-grid-2">
-            
+
             <!-- Họ và tên -->
             <div class="form-group">
               <label for="form-fullname" class="form-label">
                 <span>Họ và tên</span>
                 <span class="required-star">*</span>
               </label>
-              <input 
-                type="text" 
-                id="form-fullname" 
-                class="form-input" 
-                placeholder="Ví dụ: Nguyễn Văn An" 
-                required
-              >
+              <input type="text" id="form-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required>
               <span class="field-error-msg" id="err-fullname"></span>
             </div>
 
@@ -571,13 +596,7 @@
                 <span>Địa chỉ Email</span>
                 <span class="required-star">*</span>
               </label>
-              <input 
-                type="email" 
-                id="form-email" 
-                class="form-input" 
-                placeholder="name@school.edu.vn" 
-                required
-              >
+              <input type="email" id="form-email" class="form-input" placeholder="name@school.edu.vn" required>
               <span class="field-error-msg" id="err-email"></span>
             </div>
 
@@ -587,13 +606,7 @@
                 <span>Số điện thoại</span>
                 <span class="required-star">*</span>
               </label>
-              <input 
-                type="tel" 
-                id="form-phone" 
-                class="form-input" 
-                placeholder="0912345678" 
-                required
-              >
+              <input type="tel" id="form-phone" class="form-input" placeholder="0912345678" required>
               <span class="field-error-msg" id="err-phone"></span>
             </div>
 
@@ -618,16 +631,8 @@
                 <span>Mật khẩu</span>
                 <span class="required-star">*</span>
               </label>
-              <input 
-                type="password" 
-                id="form-password" 
-                class="form-input" 
-                placeholder="Ít nhất 8 ký tự" 
-                minlength="8" 
-                maxlength="1024" 
-                autocomplete="new-password"
-                required
-              >
+              <input type="password" id="form-password" class="form-input" placeholder="Ít nhất 8 ký tự" minlength="8"
+                maxlength="1024" autocomplete="new-password" required>
               <span class="field-error-msg" id="err-password"></span>
             </div>
 
@@ -637,16 +642,8 @@
                 <span>Xác nhận mật khẩu</span>
                 <span class="required-star">*</span>
               </label>
-              <input 
-                type="password" 
-                id="form-confirm-password" 
-                class="form-input" 
-                placeholder="Nhập lại mật khẩu" 
-                minlength="8" 
-                maxlength="1024" 
-                autocomplete="new-password"
-                required
-              >
+              <input type="password" id="form-confirm-password" class="form-input" placeholder="Nhập lại mật khẩu"
+                minlength="8" maxlength="1024" autocomplete="new-password" required>
               <span class="field-error-msg" id="err-confirm-password"></span>
             </div>
 
@@ -692,52 +689,65 @@
       </div>
       <div class="modal-body">
         <p class="modal-desc">
-          Để bảo vệ dữ liệu lớp học khỏi các nguy cơ chiếm đoạt tài khoản, hệ thống sẽ gửi mã OTP xác thực qua email trường.
+          Để bảo vệ dữ liệu lớp học khỏi các nguy cơ chiếm đoạt tài khoản, hệ thống sẽ gửi mã OTP xác thực qua email
+          trường.
         </p>
         <div class="form-group">
           <label class="form-label" for="forgot-email-input">Nhập địa chỉ email trường:</label>
-          <input type="email" id="forgot-email-input" class="form-input" placeholder="name@school.edu.vn" autocomplete="email" maxlength="254" required>
+          <input type="email" id="forgot-email-input" class="form-input" placeholder="name@school.edu.vn"
+            autocomplete="email" maxlength="254" required>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="app.closeForgotModal()">Hủy bỏ</button>
-        <button type="button" class="btn-submit btn-sm" id="forgot-submit-btn" onclick="app.handleForgotSubmit()">Gửi Yêu Cầu</button>
+        <button type="button" class="btn-submit btn-sm" id="forgot-submit-btn" onclick="app.handleForgotSubmit()">Gửi
+          Yêu Cầu</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="change-password-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
+  <div class="modal-overlay" id="change-password-modal" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="change-password-title">
     <form class="modal-dialog" id="change-password-form" onsubmit="app.handleChangePassword(event)">
       <div class="modal-header">
         <h3 class="modal-title" id="change-password-title">Đổi mật khẩu</h3>
-        <button type="button" class="btn-modal-close" onclick="app.closeChangePasswordModal()" aria-label="Đóng">&times;</button>
+        <button type="button" class="btn-modal-close" onclick="app.closeChangePasswordModal()"
+          aria-label="Đóng">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
           <label class="form-label" for="current-password-input">Mật khẩu hiện tại</label>
-          <input class="form-input" id="current-password-input" name="currentPassword" type="password" autocomplete="current-password" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="new-password-input">Mật khẩu mới (ít nhất 8 ký tự)</label>
-          <input class="form-input" id="new-password-input" name="newPassword" type="password" minlength="8" maxlength="1024" autocomplete="new-password" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="confirm-password-input">Xác nhận mật khẩu mới</label>
-          <input class="form-input" id="confirm-password-input" name="confirmPassword" type="password" minlength="8" maxlength="1024" autocomplete="new-password" required>
-        </div>
-        <p id="change-password-error" class="modal-alert-error" style="display:none;" role="alert"></p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="app.closeChangePasswordModal()">Hủy bỏ</button>
-        <button type="submit" class="btn-submit btn-sm" id="btn-change-password-submit">Cập nhật mật khẩu</button>
-      </div>
+          <input class="form-input" id="current-password-input" name="currentPassword" type="password"
+            autocomplete="current-password" required
+            oninvalid="this.setCustomValidity('Vui lòng nhập mật khẩu hiện tại.')" oninput="this.setCustomValidity('')">
+          <div class="form-group">
+            <label class="form-label" for="new-password-input">Mật khẩu mới (ít nhất 8 ký tự)</label>
+            <input class="form-input" id="new-password-input" name="newPassword" type="password" minlength="8"
+              maxlength="1024" autocomplete="new-password" required
+              oninvalid="this.setCustomValidity('Vui lòng nhập mật khẩu mới tối thiểu 8 ký tự.')"
+              oninput="this.setCustomValidity('')">
+            <div class="form-group">
+              <label class="form-label" for="confirm-password-input">Xác nhận mật khẩu mới</label>
+              <input class="form-input" id="confirm-password-input" name="confirmPassword" type="password" minlength="8"
+                maxlength="1024" autocomplete="new-password" required
+                oninvalid="this.setCustomValidity('Vui lòng xác nhận mật khẩu mới.')"
+                oninput="this.setCustomValidity('')">
+            </div>
+
+            <p id="change-password-error" class="modal-alert-error" style="display:none;" role="alert"></p>
+
+            <div class="modal-footer">
+              <button type="button" class="btn-cancel" onclick="app.closeChangePasswordModal()">Hủy bỏ</button>
+              <button type="submit" class="btn-submit btn-sm" id="btn-change-password-submit">Cập nhật mật khẩu</button>
+            </div>
     </form>
   </div>
 
   <!-- Footer -->
   <footer class="app-footer">
     <div class="container footer-content">
-      <p>© 2026 Đồ Án Môn Thực Tập Cơ Sở • Module Đăng Nhập & Quản Trị Tài Khoản • Phụ trách: <strong>Lập trình viên Frontend</strong></p>
+      <p>© 2026 Đồ Án Môn Thực Tập Cơ Sở • Module Đăng Nhập & Quản Trị Tài Khoản • Phụ trách: <strong>Lập trình viên
+          Frontend</strong></p>
       <div class="footer-badges">
         <span>Tiêu chí EP-01 (AC 1-2-3)</span>
         <span>Quản trị người dùng (20 dòng/trang)</span>
@@ -755,4 +765,5 @@
     }
   </script>
 </body>
+
 </html>

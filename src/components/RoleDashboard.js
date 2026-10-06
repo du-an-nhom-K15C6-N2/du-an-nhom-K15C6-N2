@@ -167,15 +167,43 @@ export function renderRoleDashboard(container) {
             <form id="change-password-form" class="password-change-form">
               <label class="attendance-field">
                 <span>Mật khẩu hiện tại</span>
-                <input class="form-input" type="password" name="currentPassword" autocomplete="current-password" required>
+                <input 
+                class="form-input"
+                type="password"
+                name="currentPassword"
+                autocomplete="current-password"
+                required
+                oninvalid="this.setCustomValidity('Vui lòng nhập mật khẩu hiện tại.')"
+                oninput="this.setCustomValidity('')"
+              >
               </label>
               <label class="attendance-field">
                 <span>Mật khẩu mới (ít nhất 8 ký tự)</span>
-                <input class="form-input" type="password" name="newPassword" minlength="8" maxlength="1024" autocomplete="new-password" required>
+               <input
+              class="form-input"
+              type="password"
+              name="newPassword"
+              minlength="8"
+              maxlength="1024"
+              autocomplete="new-password"
+              required
+              oninvalid="this.setCustomValidity('Vui lòng nhập mật khẩu mới tối thiểu 8 ký tự.')"
+              oninput="this.setCustomValidity('')"
+              >
               </label>
               <label class="attendance-field">
                 <span>Xác nhận mật khẩu mới</span>
-                <input class="form-input" type="password" name="confirmPassword" minlength="8" maxlength="1024" autocomplete="new-password" required>
+                <input
+                class="form-input"
+                type="password"
+                name="confirmPassword"
+                minlength="8"
+                maxlength="1024"
+                autocomplete="new-password"
+                required
+                oninvalid="this.setCustomValidity('Vui lòng xác nhận mật khẩu mới.')"
+                oninput="this.setCustomValidity('')"
+              >
               </label>
               <div class="attendance-form-actions">
                 <button class="btn-submit" type="submit">Cập nhật mật khẩu</button>
