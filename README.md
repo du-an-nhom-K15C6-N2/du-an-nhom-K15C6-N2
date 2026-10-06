@@ -1,3 +1,7 @@
+# Hệ thống Quản lý Đào tạo
+
+Dự án thuộc học phần Thực tập cơ sở của nhóm K15C6-N2. Hệ thống hướng đến việc hỗ trợ quản trị viên, giảng viên và người học trong các quy trình đào tạo.
+
 # Đăng nhập và xác thực người dùng
 
 ## Chạy ứng dụng
