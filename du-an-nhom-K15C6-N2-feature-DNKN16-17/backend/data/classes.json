@@ -1,0 +1,74 @@
+[
+  {
+    "id": "cls_001",
+    "code": "K15-CNTT01",
+    "name": "Lập trình Web",
+    "room": "A101",
+    "schedule": "Thứ 2 • 07:30–09:30",
+    "teacherId": "usr_026",
+    "status": "active"
+  },
+  {
+    "id": "cls_002",
+    "code": "K15-CNTT02",
+    "name": "Cơ sở dữ liệu",
+    "room": "A203",
+    "schedule": "Thứ 3 • 07:30–09:30",
+    "teacherId": "usr_002",
+    "status": "active"
+  },
+  {
+    "id": "cls_003",
+    "code": "K15-CNTT03",
+    "name": "Phân tích & Thiết kế hệ thống",
+    "room": "B102",
+    "schedule": "Thứ 4 • 09:45–11:45",
+    "teacherId": "usr_008",
+    "status": "active"
+  },
+  {
+    "id": "cls_004",
+    "code": "K15-CNTT04",
+    "name": "An toàn thông tin",
+    "room": "B201",
+    "schedule": "Thứ 5 • 07:30–09:30",
+    "teacherId": "usr_012",
+    "status": "active"
+  },
+  {
+    "id": "cls_005",
+    "code": "K15-CNTT05",
+    "name": "Kiến trúc phần mềm",
+    "room": "C105",
+    "schedule": "Thứ 6 • 09:45–11:45",
+    "teacherId": "usr_021",
+    "status": "active"
+  },
+  {
+    "id": "cls_006",
+    "code": "K15-CNTT06",
+    "name": "Kiểm thử phần mềm",
+    "room": "C202",
+    "schedule": "Thứ 7 • 07:30–09:30",
+    "teacherId": "usr_027",
+    "status": "active"
+  },
+  {
+    "id": "cls_007",
+    "code": "K15-CNTT07",
+    "name": "Mạng máy tính",
+    "room": "D101",
+    "schedule": "Thứ 2 • 09:45–11:45",
+    "teacherId": "usr_022",
+    "status": "active"
+  },
+  {
+    "id": "cls_008",
+    "code": "K15-CNTT08",
+    "name": "Phát triển ứng dụng",
+    "room": "D203",
+    "schedule": "Thứ 4 • 13:30–15:30",
+    "teacherId": "usr_023",
+    "status": "active"
+  }
+]

@@ -1,0 +1,45 @@
+HUONG DAN KIEM TRA CHUC NANG KHOA/MO KHOA TAI KHOAN
+
+1. Cai dependency:
+   npm install
+
+2. Khoi dong:
+   node server.js
+   hoac double-click start.bat
+
+3. Mo trinh duyet:
+   http://localhost:3000
+
+4. Dang nhap bang tai khoan admin cua du lieu local.
+
+5. Vao Quan ly nguoi dung, bam "Khoa" o mot tai khoan khac admin.
+   He thong hien modal "Ly do khoa tai khoan".
+
+6. De trong ly do va bam Xac nhan khoa:
+   - Phai bi tu choi.
+   - Khong doi trang thai tai khoan.
+
+7. Nhap ly do vi du:
+   "Vi pham quy dinh su dung he thong"
+   Bam Xac nhan khoa:
+   - status -> locked
+   - lockReason -> ly do vua nhap
+   - tat ca phien dang hoat dong cua tai khoan bi thu hoi
+
+8. Bam "Mo" o tai khoan dang bi khoa:
+   - status -> active
+   - lockReason -> null
+
+API:
+   PATCH /api/users/:id/lock
+   Body: { "reason": "..." }
+
+   PATCH /api/users/:id/unlock
+   Body: {}
+
+   PATCH /api/users/:id/toggle-lock
+   Van duoc giu de tuong thich client cu; khi khoa van bat buoc co reason.
+
+Luu y:
+- PUT /api/users/:id khong con duoc dung de doi status, tranh bo qua kiem tra ly do va thu hoi session.
+- Tien trinh test hien dang co 41 test backend/auth pass; 3 test frontend bi anh huong boi node_modules da duoc tao tren mot he dieu hanh khac va thieu package native cua Rollup. Tren may Windows, chay npm install sau khi giai nen project.
