@@ -75,7 +75,14 @@ class UserModel {
   static toPublicUser(user) {
     if (!user) return null;
     const { passwordHash, password, ...publicUser } = user;
-    return publicUser;
+    return {
+      ...publicUser,
+      fullName: publicUser.fullName || publicUser.name || '',
+      name: publicUser.name || publicUser.fullName || '',
+      phone: publicUser.phone || '',
+      dob: publicUser.dob || '',
+      address: publicUser.address || ''
+    };
   }
 
   /**
@@ -116,12 +123,16 @@ class UserModel {
 
     const role = userData.role || 'student';
     const status = userData.status || 'active';
+    const name = userData.name.trim();
 
     const newUser = {
       id: 'usr_' + Date.now().toString(36),
-      name: userData.name.trim(),
+      name: name,
+      fullName: name,
       email: cleanEmail,
       phone: (userData.phone || '').trim(),
+      dob: (userData.dob || '').trim(),
+      address: (userData.address || '').trim(),
       role: role,
       roleLabel: ROLE_MAP[role] || role,
       status: status,
@@ -155,16 +166,46 @@ class UserModel {
 
     const role = userData.role || users[index].role;
     const status = userData.status || users[index].status;
+    const name = userData.name.trim();
 
     users[index] = {
       ...users[index],
-      name: userData.name.trim(),
+      name: name,
+      fullName: name,
       email: cleanEmail,
       phone: (userData.phone || '').trim(),
+      dob: userData.dob !== undefined ? userData.dob.trim() : (users[index].dob || ''),
+      address: userData.address !== undefined ? userData.address.trim() : (users[index].address || ''),
       role: role,
       roleLabel: ROLE_MAP[role] || role,
       status: status,
       statusLabel: STATUS_MAP[status] || status
+    };
+
+    db.writeUsers(users);
+    return users[index];
+  }
+
+  /**
+   * Cập nhật thông tin hồ sơ cá nhân (chỉ các trường cho phép sửa: name, phone, dob, address)
+   */
+  static updateProfile(id, profileData) {
+    const users = db.readUsers();
+    const index = users.findIndex(u => u.id === id);
+    if (index === -1) {
+      throw new Error('Không tìm thấy tài khoản người dùng cần cập nhật hồ sơ.');
+    }
+
+    const current = users[index];
+    const updatedName = profileData.name !== undefined ? profileData.name.trim() : current.name;
+
+    users[index] = {
+      ...current,
+      name: updatedName,
+      fullName: updatedName,
+      phone: profileData.phone !== undefined ? profileData.phone.trim() : (current.phone || ''),
+      dob: profileData.dob !== undefined ? profileData.dob.trim() : (current.dob || ''),
+      address: profileData.address !== undefined ? profileData.address.trim() : (current.address || '')
     };
 
     db.writeUsers(users);

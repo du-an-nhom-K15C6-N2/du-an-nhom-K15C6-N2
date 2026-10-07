@@ -58,13 +58,20 @@
 
         <!-- Authenticated User Profile Dropdown (Dynamic) -->
         <div class="user-menu-wrapper" id="user-menu-wrapper" style="display: none;">
-          <div class="user-profile-badge" id="user-profile-badge">
+          <div class="user-profile-badge" id="user-profile-badge" onclick="app.showProfileModal()" title="Nhấn để xem và sửa hồ sơ cá nhân" style="cursor: pointer;">
             <div class="user-avatar" id="nav-user-avatar">AD</div>
             <div class="user-info-text">
               <span class="user-fullname" id="nav-user-name">Quản Trị Viên</span>
               <span class="user-role-badge" id="nav-role-badge">Quản trị viên</span>
             </div>
           </div>
+          <button type="button" class="btn-view-profile" id="btn-view-profile" onclick="app.showProfileModal()" title="Xem và sửa hồ sơ cá nhân">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Hồ sơ cá nhân</span>
+          </button>
           <button type="button" class="btn-change-password" onclick="app.showChangePasswordModal()">Đổi mật khẩu</button>
           <button type="button" class="btn-logout" id="logout-btn" onclick="app.logout()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -732,6 +739,181 @@
         <button type="submit" class="btn-submit btn-sm" id="btn-change-password-submit">Cập nhật mật khẩu</button>
       </div>
     </form>
+  </div>
+
+  <!-- Modal Xem và Cập Nhật Hồ Sơ Cá Nhân (Subtask DNKN-86) -->
+  <div class="modal-overlay" id="profile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+    <div class="modal-dialog modal-dialog-lg" id="profile-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-header-title-wrap">
+          <span class="modal-header-icon" style="font-size: 24px;">👤</span>
+          <div>
+            <h3 class="modal-title" id="profile-modal-title">Hồ Sơ Cá Nhân</h3>
+            <p class="modal-subtitle" style="font-size: 13px; color: var(--text-secondary); margin: 0;">Thông tin liên lạc và chi tiết tài khoản của bạn</p>
+          </div>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="app.closeProfileModal()" aria-label="Đóng">&times;</button>
+      </div>
+
+      <!-- CHẾ ĐỘ 1: XEM HỒ SƠ CÁ NHÂN -->
+      <div class="modal-body" id="profile-view-mode">
+        <div class="profile-hero-card">
+          <div class="profile-avatar-large" id="modal-view-avatar">US</div>
+          <div class="profile-hero-info">
+            <h2 class="profile-hero-name" id="modal-view-name-hero">Đang tải...</h2>
+            <div class="profile-badges-row">
+              <span class="profile-role-pill" id="modal-view-role-pill">Vai trò</span>
+              <span class="profile-status-pill" id="modal-view-status-pill">Đang hoạt động</span>
+            </div>
+            <p class="profile-hero-email" id="modal-view-email-hero">email@edu.vn</p>
+          </div>
+        </div>
+
+        <div class="profile-details-grid">
+          <div class="profile-detail-item">
+            <span class="detail-label">Họ và tên</span>
+            <span class="detail-value" id="modal-view-fullname">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <div class="item-label-flex">
+              <span class="detail-label">Email tài khoản</span>
+              <span class="badge-locked" title="Email không thể tự thay đổi">🔒 Cố định</span>
+            </div>
+            <span class="detail-value text-muted" id="modal-view-email">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <div class="item-label-flex">
+              <span class="detail-label">Vai trò hệ thống</span>
+              <span class="badge-locked" title="Do Quản trị viên phân quyền">🔒 Phân quyền</span>
+            </div>
+            <span class="detail-value" id="modal-view-role">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="detail-label">Số điện thoại liên lạc</span>
+            <span class="detail-value highlight-phone" id="modal-view-phone">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="detail-label">Ngày sinh</span>
+            <span class="detail-value" id="modal-view-dob">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="detail-label">Địa chỉ liên hệ</span>
+            <span class="detail-value" id="modal-view-address">---</span>
+          </div>
+        </div>
+
+        <div class="profile-view-actions">
+          <button type="button" class="btn-submit" onclick="app.toggleProfileEditMode(true)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Chỉnh Sửa Hồ Sơ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CHẾ ĐỘ 2: FORM CẬP NHẬT HỒ SƠ CÁ NHÂN -->
+      <form class="modal-body" id="profile-edit-mode" style="display: none;" onsubmit="app.handleProfileSubmit(event)" novalidate>
+        <div class="form-notice-box">
+          <div class="notice-icon">🔒</div>
+          <div class="notice-text">
+            Các trường <strong>Email</strong> và <strong>Vai trò</strong> là thông tin định danh hệ thống và không được phép tự thay đổi. Vui lòng đảm bảo số điện thoại đúng định dạng liên lạc tại Việt Nam.
+          </div>
+        </div>
+
+        <!-- Họ và tên -->
+        <div class="form-group">
+          <label class="form-label" for="profile-input-name">
+            <span>Họ và tên</span>
+            <span class="required-star">*</span>
+          </label>
+          <input type="text" class="form-input" id="profile-input-name" name="name" required placeholder="Nhập họ và tên đầy đủ...">
+          <span class="field-error-msg" id="modal-profile-name-error"></span>
+        </div>
+
+        <div class="form-row-grid">
+          <!-- Email (Chỉ đọc) -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-email">
+              <span>Địa chỉ Email</span>
+              <span class="badge-locked">🔒 Chỉ đọc</span>
+            </label>
+            <div class="input-wrapper input-readonly-wrapper">
+              <input type="email" class="form-input input-readonly" id="profile-input-email" name="email" readonly disabled>
+              <span class="input-lock-icon" title="Email định danh - Không thể tự sửa">🔒</span>
+            </div>
+            <small class="field-hint-text">Email do trường/trung tâm cấp.</small>
+          </div>
+
+          <!-- Vai trò (Chỉ đọc) -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-role">
+              <span>Vai trò người dùng</span>
+              <span class="badge-locked">🔒 Chỉ đọc</span>
+            </label>
+            <div class="input-wrapper input-readonly-wrapper">
+              <input type="text" class="form-input input-readonly" id="profile-input-role" name="role" readonly disabled>
+              <span class="input-lock-icon" title="Vai trò do Quản trị viên phân quyền">🔒</span>
+            </div>
+            <small class="field-hint-text">Phân quyền vai trò bởi Quản trị viên.</small>
+          </div>
+        </div>
+
+        <div class="form-row-grid">
+          <!-- Số điện thoại với kiểm tra định dạng Việt Nam -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-phone">
+              <span>Số điện thoại (Việt Nam)</span>
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input 
+                type="tel" 
+                class="form-input" 
+                id="profile-input-phone" 
+                name="phone" 
+                required 
+                placeholder="0981234567 hoặc +84..." 
+                autocomplete="tel" 
+                oninput="app.handleProfilePhoneInput(this)" 
+                onblur="app.handleProfilePhoneBlur(this)"
+              >
+              <span class="phone-check-icon" id="modal-profile-phone-check" style="display: none;">✓</span>
+            </div>
+            <span class="field-error-msg" id="modal-profile-phone-error"></span>
+            <small class="field-hint-text" id="modal-profile-phone-hint">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc +84).</small>
+          </div>
+
+          <!-- Ngày sinh -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-dob">
+              <span>Ngày sinh</span>
+            </label>
+            <input type="date" class="form-input" id="profile-input-dob" name="dob">
+            <span class="field-error-msg" id="modal-profile-dob-error"></span>
+          </div>
+        </div>
+
+        <!-- Địa chỉ -->
+        <div class="form-group">
+          <label class="form-label" for="profile-input-address">
+            <span>Địa chỉ hiện tại</span>
+          </label>
+          <input type="text" class="form-input" id="profile-input-address" name="address" placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
+        </div>
+
+        <p id="modal-profile-general-error" class="modal-alert-error" style="display:none;" role="alert"></p>
+
+        <div class="modal-footer profile-modal-footer">
+          <button type="button" class="btn-cancel" onclick="app.toggleProfileEditMode(false)">Quay Lại Xem</button>
+          <button type="submit" class="btn-submit btn-sm" id="btn-modal-save-profile">
+            <span class="btn-spinner" id="modal-profile-save-spinner" style="display: none;"></span>
+            <span id="modal-profile-save-text">Lưu Thay Đổi</span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Footer -->

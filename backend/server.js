@@ -65,6 +65,9 @@ app.use((req, res, next) => {
     if (req.path === '/session-demo' || req.path === '/session-demo.html') {
       return res.sendFile(resolveHtmlFile('session-demo.html'));
     }
+    if (req.path === '/profile' || req.path === '/profile.html') {
+      return res.sendFile(resolveHtmlFile('profile.html'));
+    }
     return res.sendFile(resolveHtmlFile('index.html'));
   }
   next();

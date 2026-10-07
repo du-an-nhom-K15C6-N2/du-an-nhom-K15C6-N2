@@ -7,7 +7,7 @@ import { authState } from '../core/authState.js';
 import { getAuthSession } from '../core/storage.js';
 import { clearFormDraft, restoreFormDrafts } from '../core/formDrafts.js';
 import { createAttendanceRecord, getAttendanceRecords, getAttendanceStudents } from '../core/attendanceService.js';
-import { changePasswordApi } from '../core/authService.js';
+import { changePasswordApi, getProfileApi, updateProfileApi } from '../core/authService.js';
 import { createRoleNavigation } from './RoleNavigation.js';
 
 export function renderRoleDashboard(container) {
@@ -186,6 +186,57 @@ export function renderRoleDashboard(container) {
             </form>
           </section>
 
+          <!-- Section Hồ Sơ Cá Nhân (Subtask DNKN-86) -->
+          <section class="password-change-card glass-panel" id="dash-profile-section" aria-labelledby="profile-heading">
+            <h3 id="profile-heading">Hồ Sơ Cá Nhân</h3>
+            <p>Xem và cập nhật thông tin liên lạc (Họ tên, Số điện thoại Việt Nam, Ngày sinh, Địa chỉ). Trường Email và Vai trò được giữ cố định.</p>
+
+            <form id="dash-profile-form" class="dashboard-profile-form" novalidate style="margin-top: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                
+                <label class="attendance-field">
+                  <span>Họ và tên <strong style="color: #ef4444;">*</strong></span>
+                  <input class="form-input" type="text" name="name" id="dash-input-name" value="${escapeHtml(user?.fullName || user?.name || '')}" required>
+                  <small id="dash-name-error" style="color: #ef4444; display: none; font-size: 0.75rem;"></small>
+                </label>
+
+                <label class="attendance-field">
+                  <span>Địa chỉ Email <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(239,68,68,0.15); color: #f87171;">🔒 Cố định</span></span>
+                  <input class="form-input" type="email" name="email" value="${escapeHtml(user?.email || '')}" readonly disabled style="opacity: 0.7; cursor: not-allowed;">
+                </label>
+
+                <label class="attendance-field">
+                  <span>Vai trò hệ thống <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(239,68,68,0.15); color: #f87171;">🔒 Phân quyền</span></span>
+                  <input class="form-input" type="text" name="role" value="${escapeHtml(user?.roleLabel || role)} (Cố định)" readonly disabled style="opacity: 0.7; cursor: not-allowed;">
+                </label>
+
+                <label class="attendance-field">
+                  <span>Số điện thoại (Việt Nam) <strong style="color: #ef4444;">*</strong></span>
+                  <input class="form-input" type="tel" name="phone" id="dash-input-phone" value="${escapeHtml(user?.phone || '')}" placeholder="Ví dụ: 0981234567 hoặc +84..." required>
+                  <small id="dash-phone-hint" style="color: #94a3b8; font-size: 0.75rem;">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc +84).</small>
+                  <small id="dash-phone-error" style="color: #ef4444; display: none; font-size: 0.75rem;"></small>
+                </label>
+
+                <label class="attendance-field">
+                  <span>Ngày sinh</span>
+                  <input class="form-input" type="date" name="dob" id="dash-input-dob" value="${escapeHtml(user?.dob || '')}">
+                  <small id="dash-dob-error" style="color: #ef4444; display: none; font-size: 0.75rem;"></small>
+                </label>
+
+                <label class="attendance-field">
+                  <span>Địa chỉ liên hệ</span>
+                  <input class="form-input" type="text" name="address" id="dash-input-address" value="${escapeHtml(user?.address || '')}" placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
+                </label>
+
+              </div>
+
+              <div class="attendance-form-actions">
+                <button class="btn-submit" type="submit" id="dash-save-profile-btn">Lưu Hồ Sơ Cá Nhân</button>
+                <p id="dash-profile-feedback" class="attendance-feedback" aria-live="polite"></p>
+              </div>
+            </form>
+          </section>
+
           <div class="dash-grid">
             <!-- Thẻ 1: Thông tin phiên đăng nhập & Token lưu trữ -->
             <div class="dash-card glass-panel">
@@ -354,6 +405,134 @@ export function renderRoleDashboard(container) {
           feedback.className = 'attendance-feedback is-error';
         } finally {
           submitButton.disabled = false;
+        }
+      });
+    }
+
+    const profileForm = container.querySelector('#dash-profile-form');
+    if (profileForm) {
+      function normalizePhoneVal(p) {
+        if (!p) return '';
+        let c = p.trim().replace(/[\s.\-()]/g, '');
+        if (c.startsWith('+84')) c = '0' + c.slice(3);
+        else if (c.startsWith('84') && c.length === 11) c = '0' + c.slice(2);
+        return c;
+      }
+
+      function isVNPhoneVal(p) {
+        const n = normalizePhoneVal(p);
+        return /^0[35789]\d{8}$/.test(n);
+      }
+
+      const phoneInput = profileForm.querySelector('#dash-input-phone');
+      const phoneHint = profileForm.querySelector('#dash-phone-hint');
+      const phoneErr = profileForm.querySelector('#dash-phone-error');
+
+      function validatePhoneField() {
+        if (!phoneInput) return false;
+        const val = phoneInput.value.trim();
+        if (!val) {
+          phoneInput.classList.remove('input-valid', 'input-invalid');
+          if (phoneErr) { phoneErr.textContent = 'Số điện thoại không được để trống.'; phoneErr.style.display = 'block'; }
+          return false;
+        }
+        if (!isVNPhoneVal(val)) {
+          phoneInput.classList.remove('input-valid');
+          phoneInput.classList.add('input-invalid');
+          if (phoneErr) { phoneErr.textContent = 'Số điện thoại không đúng định dạng Việt Nam (10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09).'; phoneErr.style.display = 'block'; }
+          return false;
+        }
+        phoneInput.classList.remove('input-invalid');
+        phoneInput.classList.add('input-valid');
+        if (phoneErr) { phoneErr.textContent = ''; phoneErr.style.display = 'none'; }
+        if (phoneHint) { phoneHint.textContent = `✓ Định dạng hợp lệ. Chuẩn hóa: ${normalizePhoneVal(val)}`; phoneHint.style.color = '#10b981'; }
+        return true;
+      }
+
+      if (phoneInput) {
+        phoneInput.addEventListener('input', validatePhoneField);
+        phoneInput.addEventListener('blur', validatePhoneField);
+      }
+
+      profileForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = profileForm.querySelector('#dash-save-profile-btn');
+        const feedback = container.querySelector('#dash-profile-feedback');
+        const nameInput = profileForm.querySelector('#dash-input-name');
+        const nameErr = profileForm.querySelector('#dash-name-error');
+        const dobInput = profileForm.querySelector('#dash-input-dob');
+        const dobErr = profileForm.querySelector('#dash-dob-error');
+        const addressInput = profileForm.querySelector('#dash-input-address');
+
+        let isValid = true;
+        const nameVal = nameInput ? nameInput.value.trim() : '';
+        if (!nameVal) {
+          if (nameErr) { nameErr.textContent = 'Họ và tên không được để trống.'; nameErr.style.display = 'block'; }
+          isValid = false;
+        } else {
+          if (nameErr) { nameErr.textContent = ''; nameErr.style.display = 'none'; }
+        }
+
+        if (!validatePhoneField()) {
+          isValid = false;
+        }
+
+        const dobVal = dobInput && dobInput.value ? dobInput.value.trim() : '';
+        if (dobVal) {
+          const d = new Date(dobVal);
+          if (isNaN(d.getTime())) {
+            if (dobErr) { dobErr.textContent = 'Ngày sinh không hợp lệ.'; dobErr.style.display = 'block'; }
+            isValid = false;
+          } else if (d > new Date()) {
+            if (dobErr) { dobErr.textContent = 'Ngày sinh không thể là ngày trong tương lai.'; dobErr.style.display = 'block'; }
+            isValid = false;
+          } else {
+            if (dobErr) { dobErr.textContent = ''; dobErr.style.display = 'none'; }
+          }
+        }
+
+        if (!isValid) {
+          if (feedback) {
+            feedback.textContent = 'Vui lòng kiểm tra lại thông tin chưa hợp lệ.';
+            feedback.className = 'attendance-feedback is-error';
+          }
+          return;
+        }
+
+        if (submitButton) submitButton.disabled = true;
+        if (feedback) {
+          feedback.textContent = 'Đang lưu hồ sơ...';
+          feedback.className = 'attendance-feedback';
+        }
+
+        try {
+          const token = authState.getState().token;
+          const updatedProfile = await updateProfileApi(token, {
+            name: nameVal,
+            phone: phoneInput.value.trim(),
+            dob: dobVal,
+            address: addressInput ? addressInput.value.trim() : ''
+          });
+
+          if (feedback) {
+            feedback.textContent = 'Cập nhật hồ sơ cá nhân thành công!';
+            feedback.className = 'attendance-feedback is-success';
+          }
+
+          // Cập nhật authState
+          const currentState = authState.getState();
+          if (currentState.user) {
+            authState.setState({
+              user: { ...currentState.user, ...updatedProfile }
+            });
+          }
+        } catch (error) {
+          if (feedback) {
+            feedback.textContent = error.message || 'Không thể cập nhật hồ sơ cá nhân.';
+            feedback.className = 'attendance-feedback is-error';
+          }
+        } finally {
+          if (submitButton) submitButton.disabled = false;
         }
       });
     }

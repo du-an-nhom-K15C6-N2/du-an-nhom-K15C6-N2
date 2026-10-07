@@ -100,3 +100,20 @@ export async function logoutApi(token) {
     headers: { Authorization: `Bearer ${token}` }
   });
 }
+
+export async function getProfileApi(token) {
+  const data = await request('/profile', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return data?.data;
+}
+
+export async function updateProfileApi(token, profileData) {
+  const data = await request('/profile', {
+    method: 'PUT',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(profileData)
+  });
+  return data?.data;
+}
+

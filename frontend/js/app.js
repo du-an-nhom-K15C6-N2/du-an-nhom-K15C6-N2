@@ -1709,6 +1709,332 @@
       }, 4000);
     },
 
+    // ====================================================================
+    // [FE] SUBTASK DNKN-86: QUẢN LÝ XEM VÀ CẬP NHẬT HỒ SƠ CÁ NHÂN
+    // ====================================================================
+    currentProfileUser: null,
+
+    normalizeVietnamPhone: function (phone) {
+      if (!phone || typeof phone !== 'string') return '';
+      let cleaned = phone.trim().replace(/[\s.\-()]/g, '');
+      if (cleaned.startsWith('+84')) {
+        cleaned = '0' + cleaned.slice(3);
+      } else if (cleaned.startsWith('84') && cleaned.length === 11) {
+        cleaned = '0' + cleaned.slice(2);
+      }
+      return cleaned;
+    },
+
+    validateVietnamPhone: function (phone) {
+      const normalized = this.normalizeVietnamPhone(phone);
+      if (!normalized) return false;
+      return /^0[35789]\d{8}$/.test(normalized);
+    },
+
+    formatProfileDobDisplay: function (dob) {
+      if (!dob) return 'Chưa cập nhật';
+      try {
+        const parts = dob.split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        const d = new Date(dob);
+        if (isNaN(d.getTime())) return dob;
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+      } catch (e) {
+        return dob;
+      }
+    },
+
+    showProfileModal: async function () {
+      const modal = document.getElementById('profile-modal');
+      if (!modal) return;
+
+      // 1. Lấy thông tin người dùng từ API hoặc Storage
+      let profileUser = null;
+      const token = getAuthToken();
+      if (token) {
+        try {
+          const res = await fetch('/api/profile', {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              profileUser = json.data;
+            }
+          }
+        } catch (e) {
+          console.warn('Lỗi kết nối /api/profile:', e);
+        }
+      }
+
+      if (!profileUser) {
+        profileUser = this.currentUser || {};
+      }
+
+      this.currentProfileUser = profileUser;
+
+      // 2. Điền dữ liệu vào chế độ Xem (View Mode)
+      const name = profileUser.fullName || profileUser.name || 'Người dùng';
+      const email = profileUser.email || '';
+      const role = profileUser.roleLabel || profileUser.role || 'Người dùng';
+      const phone = profileUser.phone || 'Chưa cập nhật';
+      const dobDisplay = this.formatProfileDobDisplay(profileUser.dob);
+      const address = profileUser.address || 'Chưa cập nhật';
+
+      const initials = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'US';
+      const avatarEl = document.getElementById('modal-view-avatar');
+      if (avatarEl) avatarEl.textContent = initials;
+
+      const nameHero = document.getElementById('modal-view-name-hero');
+      if (nameHero) nameHero.textContent = name;
+
+      const emailHero = document.getElementById('modal-view-email-hero');
+      if (emailHero) emailHero.textContent = email;
+
+      const rolePill = document.getElementById('modal-view-role-pill');
+      if (rolePill) rolePill.textContent = role;
+
+      const fullnameEl = document.getElementById('modal-view-fullname');
+      if (fullnameEl) fullnameEl.textContent = name;
+
+      const emailEl = document.getElementById('modal-view-email');
+      if (emailEl) emailEl.textContent = email;
+
+      const roleEl = document.getElementById('modal-view-role');
+      if (roleEl) roleEl.textContent = `${role} (${profileUser.role || 'user'})`;
+
+      const phoneEl = document.getElementById('modal-view-phone');
+      if (phoneEl) phoneEl.textContent = phone;
+
+      const dobEl = document.getElementById('modal-view-dob');
+      if (dobEl) dobEl.textContent = dobDisplay;
+
+      const addrEl = document.getElementById('modal-view-address');
+      if (addrEl) addrEl.textContent = address;
+
+      // Mặc định mở ở chế độ xem
+      this.toggleProfileEditMode(false);
+
+      modal.style.display = 'flex';
+    },
+
+    closeProfileModal: function () {
+      const modal = document.getElementById('profile-modal');
+      if (modal) modal.style.display = 'none';
+    },
+
+    toggleProfileEditMode: function (isEditing) {
+      const viewMode = document.getElementById('profile-view-mode');
+      const editMode = document.getElementById('profile-edit-mode');
+      if (!viewMode || !editMode) return;
+
+      if (isEditing) {
+        viewMode.style.display = 'none';
+        editMode.style.display = 'block';
+
+        // Điền dữ liệu vào form sửa
+        const u = this.currentProfileUser || this.currentUser || {};
+        const nameInput = document.getElementById('profile-input-name');
+        if (nameInput) nameInput.value = u.fullName || u.name || '';
+
+        // Email và vai trò giữ trạng thái đọc (readonly & disabled)
+        const emailInput = document.getElementById('profile-input-email');
+        if (emailInput) emailInput.value = u.email || '';
+
+        const roleInput = document.getElementById('profile-input-role');
+        if (roleInput) roleInput.value = `${u.roleLabel || u.role || 'Thành viên'} (Cố định)`;
+
+        const phoneInput = document.getElementById('profile-input-phone');
+        if (phoneInput) {
+          phoneInput.value = u.phone || '';
+          this.handleProfilePhoneInput(phoneInput);
+        }
+
+        const dobInput = document.getElementById('profile-input-dob');
+        if (dobInput) dobInput.value = u.dob || '';
+
+        const addrInput = document.getElementById('profile-input-address');
+        if (addrInput) addrInput.value = u.address || '';
+
+        // Xóa thông báo lỗi cũ
+        const nameErr = document.getElementById('modal-profile-name-error');
+        if (nameErr) nameErr.textContent = '';
+        const dobErr = document.getElementById('modal-profile-dob-error');
+        if (dobErr) dobErr.textContent = '';
+        const genErr = document.getElementById('modal-profile-general-error');
+        if (genErr) { genErr.textContent = ''; genErr.style.display = 'none'; }
+      } else {
+        viewMode.style.display = 'block';
+        editMode.style.display = 'none';
+      }
+    },
+
+    // [FE] Kiểm tra số điện thoại Việt Nam theo thời gian thực
+    handleProfilePhoneInput: function (input) {
+      const errorEl = document.getElementById('modal-profile-phone-error');
+      const checkIcon = document.getElementById('modal-profile-phone-check');
+      const hintEl = document.getElementById('modal-profile-phone-hint');
+      const val = input.value.trim();
+
+      if (!val) {
+        input.classList.remove('input-valid', 'input-invalid');
+        if (errorEl) errorEl.textContent = 'Số điện thoại không được để trống.';
+        if (checkIcon) checkIcon.style.display = 'none';
+        if (hintEl) hintEl.style.display = 'none';
+        return false;
+      }
+
+      if (!this.validateVietnamPhone(val)) {
+        input.classList.remove('input-valid');
+        input.classList.add('input-invalid');
+        if (errorEl) errorEl.textContent = 'Số điện thoại không đúng định dạng Việt Nam (10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09).';
+        if (checkIcon) checkIcon.style.display = 'none';
+        if (hintEl) hintEl.style.display = 'none';
+        return false;
+      }
+
+      // Hợp lệ
+      input.classList.remove('input-invalid');
+      input.classList.add('input-valid');
+      if (errorEl) errorEl.textContent = '';
+      if (checkIcon) checkIcon.style.display = 'inline-block';
+      if (hintEl) {
+        hintEl.style.display = 'block';
+        hintEl.textContent = `✓ Định dạng hợp lệ. Chuẩn hóa: ${this.normalizeVietnamPhone(val)}`;
+      }
+      return true;
+    },
+
+    handleProfilePhoneBlur: function (input) {
+      this.handleProfilePhoneInput(input);
+    },
+
+    // Xử lý submit form cập nhật hồ sơ
+    handleProfileSubmit: async function (event) {
+      event.preventDefault();
+
+      const nameInput = document.getElementById('profile-input-name');
+      const phoneInput = document.getElementById('profile-input-phone');
+      const dobInput = document.getElementById('profile-input-dob');
+      const addressInput = document.getElementById('profile-input-address');
+      const genErr = document.getElementById('modal-profile-general-error');
+
+      if (genErr) {
+        genErr.textContent = '';
+        genErr.style.display = 'none';
+      }
+
+      let hasError = false;
+
+      // 1. Kiểm tra Họ và tên
+      const nameVal = nameInput ? nameInput.value.trim() : '';
+      const nameErr = document.getElementById('modal-profile-name-error');
+      if (!nameVal) {
+        if (nameErr) nameErr.textContent = 'Họ và tên không được để trống.';
+        if (nameInput) nameInput.classList.add('input-invalid');
+        hasError = true;
+      } else {
+        if (nameErr) nameErr.textContent = '';
+        if (nameInput) nameInput.classList.remove('input-invalid');
+      }
+
+      // 2. [FE] Kiểm tra số điện thoại Việt Nam
+      const isPhoneValid = this.handleProfilePhoneInput(phoneInput);
+      if (!isPhoneValid) {
+        hasError = true;
+      }
+
+      // 3. Kiểm tra ngày sinh (nếu có nhập)
+      const dobVal = dobInput ? dobInput.value.trim() : '';
+      const dobErr = document.getElementById('modal-profile-dob-error');
+      if (dobVal) {
+        const d = new Date(dobVal);
+        if (isNaN(d.getTime())) {
+          if (dobErr) dobErr.textContent = 'Ngày sinh không hợp lệ.';
+          hasError = true;
+        } else if (d > new Date()) {
+          if (dobErr) dobErr.textContent = 'Ngày sinh không thể là ngày trong tương lai.';
+          hasError = true;
+        } else {
+          if (dobErr) dobErr.textContent = '';
+        }
+      } else {
+        if (dobErr) dobErr.textContent = '';
+      }
+
+      if (hasError) {
+        this.showToast('Vui lòng kiểm tra lại thông tin chưa hợp lệ.', 'error');
+        return;
+      }
+
+      // 4. Gọi API cập nhật lên Backend
+      const spinner = document.getElementById('modal-profile-save-spinner');
+      const label = document.getElementById('modal-profile-save-text');
+      const btn = document.getElementById('btn-modal-save-profile');
+
+      if (spinner) spinner.style.display = 'inline-block';
+      if (label) label.textContent = 'Đang lưu...';
+      if (btn) btn.disabled = true;
+
+      try {
+        const token = getAuthToken();
+        const payload = {
+          name: nameVal,
+          phone: phoneInput.value.trim(),
+          dob: dobVal,
+          address: addressInput ? addressInput.value.trim() : ''
+        };
+
+        const res = await fetch('/api/profile', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+          const updatedUser = json.data;
+          this.currentProfileUser = updatedUser;
+          this.currentUser = { ...this.currentUser, ...updatedUser };
+
+          // Đồng bộ vào Storage
+          persistAuthSession(this.currentUser, token, localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true');
+
+          // Cập nhật DOM thanh điều hướng header
+          const navName = document.getElementById('nav-user-name');
+          if (navName) navName.textContent = updatedUser.fullName || updatedUser.name;
+          const navAvatar = document.getElementById('nav-user-avatar');
+          if (navAvatar) {
+            const words = (updatedUser.fullName || updatedUser.name).trim().split(/\s+/);
+            navAvatar.textContent = words.length === 1 ? words[0].slice(0, 2).toUpperCase() : (words[0][0] + words[words.length - 1][0]).toUpperCase();
+          }
+
+          this.showToast('Cập nhật hồ sơ cá nhân thành công!', 'success');
+
+          // Đóng chế độ sửa, cập nhật chế độ xem
+          await this.showProfileModal();
+        } else {
+          const errMsg = json.message || 'Lỗi khi cập nhật hồ sơ cá nhân.';
+          if (genErr) {
+            genErr.textContent = errMsg;
+            genErr.style.display = 'block';
+          }
+          this.showToast(errMsg, 'error');
+        }
+      } catch (err) {
+        console.error('Lỗi API cập nhật profile:', err);
+        this.showToast('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.', 'error');
+      } finally {
+        if (spinner) spinner.style.display = 'none';
+        if (label) label.textContent = 'Lưu Thay Đổi';
+        if (btn) btn.disabled = false;
+      }
+    },
+
     escapeHtml: function (str) {
       if (!str) return '';
       return String(str)

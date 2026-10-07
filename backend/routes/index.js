@@ -7,6 +7,8 @@ const attendanceRoutes = require('./attendanceRoutes');
 const sessionRoutes = require('./sessionRoutes');
 const AuthController = require('../controllers/authController');
 
+const profileRoutes = require('./profileRoutes');
+
 // API Health Check (tương thích cả 2 định dạng)
 router.get('/health', (req, res) => {
   res.status(200).json({
@@ -24,6 +26,7 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/session', sessionRoutes);
+router.use('/profile', profileRoutes);
 
 // Endpoint đặt lại mật khẩu trực tiếp theo đặc tả nhánh feature
 router.post('/forgot-password', AuthController.forgotPassword);
