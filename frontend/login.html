@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng Nhập - Hệ Thống Điểm Danh</title>
+    <style>
+        :root {
+            --bg-start: #f0f7ff;
+            --bg-end: #dfe9ff;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-soft: #e0ecff;
+            --card-bg: rgba(255, 255, 255, 0.82);
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: rgba(148, 163, 184, 0.35);
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before,
+        body::after {
+            content: "";
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: rgba(37, 99, 235, 0.08);
+            filter: blur(12px);
+        }
+
+        body::before {
+            top: -120px;
+            left: -80px;
+        }
+
+        body::after {
+            right: -60px;
+            bottom: -140px;
+        }
+
+        .login-card {
+            position: relative;
+            z-index: 1;
+            width: min(92vw, 420px);
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            border-radius: 24px;
+            padding: 36px 30px 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .brand-mark {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, #60a5fa 100%);
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 12px 25px rgba(37, 99, 235, 0.28);
+        }
+
+        h2 {
+            margin: 0;
+            color: var(--text);
+            font-size: 28px;
+            letter-spacing: -0.03em;
+            text-align: center;
+        }
+
+        .desc {
+            margin: 8px 0 22px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .status-chip {
+            margin: 0 auto 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: var(--primary-soft);
+            color: var(--primary-dark);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+        }
+
+        .alert-timeout {
+            display: none;
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            color: var(--muted);
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            color: var(--text);
+            background: white;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+        }
+
+        .row-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 22px;
+            font-size: 13px;
+        }
+
+        .remember {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--muted);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .remember input {
+            accent-color: var(--primary);
+        }
+
+        .forgot-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 14px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.03);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .footer-note {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .switch-portal {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .switch-portal a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .switch-portal a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 28px 20px 22px;
+                border-radius: 20px;
+            }
+
+            h2 {
+                font-size: 24px;
+            }
+
+            .row-actions {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="brand">
+        <div class="brand-mark">✓</div>
+        <h2>Cổng Điểm Danh</h2>
+    </div>
+    <div class="desc">Đăng nhập an toàn - Quản lý phiên làm việc</div>
+    <div style="text-align: center;">
+        <div class="status-chip"><span class="status-dot"></span> Hệ thống đang hoạt động</div>
+    </div>
+
+    <div id="timeoutAlert" class="alert-timeout">⚠️ Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!</div>
+    <div id="lockoutAlert" class="alert-timeout" role="status" aria-live="polite"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Email</label>
+        <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="email" id="username" name="email" autocomplete="username" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="password">Mật khẩu</label>
+        <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+        </div>
+      </div>
+
+      <div class="row-actions">
+          <label class="remember"><input type="checkbox" id="rememberMe"> Ghi nhớ tôi</label>
+          <a href="forgot-password.html" class="forgot-link">Quên mật khẩu?</a>
+      </div>
+
+      <button id="loginButton" class="btn-login" type="submit">Đăng Nhập</button>
+    </form>
+    <div class="switch-portal">
+        <a href="index.html">← Chuyển sang Cổng Quản lý Tổng thể (EduClass)</a>
+    </div>
+    <div class="footer-note">Bảo mật theo chuẩn đồ án TTCS</div>
+</div>
+
+<script>
+    const apiBaseUrl = window.location.protocol === "file:" ? "http://localhost:3000" : "";
+    let lockoutTimer = null;
+    let lockoutUntil = 0;
+    let lockedEmail = null;
+    const loginForm = document.getElementById("loginForm");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const loginButton = document.getElementById("loginButton");
+    const lockoutAlert = document.getElementById("lockoutAlert");
+
+    function saveLockout(email, expiresAt) {
+        localStorage.setItem("loginLockoutEmail", email.toLowerCase());
+        localStorage.setItem("loginLockoutExpiry", String(expiresAt));
+    }
+
+    function clearSavedLockout() {
+        localStorage.removeItem("loginLockoutEmail");
+        localStorage.removeItem("loginLockoutExpiry");
+    }
+
+    function startLockoutCountdown(seconds) {
+        lockedEmail = usernameInput.value.trim().toLowerCase();
+        lockoutUntil = Date.now() + Math.max(0, Math.ceil(seconds)) * 1000;
+        saveLockout(lockedEmail, lockoutUntil);
+
+        if (lockoutTimer !== null) {
+            clearInterval(lockoutTimer);
+        }
+
+        usernameInput.disabled = false;
+        passwordInput.disabled = true;
+        loginButton.disabled = true;
+        lockoutAlert.style.display = "block";
+
+        const renderCountdown = function() {
+            const remainingSeconds = Math.ceil((lockoutUntil - Date.now()) / 1000);
+            if (remainingSeconds <= 0) {
+                clearInterval(lockoutTimer);
+                lockoutTimer = null;
+                lockoutUntil = 0;
+                lockedEmail = null;
+                clearSavedLockout();
+                lockoutAlert.style.display = "none";
+                usernameInput.disabled = false;
+                passwordInput.disabled = false;
+                loginButton.disabled = false;
+                loginButton.textContent = "Đăng Nhập";
+                return;
+            }
+
+            const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, "0");
+            const seconds = String(remainingSeconds % 60).padStart(2, "0");
+            lockoutAlert.textContent = `Email hoặc mật khẩu không đúng. Có thể thử lại sau ${minutes}:${seconds}.`;
+        };
+
+        renderCountdown();
+        lockoutTimer = setInterval(renderCountdown, 1000);
+    }
+
+    window.onload = function() {
+        const reason = localStorage.getItem("logout_reason");
+        if (reason === "timeout") {
+            document.getElementById("timeoutAlert").style.display = "block";
+            localStorage.removeItem("logout_reason");
+        } else if (reason === "logout-failed") {
+            const alert = document.getElementById("timeoutAlert");
+            alert.textContent = "Đã xóa thông tin đăng nhập trên thiết bị, nhưng máy chủ chưa xác nhận thu hồi phiên. Vui lòng thử đăng xuất lại khi có kết nối.";
+            alert.style.display = "block";
+            localStorage.removeItem("logout_reason");
+        }
+        const lockedEmail = localStorage.getItem("loginLockoutEmail");
+        const lockoutExpiry = Number(localStorage.getItem("loginLockoutExpiry"));
+        if (lockedEmail && lockoutExpiry > Date.now()) {
+            document.getElementById("username").value = lockedEmail;
+            startLockoutCountdown(Math.ceil((lockoutExpiry - Date.now()) / 1000));
+        } else if (lockoutExpiry && lockoutExpiry <= Date.now()) {
+            clearSavedLockout();
+        }
+    };
+
+    usernameInput.addEventListener("input", function() {
+        if (!lockoutUntil || lockoutUntil <= Date.now()) return;
+        const isLockedEmail = usernameInput.value.trim().toLowerCase() === lockedEmail;
+        lockoutAlert.style.display = isLockedEmail ? "block" : "none";
+        passwordInput.disabled = isLockedEmail;
+        loginButton.disabled = isLockedEmail;
+    });
+
+    loginForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!username || !password) {
+            alert("Vui lòng nhập email và mật khẩu.");
+            return;
+        }
+        if (lockoutUntil > Date.now() && username.toLowerCase() === lockedEmail) {
+            return;
+        }
+
+        loginButton.disabled = true;
+        loginButton.textContent = "Đang xác thực...";
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: username, password })
+            });
+            const result = await response.json();
+
+            if (!response.ok) {
+                const error = new Error(result.message || "Đăng nhập không thành công.");
+                if (Number(result.retryAfterSeconds) > 0) {
+                    error.retryAfterSeconds = Number(result.retryAfterSeconds);
+                }
+                throw error;
+            }
+
+            clearSavedLockout();
+            const rememberMe = document.getElementById("rememberMe").checked;
+            const storage = rememberMe ? localStorage : sessionStorage;
+            [localStorage, sessionStorage].forEach(target => {
+                target.removeItem("dnkn_auth_token");
+                target.removeItem("dnkn_user_info");
+                target.removeItem("dnkn_user_role");
+                target.removeItem("dnkn_remember_me");
+                target.removeItem("dnkn_login_timestamp");
+            });
+            storage.setItem("dnkn_auth_token", result.token);
+            storage.setItem("dnkn_user_info", JSON.stringify(result.user));
+            storage.setItem("dnkn_user_role", result.user.role);
+            storage.setItem("dnkn_remember_me", String(rememberMe));
+            storage.setItem("dnkn_login_timestamp", new Date().toISOString());
+            const roleRoutes = {
+                admin: "/admin/dashboard",
+                teacher: "/teacher/dashboard",
+                assistant: "/assistant/dashboard",
+                student: "/student/workspace"
+            };
+            window.location.href = roleRoutes[result.user.role] || "/";
+        } catch (error) {
+            if (error.retryAfterSeconds) {
+                startLockoutCountdown(error.retryAfterSeconds);
+            } else {
+                alert(error.message || "Đăng nhập không thành công.");
+            }
+        } finally {
+            if (!lockoutUntil || lockoutUntil <= Date.now() || username.toLowerCase() !== lockedEmail) {
+                loginButton.disabled = false;
+                loginButton.textContent = "Đăng Nhập";
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

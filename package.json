@@ -1,19 +1,22 @@
 {
-  "name": "dnkn-85",
+  "name": "ttcs-classroom-auth",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Hệ thống quản lý lớp học - Module xác thực và phân quyền vai trò",
+  "main": "backend/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build && node backend/server.js",
+    "server": "node backend/server.js",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
   "dependencies": {
     "cors": "^2.8.6",
-    "exceljs": "^4.4.0",
     "express": "^5.2.1",
-    "multer": "^2.4.0"
+    "nodemailer": "^10.0.14"
   }
 }
