@@ -90,7 +90,7 @@
         <!-- Requirement Badge / User Story Header -->
         <div class="requirement-callout">
           <div class="callout-pill">Yêu cầu EP-01</div>
-          <p>Bảo mật dữ liệu lớp học • Khóa tạm 15 phút sau 5 lần sai • Phân quyền vai trò</p>
+          <p>Bảo mật dữ liệu lớp học • Phân quyền vai trò</p>
         </div>
 
         <div class="auth-card" id="auth-card">
@@ -107,7 +107,7 @@
           </div>
 
           <!-- Lockout Alert Box (AC 3: Bị khóa tạm 15 phút) -->
-          <div class="lockout-alert-box" id="lockout-alert-box" style="display: none;" role="alert">
+          <div class="lockout-alert-box" id="lockout-alert-box" style="display: none;" role="alert" hidden>
             <div class="lockout-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -118,11 +118,12 @@
             <div class="lockout-details">
               <h3 class="lockout-title">Tài Khoản Đã Bị Tạm Khóa An Toàn!</h3>
               <p class="lockout-desc">Bạn đã nhập sai 5 lần liên tiếp. Hệ thống đã kích hoạt khóa tạm thời <strong>15 phút</strong> để chống dò quét mật khẩu.</p>
-              <div class="lockout-timer-wrapper">
-                <span class="timer-label">Thời gian mở khóa sau:</span>
-                <span class="timer-countdown" id="lockout-timer-display">15:00</span>
-              </div>
             </div>
+          </div>
+
+          <div class="lockout-timer-wrapper lockout-countdown-display" id="lockout-countdown-display" role="status" aria-live="polite" hidden>
+            <span class="timer-label">Thời gian thử lại sau:</span>
+            <span class="timer-countdown" id="lockout-timer-display">15:00</span>
           </div>
 
           <!-- General Error Message Box (AC 2: Chính xác 'Email hoặc mật khẩu không đúng') -->
@@ -136,12 +137,12 @@
             </div>
             <div class="error-text-content">
               <strong id="error-message-text">Email hoặc mật khẩu không đúng</strong>
-              <div class="attempts-hint" id="attempts-hint-text">Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.</div>
+              <div class="attempts-hint" id="attempts-hint-text" hidden>Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.</div>
             </div>
           </div>
 
           <!-- Visual Attempt Meter (1 to 5 dots) -->
-          <div class="attempt-meter-container" id="attempt-meter-container" title="Chỉ số số lần nhập sai liên tiếp">
+          <div class="attempt-meter-container" id="attempt-meter-container" title="Chỉ số số lần nhập sai liên tiếp" hidden>
             <div class="attempt-meter-labels">
               <span>Số lần nhập sai liên tiếp:</span>
               <span id="attempt-ratio-text">0 / 5</span>
@@ -242,7 +243,7 @@
           </form>
 
           <!-- Acceptance Criteria Checklist -->
-          <div class="criteria-checklist">
+          <div class="criteria-checklist" hidden>
             <h4>Tiêu chuẩn chấp nhận EP-01:</h4>
             <ul>
               <li class="check-item"><span class="check-icon">✓</span> <strong>AC1:</strong> Đăng nhập đúng điều hướng vào trang chủ tương ứng theo vai trò.</li>
@@ -284,11 +285,12 @@
           </div>
         </div>
 
-        <!-- Notification Banner / Alert khi có lỗi hoặc chú thích -->
-        <div class="admin-notice-card">
-          <div class="notice-icon">💡</div>
+        <!-- Quy trình kích hoạt tài khoản -->
+        <div class="admin-notice-card activation-notice-card" role="note" aria-label="Thông tin kích hoạt tài khoản">
           <div class="notice-text">
-            <strong>Quy trình cấp tài khoản:</strong> Tài khoản mới ở trạng thái chờ kích hoạt. Hệ thống gửi liên kết kích hoạt và mật khẩu tạm qua email; email trùng sẽ bị từ chối.
+            <strong>🔐 Kích hoạt:</strong>
+            <span>Mật khẩu tạm được tạo tự động, gửi qua email và chỉ đăng nhập được sau khi kích hoạt.</span>
+            <small>Email đã tồn tại trong hệ thống sẽ bị từ chối khi tạo tài khoản.</small>
           </div>
         </div>
 
@@ -322,6 +324,9 @@
                 <option value="admin">Quản trị viên</option>
                 <option value="assistant">Trợ giảng</option>
                 <option value="manager">Quản lý đào tạo</option>
+                <option value="accountant">Kế toán</option>
+                <option value="department_head">Trưởng bộ môn</option>
+                <option value="training_staff">Nhân viên đào tạo</option>
               </select>
             </div>
 
@@ -710,6 +715,25 @@
               <span class="field-error-msg" id="err-phone"></span>
             </div>
 
+            <!-- Mật khẩu -->
+            <div class="form-group">
+              <label for="form-password" class="form-label">
+                <span>Mật khẩu</span>
+                <span class="required-star">*</span>
+              </label>
+              <input
+                type="password"
+                id="form-password"
+                class="form-input"
+                placeholder="Nhập mật khẩu"
+                minlength="8"
+                maxlength="128"
+                autocomplete="new-password"
+                required
+              >
+              <span class="field-error-msg" id="err-password"></span>
+            </div>
+
             <!-- Vai trò -->
             <div class="form-group form-col-span-2">
               <span class="form-label">Vai trò người dùng</span>
@@ -718,6 +742,9 @@
                 <label><input type="checkbox" name="user-role" value="teacher"> Giảng viên</label>
                 <label><input type="checkbox" name="user-role" value="assistant"> Trợ giảng</label>
                 <label><input type="checkbox" name="user-role" value="manager"> Quản lý đào tạo</label>
+                <label><input type="checkbox" name="user-role" value="accountant"> Kế toán</label>
+                <label><input type="checkbox" name="user-role" value="department_head"> Trưởng bộ môn</label>
+                <label><input type="checkbox" name="user-role" value="training_staff"> Nhân viên đào tạo</label>
                 <label><input type="checkbox" name="user-role" value="admin"> Quản trị viên</label>
               </div>
               <span class="field-error-msg" id="err-role"></span>

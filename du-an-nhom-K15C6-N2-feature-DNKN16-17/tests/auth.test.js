@@ -44,11 +44,102 @@ test('root URL serves the original EduClass portal login interface', async () =>
   assert.equal(response.status, 200);
   assert.match(html, /EduClass/);
   assert.match(html, /id="auth-section"/);
-  assert.match(html, /id="attempt-meter-container"/);
+  assert.match(html, /id="attempt-meter-container"[^>]*hidden/);
+  assert.match(html, /id="lockout-alert-box"[^>]*hidden/);
+  assert.match(html, /id="attempts-hint-text" hidden/);
+  assert.match(html, /id="lockout-countdown-display"[^>]*hidden/);
+  assert.match(html, /id="lockout-timer-display">15:00<\/span>/);
+  assert.match(html, /<p>Bảo mật dữ liệu lớp học • Phân quyền vai trò<\/p>/);
+  assert.match(html, /class="criteria-checklist" hidden/);
+
+  const standaloneLoginPage = await fetch(`${baseUrl}/login.html`);
+  const standaloneLoginHtml = await standaloneLoginPage.text();
+  assert.equal(standaloneLoginPage.status, 200);
+  assert.match(standaloneLoginHtml, /id="lockoutAlert" class="alert-timeout" role="status" aria-live="polite"/);
+  assert.match(standaloneLoginHtml, /Thời gian thử lại sau: \$\{minutes\}:\$\{seconds\}/);
 
   const activationPage = await fetch(`${baseUrl}/activate-account.html`);
   assert.equal(activationPage.status, 200);
   assert.match(await activationPage.text(), /Kích hoạt tài khoản/);
+});
+
+test('production startup requires isolated storage and securely bootstraps the first admin', async () => {
+  const envKeys = [
+    'NODE_ENV',
+    'DATA_FILE',
+    'AUTH_TOKEN_SECRET',
+    'BOOTSTRAP_ADMIN_EMAIL',
+    'BOOTSTRAP_ADMIN_PASSWORD'
+  ];
+  const previousEnv = new Map(envKeys.map(key => [key, process.env[key]]));
+  const originalData = await fs.readFile(dataFile, 'utf8');
+  const serverModule = require('../backend/server');
+  const originalListen = serverModule.app.listen;
+  const mockServer = { on() { return this; } };
+
+  try {
+    process.env.NODE_ENV = 'production';
+    process.env.AUTH_TOKEN_SECRET = 'production-test-secret-with-at-least-32-bytes';
+    delete process.env.BOOTSTRAP_ADMIN_EMAIL;
+    delete process.env.BOOTSTRAP_ADMIN_PASSWORD;
+
+    delete process.env.DATA_FILE;
+    assert.throws(
+      () => serverModule.startServer(),
+      /DATA_FILE phải trỏ tới kho dữ liệu riêng/
+    );
+
+    process.env.DATA_FILE = dataFile;
+    delete process.env.AUTH_TOKEN_SECRET;
+    assert.throws(
+      () => serverModule.startServer(),
+      /AUTH_TOKEN_SECRET phải có ít nhất 32 byte/
+    );
+
+    process.env.AUTH_TOKEN_SECRET = 'production-test-secret-with-at-least-32-bytes';
+    await fs.writeFile(dataFile, JSON.stringify([]));
+    assert.throws(
+      () => serverModule.startServer(),
+      /Chưa có quản trị viên đang hoạt động/
+    );
+
+    process.env.BOOTSTRAP_ADMIN_EMAIL = 'first-admin@example.test';
+    process.env.BOOTSTRAP_ADMIN_PASSWORD = 'Production-Admin-Pass1!';
+    serverModule.app.listen = () => mockServer;
+    assert.equal(serverModule.startServer(), mockServer);
+
+    const admin = require('../backend/models/userModel').findByEmail('first-admin@example.test');
+    assert.equal(admin.status, 'active');
+    assert.deepEqual(admin.roles, ['admin']);
+    assert.equal(await verifyPassword(
+      process.env.BOOTSTRAP_ADMIN_PASSWORD,
+      admin.passwordHash
+    ), true);
+
+    const adminLogin = await api('/api/auth/login', jsonRequest({
+      email: process.env.BOOTSTRAP_ADMIN_EMAIL,
+      password: process.env.BOOTSTRAP_ADMIN_PASSWORD
+    }));
+    assert.equal(adminLogin.response.status, 200);
+    const deniedReset = await api('/api/users/reset', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${adminLogin.data.token}` }
+    });
+    assert.equal(deniedReset.response.status, 403);
+    assert.equal(deniedReset.data.code, 'PRODUCTION_OPERATION_DISABLED');
+    assert.match(deniedReset.data.message, /Không thể khôi phục dữ liệu mẫu trong môi trường production/);
+    assert.equal(
+      require('../backend/models/userModel').findByEmail('first-admin@example.test').id,
+      admin.id
+    );
+  } finally {
+    serverModule.app.listen = originalListen;
+    await fs.writeFile(dataFile, originalData);
+    for (const [key, value] of previousEnv) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test('unknown API routes return the shared resource-not-found error shape', async () => {
@@ -235,7 +326,9 @@ test('attendance API protects roles, validates records, and persists entries', a
   assert.equal(studentForbidden.data.code, 'ACCESS_FORBIDDEN');
   assert.equal(studentForbidden.data.errorType, 'forbidden');
   assert.equal(studentForbidden.data.featureName, 'quản lý điểm danh');
+  assert.match(studentForbidden.data.message, /Bạn chưa được cấp quyền truy cập quản lý điểm danh/);
   assert.equal(studentForbidden.data.role, 'student');
+  assert.deepEqual(studentForbidden.data.roles, ['student']);
 
   const { data: teacherLogin } = await api('/api/auth/login', jsonRequest({
     email: 'teacher@test.edu',
@@ -472,7 +565,9 @@ test('user APIs require an authenticated admin and never expose password hashes'
   assert.equal(studentAccess.data.code, 'ACCESS_FORBIDDEN');
   assert.equal(studentAccess.data.errorType, 'forbidden');
   assert.equal(studentAccess.data.featureName, 'quản lý người dùng');
+  assert.match(studentAccess.data.message, /Bạn chưa được cấp quyền truy cập quản lý người dùng/);
   assert.equal(studentAccess.data.role, 'student');
+  assert.deepEqual(studentAccess.data.roles, ['student']);
 
   const { data: adminLogin } = await api('/api/auth/login', jsonRequest({
     email: 'admin@test.edu',
@@ -498,41 +593,29 @@ test('user APIs require an authenticated admin and never expose password hashes'
   const assignManager = await api('/api/users/student-1/roles', jsonRequest({
     role: 'manager'
   }, adminLogin.token));
-  assert.equal(assignManager.response.status, 200);
-  assert.deepEqual(assignManager.data.data.roles, ['student', 'manager']);
+  assert.equal(assignManager.response.status, 400);
+  assert.match(assignManager.data.message, /Học sinh chỉ được gán vai trò học sinh/);
 
   const assignTeacher = await api('/api/users/student-1/roles', jsonRequest({
     role: 'teacher'
   }, adminLogin.token));
-  assert.equal(assignTeacher.response.status, 200);
-  assert.deepEqual(assignTeacher.data.data.roles, ['student', 'manager', 'teacher']);
+  assert.equal(assignTeacher.response.status, 400);
+  assert.match(assignTeacher.data.message, /Học sinh chỉ được gán vai trò học sinh/);
 
   const refreshedMe = await api('/api/auth/me', {
     headers: { Authorization: ['Bearer', studentLogin.token].join(' ') }
   });
-  assert.deepEqual(refreshedMe.data.user.roles, ['student', 'manager', 'teacher']);
+  assert.deepEqual(refreshedMe.data.user.roles, ['student']);
 
   const immediateTeacherAccess = await api('/api/attendance/students', {
     headers: { Authorization: ['Bearer', studentLogin.token].join(' ') }
   });
-  assert.equal(immediateTeacherAccess.response.status, 200);
+  assert.equal(immediateTeacherAccess.response.status, 403);
 
   const managerFilter = await api('/api/users?role=manager', {
     headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
   });
-  assert.ok(managerFilter.data.data.some(user => user.id === 'student-1'));
-
-  const revokeTeacher = await api('/api/users/student-1/roles/teacher', {
-    method: 'DELETE',
-    headers: { Authorization: ['Bearer', adminLogin.token].join(' ') }
-  });
-  assert.equal(revokeTeacher.response.status, 200);
-  assert.deepEqual(revokeTeacher.data.data.roles, ['student', 'manager']);
-
-  const immediateTeacherRevocation = await api('/api/attendance/students', {
-    headers: { Authorization: ['Bearer', studentLogin.token].join(' ') }
-  });
-  assert.equal(immediateTeacherRevocation.response.status, 403);
+  assert.equal(managerFilter.data.data.some(user => user.id === 'student-1'), false);
 
   const adminUsers = await api('/api/users', {
     headers: { Authorization: `Bearer ${adminLogin.token}` }
@@ -829,6 +912,95 @@ test('shared error screens show matching messages and safe navigation actions', 
     assert.match(container.innerHTML, /Quay lại trang trước/);
     handlers.get('#btn-previous-page')();
     assert.equal(navigationPaths.at(-1), '/student/workspace?tab=courses');
+  } finally {
+    for (const [key, descriptor] of originalGlobals) {
+      if (descriptor) {
+        Object.defineProperty(globalThis, key, descriptor);
+      } else {
+        delete globalThis[key];
+      }
+    }
+    await vite.close();
+  }
+});
+
+test('frontend shows a Vietnamese access-denied screen when an API request returns 403', async () => {
+  const { createServer } = await import('vite');
+  const vite = await createServer({
+    configFile: false,
+    root: path.resolve(__dirname, '..'),
+    server: { middlewareMode: true },
+    appType: 'custom'
+  });
+  const globalNames = ['window', 'document', 'CustomEvent', 'fetch'];
+  const originalGlobals = globalNames.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]);
+
+  try {
+    const [{ request }, { registerAccessForbiddenHandler }] = await Promise.all([
+      vite.ssrLoadModule('/src/core/authService.js'),
+      vite.ssrLoadModule('/src/core/accessForbidden.js')
+    ]);
+    const listeners = new Map();
+    const windowMock = {
+      location: { origin: 'http://localhost:5173' },
+      history: { pushState() {} },
+      addEventListener: (type, listener) => listeners.set(type, listener),
+      removeEventListener: (type) => listeners.delete(type),
+      dispatchEvent(event) {
+        listeners.get(event.type)?.(event);
+        return true;
+      }
+    };
+    globalThis.window = windowMock;
+    globalThis.document = {
+      referrer: 'http://localhost:5173/student/workspace',
+      querySelector: () => null
+    };
+    globalThis.CustomEvent = class {
+      constructor(type, options) {
+        this.type = type;
+        this.detail = options?.detail;
+      }
+    };
+    globalThis.fetch = async () => ({
+      ok: false,
+      status: 403,
+      headers: { get: () => null },
+      json: async () => ({
+        success: false,
+        code: 'ACCESS_FORBIDDEN',
+        featureName: 'quản lý người dùng',
+        role: 'student',
+        message: 'Bạn chưa được cấp quyền truy cập quản lý người dùng.'
+      })
+    });
+
+    const handlers = new Map();
+    const container = {
+      innerHTML: '',
+      querySelector(selector) {
+        return { addEventListener: (eventName, handler) => handlers.set(selector, handler) };
+      }
+    };
+    const unregister = registerAccessForbiddenHandler(container, () => ({
+      isAuthenticated: true,
+      role: 'student',
+      navigationTarget: { path: '/student/workspace' }
+    }));
+
+    await assert.rejects(
+      request('/users'),
+      error => error.code === 'ACCESS_FORBIDDEN'
+        && /Bạn chưa được cấp quyền truy cập quản lý người dùng/.test(error.message)
+    );
+    assert.match(container.innerHTML, /data-error-type="forbidden"/);
+    assert.match(container.innerHTML, /Bạn chưa được cấp quyền/);
+    assert.match(container.innerHTML, /Bạn không thể truy cập khu vực này/);
+    assert.match(container.innerHTML, /quản lý người dùng/);
+    assert.match(container.innerHTML, /Quay lại màn hình an toàn/);
+    assert.doesNotMatch(container.innerHTML, /stack|TypeError|Internal Server Error/i);
+    unregister();
+    assert.equal(listeners.has('app:access-forbidden'), false);
   } finally {
     for (const [key, descriptor] of originalGlobals) {
       if (descriptor) {

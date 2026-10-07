@@ -1,14 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const AttendanceController = require('../controllers/attendanceController');
-const { requireAuth, requireRoles } = require('../middleware/authMiddleware');
+const { requireAuth, requirePermission } = require('../middleware/authMiddleware');
 const { sessions } = require('../services/sessionService');
 const UserModel = require('../models/userModel');
-
-const requireAttendanceAccess = requireRoles(
-  ['admin', 'teacher', 'assistant'],
-  { featureName: 'quản lý điểm danh' }
-);
 
 function attendanceAuthMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'] || '';
@@ -46,10 +41,22 @@ function attendanceAuthMiddleware(req, res, next) {
 
 router.use(attendanceAuthMiddleware);
 
-router.get('/', requireAttendanceAccess, AttendanceController.list);
+router.get(
+  '/',
+  requirePermission('attendance.read', { featureName: 'quản lý điểm danh' }),
+  AttendanceController.list
+);
 
-router.get('/students', requireAttendanceAccess, AttendanceController.listStudents);
+router.get(
+  '/students',
+  requirePermission('attendance.write', { featureName: 'quản lý điểm danh' }),
+  AttendanceController.listStudents
+);
 
-router.post('/', requireAttendanceAccess, AttendanceController.create);
+router.post(
+  '/',
+  requirePermission('attendance.write', { featureName: 'quản lý điểm danh' }),
+  AttendanceController.create
+);
 
 module.exports = router;

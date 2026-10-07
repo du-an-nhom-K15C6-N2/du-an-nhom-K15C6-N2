@@ -11,8 +11,8 @@ const {
 } = require('../security/token');
 
 const sessionStore = require('../security/sessionStore');
+const { ALLOWED_ROLES } = require('../config/rolePermissions');
 
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student', 'manager']);
 const RESET_TOKEN_TTL = 30 * 60 * 1000;
 const resetTokens = new Map();
 
@@ -24,11 +24,25 @@ try {
 }
 
 function getMailTransporter() {
-  const user = process.env.SMTP_USER || config.SMTP_USER;
-  const pass = process.env.SMTP_PASS || config.SMTP_PASS;
-  if (!nodemailerModule || !user || !pass || user === 'email_cua_ban@gmail.com' || pass === 'xxxx xxxx xxxx xxxx') {
+  const user = String(process.env.SMTP_USER || config.SMTP_USER || '').trim();
+  const pass = String(process.env.SMTP_PASS || config.SMTP_PASS || '').trim();
+  const placeholderValues = new Set([
+    'email_cua_ban@gmail.com',
+    'xxxx xxxx xxxx xxxx',
+    'your-gmail@gmail.com',
+    'your-16-character-google-app-password'
+  ]);
+
+  if (
+    !nodemailerModule
+    || !user
+    || !pass
+    || placeholderValues.has(user.toLowerCase())
+    || placeholderValues.has(pass.toLowerCase())
+  ) {
     return null;
   }
+
   return nodemailerModule.createTransport({
     service: 'gmail',
     auth: { user, pass }
@@ -269,7 +283,9 @@ class AuthController {
       if (user) {
         const now = Date.now();
         for (const [existingToken, request] of resetTokens) {
-          if (request.expiresAt <= now) resetTokens.delete(existingToken);
+          if (request.expiresAt <= now || request.email === user.email) {
+            resetTokens.delete(existingToken);
+          }
         }
 
         const token = crypto.randomBytes(32).toString('hex');
@@ -304,22 +320,33 @@ class AuthController {
               `
             });
           } catch (mailErr) {
-            resetTokens.delete(token);
-            console.error(`Lỗi khi gửi email đến ${user.email}:`, mailErr.message);
+            console.error('Lỗi khi gửi email đặt lại mật khẩu:', mailErr.message);
+            if (process.env.NODE_ENV !== 'production') {
+              console.info(`[Chế độ phát triển] Liên kết đặt lại mật khẩu: ${resetLink}`);
+            } else {
+              resetTokens.delete(token);
+            }
           }
         } else {
           if (process.env.NODE_ENV !== 'production') {
             console.info(`[Chế độ phát triển] Liên kết đặt lại mật khẩu: ${resetLink}`);
           } else {
+            resetTokens.delete(token);
             console.error('Chưa cấu hình SMTP_USER/SMTP_PASS; không thể gửi email đặt lại mật khẩu.');
           }
         }
+
+        return res.status(200).json({
+          success: true,
+          message: mailer
+            ? 'Yêu cầu đã được tiếp nhận. Nếu địa chỉ email tồn tại trong hệ thống, hướng dẫn sẽ được gửi đến hộp thư.'
+            : 'Yêu cầu đã được tiếp nhận. SMTP chưa cấu hình nên ở môi trường local, hãy lấy liên kết đặt lại trong terminal đang chạy backend.'
+        });
       }
 
-      const hasSmtpConfiguration = Boolean(getMailTransporter());
       return res.status(200).json({
         success: true,
-        message: hasSmtpConfiguration
+        message: getMailTransporter()
           ? 'Yêu cầu đã được tiếp nhận. Nếu địa chỉ email tồn tại trong hệ thống, hướng dẫn sẽ được gửi đến hộp thư.'
           : 'Yêu cầu đã được tiếp nhận. SMTP chưa cấu hình nên ở môi trường local, hãy lấy liên kết đặt lại trong terminal đang chạy backend.'
       });

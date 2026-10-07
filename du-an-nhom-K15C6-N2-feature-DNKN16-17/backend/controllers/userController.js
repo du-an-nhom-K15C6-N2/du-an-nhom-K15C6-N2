@@ -5,15 +5,16 @@ const { sendActivationEmail } = require('../services/accountActivationMailer');
 const crypto = require('crypto');
 const config = require('../config/app.config');
 const sessionStore = require('../security/sessionStore');
+const {
+  ROLE_CATALOG,
+  isValidRoleAssignment,
+  getRoleAssignmentError
+} = require('../config/rolePermissions');
 
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student', 'manager']);
-const ROLE_LABELS = {
-  admin: 'Quản trị viên',
-  teacher: 'Giảng viên',
-  assistant: 'Trợ giảng',
-  student: 'Học sinh / Sinh viên',
-  manager: 'Quản lý đào tạo'
-};
+const ALLOWED_ROLES = new Set(Object.keys(ROLE_CATALOG));
+const ROLE_LABELS = Object.fromEntries(
+  Object.entries(ROLE_CATALOG).map(([role, definition]) => [role, definition.label])
+);
 const ALLOWED_STATUSES = new Set(['active', 'locked', 'pending']);
 const ACTIVATION_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -121,7 +122,7 @@ class UserController {
   static async createUser(req, res, next) {
     let createdUser = null;
     try {
-      const { name, email, phone = '', role = 'student', roles } = req.body || {};
+      const { name, email, phone = '', role = 'student', roles, password } = req.body || {};
       const assignedRoles = roles === undefined ? [role] : roles;
 
       if (typeof name !== 'string' || !name.trim() || name.trim().length > 120) {
@@ -139,10 +140,15 @@ class UserController {
       }
       if (
         !Array.isArray(assignedRoles)
-        || assignedRoles.length === 0
-        || assignedRoles.some(assignedRole => !ALLOWED_ROLES.has(assignedRole))
+        || !isValidRoleAssignment(assignedRoles)
       ) {
-        return res.status(400).json({ success: false, message: 'Tài khoản phải có ít nhất một vai trò hợp lệ.' });
+        return res.status(400).json({
+          success: false,
+          message: getRoleAssignmentError(assignedRoles)
+        });
+      }
+      if (typeof password !== 'undefined' && (typeof password !== 'string' || password.length < 8)) {
+        return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 8 ký tự.' });
       }
       if (UserModel.findByEmail(cleanEmail)) {
         return res.status(409).json({
@@ -160,6 +166,7 @@ class UserController {
       }
 
       const temporaryPassword = createTemporaryPassword();
+      const finalPassword = typeof password === 'string' && password.length >= 8 ? password : temporaryPassword;
       const activationToken = crypto.randomBytes(32).toString('hex');
       createdUser = UserModel.create({
         name: name.trim(),
@@ -167,7 +174,7 @@ class UserController {
         phone,
         role: assignedRoles[0],
         roles: [...new Set(assignedRoles)],
-        passwordHash: await hashPassword(temporaryPassword),
+        passwordHash: await hashPassword(finalPassword),
         activationTokenHash: crypto.createHash('sha256').update(activationToken).digest('hex'),
         activationExpiresAt: Date.now() + ACTIVATION_TTL_MS
       });
@@ -229,6 +236,102 @@ class UserController {
       return res.status(200).json({
         success: true,
         message: 'Kích hoạt tài khoản thành công. Bạn có thể đăng nhập bằng mật khẩu tạm trong email.'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resendActivation(req, res, next) {
+    try {
+      const user = UserModel.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          code: 'RESOURCE_NOT_FOUND',
+          message: 'Không tìm thấy tài khoản người dùng.'
+        });
+      }
+      if (user.status !== 'pending') {
+        return res.status(409).json({
+          success: false,
+          code: 'ACCOUNT_NOT_PENDING',
+          message: 'Chỉ có thể gửi lại email cho tài khoản đang chờ kích hoạt.'
+        });
+      }
+      if (process.env.NODE_ENV === 'production' && !sendActivationEmailTransportAvailable()) {
+        return res.status(503).json({
+          success: false,
+          code: 'EMAIL_SERVICE_UNAVAILABLE',
+          message: 'Chưa cấu hình dịch vụ gửi email. Không thể gửi lại email kích hoạt.'
+        });
+      }
+
+      const temporaryPassword = createTemporaryPassword();
+      const activationToken = crypto.randomBytes(32).toString('hex');
+      const updatedUser = UserModel.renewActivation(req.params.id, {
+        passwordHash: await hashPassword(temporaryPassword),
+        activationTokenHash: crypto.createHash('sha256').update(activationToken).digest('hex'),
+        activationExpiresAt: Date.now() + ACTIVATION_TTL_MS
+      });
+      const baseUrl = (process.env.RESET_PASSWORD_URL || config.RESET_PASSWORD_URL
+        || `http://localhost:${config.PORT || 3000}`).replace(/\/+$/, '');
+      const activationUrl = `${baseUrl}/activate-account.html?token=${activationToken}`;
+      const emailSent = await sendActivationEmail({
+        name: updatedUser.name,
+        email: updatedUser.email,
+        activationUrl,
+        temporaryPassword
+      });
+
+      if (!emailSent) {
+        console.info(
+          `[Chế độ phát triển] Email kích hoạt cho ${updatedUser.email}: ${activationUrl} | Mật khẩu tạm: ${temporaryPassword}`
+        );
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: emailSent
+          ? 'Đã gửi lại email kích hoạt và mật khẩu tạm. Liên kết kích hoạt cũ không còn hiệu lực.'
+          : 'SMTP chưa cấu hình; liên kết kích hoạt và mật khẩu mới chỉ được ghi trong terminal backend ở môi trường phát triển.'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async activatePendingAccount(req, res, next) {
+    try {
+      const user = UserModel.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          code: 'RESOURCE_NOT_FOUND',
+          message: 'Không tìm thấy tài khoản người dùng.'
+        });
+      }
+      if (user.status !== 'pending') {
+        return res.status(409).json({
+          success: false,
+          code: 'ACCOUNT_NOT_PENDING',
+          message: 'Chỉ có thể kích hoạt tài khoản đang chờ kích hoạt.'
+        });
+      }
+
+      const activatedUser = UserModel.activatePendingAccount(req.params.id);
+      if (!activatedUser) {
+        return res.status(409).json({
+          success: false,
+          code: 'ACCOUNT_NOT_PENDING',
+          message: 'Tài khoản không còn ở trạng thái chờ kích hoạt.'
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: UserModel.toPublicUser(activatedUser),
+        message: 'Admin đã kích hoạt tài khoản. Người dùng có thể đăng nhập bằng mật khẩu tạm đã nhận.'
       });
     } catch (error) {
       next(error);
@@ -299,7 +402,7 @@ class UserController {
   static async updateUser(req, res, next) {
     try {
       const { id } = req.params;
-      const { name, email, phone, role, roles, status } = req.body || {};
+      const { name, email, phone, role, roles, status, password } = req.body || {};
 
       if (typeof name !== 'string' || !name.trim()) {
         return res.status(400).json({ success: false, message: 'Họ và tên không được để trống.' });
@@ -316,9 +419,12 @@ class UserController {
       }
       if (
         typeof roles !== 'undefined'
-        && (!Array.isArray(roles) || !roles.length || roles.some(assignedRole => !ALLOWED_ROLES.has(assignedRole)))
+        && !isValidRoleAssignment(roles)
       ) {
-        return res.status(400).json({ success: false, message: 'Tài khoản phải có ít nhất một vai trò hợp lệ.' });
+        return res.status(400).json({
+          success: false,
+          message: getRoleAssignmentError(roles)
+        });
       }
       if (typeof status !== 'undefined' && !ALLOWED_STATUSES.has(status)) {
         return res.status(400).json({ success: false, message: 'Trạng thái tài khoản không hợp lệ.' });
@@ -328,6 +434,9 @@ class UserController {
       }
       if (typeof phone !== 'undefined' && (typeof phone !== 'string' || phone.length > 32)) {
         return res.status(400).json({ success: false, message: 'Số điện thoại không hợp lệ.' });
+      }
+      if (typeof password !== 'undefined' && (typeof password !== 'string' || password.length < 8)) {
+        return res.status(400).json({ success: false, message: 'Mật khẩu phải có ít nhất 8 ký tự.' });
       }
       const existingUser = UserModel.findById(id);
       if (existingUser && typeof status !== 'undefined' && status !== existingUser.status) {
@@ -360,6 +469,11 @@ class UserController {
         roles,
         status
       });
+
+      if (typeof password === 'string' && password.length >= 8) {
+        const passwordHash = await hashPassword(password);
+        UserModel.setPassword(id, passwordHash);
+      }
 
       return res.status(200).json({
         success: true,
@@ -550,6 +664,14 @@ class UserController {
    * POST /api/users/reset
    */
   static async resetData(req, res, next) {
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({
+        success: false,
+        code: 'PRODUCTION_OPERATION_DISABLED',
+        message: 'Không thể khôi phục dữ liệu mẫu trong môi trường production.'
+      });
+    }
+
     try {
       const users = UserModel.reset();
       return res.status(200).json({

@@ -70,6 +70,32 @@ function captureNextResetToken() {
     });
 }
 
+test('reset-password: yêu cầu mới vô hiệu hóa liên kết cũ của cùng tài khoản', async () => {
+    const oldToken = await captureNextResetToken();
+    assert.ok(oldToken, 'Yêu cầu đầu tiên phải tạo token');
+
+    const newToken = await captureNextResetToken();
+    assert.ok(newToken, 'Yêu cầu mới phải tạo token mới');
+    assert.notEqual(newToken, oldToken);
+    assert.equal(resetTokens.has(oldToken), false, 'Token cũ phải bị xóa khi phát hành liên kết mới');
+    assert.equal(resetTokens.has(newToken), true, 'Token mới phải còn hiệu lực');
+
+    const oldTokenResult = await post('/api/reset-password', {
+        token: oldToken,
+        password: 'OldLinkPassword@123'
+    });
+    assert.equal(oldTokenResult.response.status, 400);
+    assert.equal(oldTokenResult.data.success, false);
+    assert.match(oldTokenResult.data.message, /không hợp lệ hoặc đã hết hạn/);
+
+    const newTokenResult = await post('/api/reset-password', {
+        token: newToken,
+        password: 'NewestLinkPassword@123'
+    });
+    assert.equal(newTokenResult.response.status, 200);
+    assert.equal(newTokenResult.data.success, true);
+});
+
 test('reset-password: token hết hạn (expiresAt trong quá khứ) bị từ chối', async () => {
     const expiredToken = crypto.randomBytes(32).toString('hex');
     // Inject token đã hết hạn trực tiếp vào Map

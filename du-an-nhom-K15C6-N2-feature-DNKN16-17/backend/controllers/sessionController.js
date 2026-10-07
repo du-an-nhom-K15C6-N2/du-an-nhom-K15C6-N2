@@ -3,8 +3,7 @@ const { sessions, SESSION_TTL } = require('../services/sessionService');
 const LoginAttemptService = require('../services/loginAttemptService');
 const UserModel = require('../models/userModel');
 const { verifyPassword } = require('../security/password');
-
-const ALLOWED_ROLES = new Set(['admin', 'teacher', 'assistant', 'student', 'manager']);
+const { ALLOWED_ROLES } = require('../config/rolePermissions');
 
 class SessionController {
   /**

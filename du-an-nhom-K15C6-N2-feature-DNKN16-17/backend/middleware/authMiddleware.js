@@ -3,6 +3,7 @@
  */
 const UserModel = require('../models/userModel');
 const { verifyToken } = require('../security/token');
+const { hasPermission } = require('../config/rolePermissions');
 
 const requireAuth = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -40,29 +41,52 @@ const requireAuth = (req, res, next) => {
   next();
 };
 
+function denyAccess(res, featureName, userRoles, message) {
+  return res.status(403).json({
+    success: false,
+    code: 'ACCESS_FORBIDDEN',
+    errorType: 'forbidden',
+    message: message || `Bạn chưa được cấp quyền truy cập ${featureName}. Vui lòng liên hệ quản trị viên nếu bạn cần quyền này.`,
+    featureName,
+    role: userRoles[0] || null,
+    roles: userRoles
+  });
+}
+
 const requireRoles = (roles, { featureName = 'chức năng này', message } = {}) => (req, res, next) => {
   const userRoles = UserModel.getRoles(req.user);
   if (!req.user || !roles.some(role => userRoles.includes(role))) {
-    return res.status(403).json({
-      success: false,
-      code: 'ACCESS_FORBIDDEN',
-      errorType: 'forbidden',
-      message: message || 'Bạn không có quyền truy cập chức năng này.',
-      featureName,
-      role: userRoles[0] || null,
-      roles: userRoles
-    });
+    return denyAccess(res, featureName, userRoles, message);
   }
   next();
 };
 
+const requirePermission = (
+  permission,
+  { featureName = 'chức năng này', fieldPermissions = {} } = {}
+) => (req, res, next) => {
+  const userRoles = UserModel.getRoles(req.user);
+  if (!req.user || !hasPermission(req.user, permission)) {
+    return denyAccess(res, featureName, userRoles);
+  }
+
+  const body = req.body || {};
+  for (const [field, fieldPermission] of Object.entries(fieldPermissions)) {
+    if (Object.prototype.hasOwnProperty.call(body, field) && !hasPermission(req.user, fieldPermission)) {
+      return denyAccess(res, featureName, userRoles);
+    }
+  }
+
+  next();
+};
+
 const requireAdmin = requireRoles(['admin'], {
-  featureName: 'quản lý người dùng',
-  message: 'Bạn không có quyền quản trị viên (Admin) để thực hiện thao tác này.'
+  featureName: 'quản lý người dùng'
 });
 
 module.exports = {
   requireAuth,
   requireAdmin,
-  requireRoles
+  requireRoles,
+  requirePermission
 };

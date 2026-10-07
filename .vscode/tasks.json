@@ -1,0 +1,14 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build app",
+            "type": "shell",
+            "command": "npm run build",
+            "options": {
+                "cwd": "${workspaceFolder}/du-an-nhom-K15C6-N2-feature-DNKN16-17"
+            },
+            "problemMatcher": "$tsc"
+        }
+    ]
+}

@@ -8,8 +8,10 @@ export const USER_ROLES = {
   TEACHER: 'TEACHER',
   ASSISTANT: 'ASSISTANT',
   STUDENT: 'STUDENT',
-  // Kept for older client-side links.
   MANAGER: 'MANAGER',
+  ACCOUNTANT: 'ACCOUNTANT',
+  DEPARTMENT_HEAD: 'DEPARTMENT_HEAD',
+  TRAINING_STAFF: 'TRAINING_STAFF',
   USER: 'USER'
 };
 
@@ -48,6 +50,27 @@ export const ROLE_NAVIGATION_MAP = {
     description: 'Theo dõi tiến độ dự án, báo cáo nhóm và phê duyệt tài liệu.',
     badgeColor: '#f59e0b',
     icon: 'briefcase'
+  },
+  [USER_ROLES.ACCOUNTANT]: {
+    path: '/accountant/dashboard',
+    title: 'Khu vực Kế toán',
+    description: 'Quản lý học phí và báo cáo tài chính.',
+    badgeColor: '#10b981',
+    icon: 'briefcase'
+  },
+  [USER_ROLES.DEPARTMENT_HEAD]: {
+    path: '/department-head/dashboard',
+    title: 'Khu vực Trưởng bộ môn',
+    description: 'Theo dõi lớp học, điểm số và báo cáo học thuật của bộ môn.',
+    badgeColor: '#8b5cf6',
+    icon: 'users'
+  },
+  [USER_ROLES.TRAINING_STAFF]: {
+    path: '/training/dashboard',
+    title: 'Khu vực Nhân viên đào tạo',
+    description: 'Quản lý hồ sơ học viên và lớp học.',
+    badgeColor: '#06b6d4',
+    icon: 'users'
   },
   [USER_ROLES.USER]: {
     path: '/user/workspace',

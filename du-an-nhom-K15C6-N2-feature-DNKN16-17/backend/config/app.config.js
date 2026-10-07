@@ -29,10 +29,12 @@ module.exports = {
   SESSION_STORE_FILE: process.env.SESSION_STORE_FILE || path.resolve(__dirname, '../data/revoked-sessions.json'),
   LOGIN_ATTEMPT_STORE_FILE: process.env.LOGIN_ATTEMPT_STORE_FILE || path.resolve(__dirname, '../data/login-attempts.json'),
   ATTENDANCE_DATA_FILE: process.env.ATTENDANCE_DATA_FILE || path.resolve(__dirname, '../data/attendance.json'),
+  GRADES_DATA_FILE: process.env.GRADES_DATA_FILE || path.resolve(__dirname, '../data/grades.json'),
+  TUITION_DATA_FILE: process.env.TUITION_DATA_FILE || path.resolve(__dirname, '../data/tuition.json'),
   DEFAULT_PAGE_SIZE: 20,
   MAX_CONSECUTIVE_FAILS: 5,
   LOCKOUT_DURATION_MS: 15 * 60 * 1000, // 15 phút
   SMTP_USER: process.env.SMTP_USER || '',
   SMTP_PASS: process.env.SMTP_PASS || '',
-  RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL || ''
+  RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL || process.env.RENDER_EXTERNAL_URL || ''
 };

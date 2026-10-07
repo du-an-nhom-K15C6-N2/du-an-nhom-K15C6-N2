@@ -20,6 +20,7 @@
         }
 
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        [hidden] { display: none !important; }
 
         body {
             margin: 0;
@@ -383,7 +384,7 @@
 
             const minutes = String(Math.floor(remainingSeconds / 60)).padStart(2, "0");
             const seconds = String(remainingSeconds % 60).padStart(2, "0");
-            lockoutAlert.textContent = `Email hoặc mật khẩu không đúng. Có thể thử lại sau ${minutes}:${seconds}.`;
+            lockoutAlert.textContent = `Thời gian thử lại sau: ${minutes}:${seconds}.`;
         };
 
         renderCountdown();

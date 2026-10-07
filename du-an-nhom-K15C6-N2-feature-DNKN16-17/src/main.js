@@ -5,11 +5,11 @@
 
 import './style.css';
 import { authState } from './core/authState.js';
+import { registerAccessForbiddenHandler } from './core/accessForbidden.js';
 import { saveFormDraft } from './core/formDrafts.js';
 import {
   getAppRouteError,
-  getSafeAppPath,
-  ROLE_NAVIGATION_MAP
+  getSafeAppPath
 } from './core/navigation.js';
 import { renderLoginForm } from './components/LoginForm.js';
 import { renderAppErrorScreen } from './components/AppErrorScreen.js';
@@ -76,20 +76,7 @@ window.addEventListener('popstate', () => {
   renderApp();
 });
 
-window.addEventListener('app:access-forbidden', (event) => {
-  const state = authState.getState();
-  const role = (event.detail?.role || state.role || '').toUpperCase();
-  const navigationTarget = state.navigationTarget || ROLE_NAVIGATION_MAP[role];
-  renderAppErrorScreen(appContainer, {
-    type: 'forbidden',
-    safePath: getSafeAppPath(
-      state.isAuthenticated || Boolean(ROLE_NAVIGATION_MAP[role]),
-      navigationTarget
-    ),
-    featureName: event.detail?.featureName || null,
-    role: role || null
-  });
-});
+registerAccessForbiddenHandler(appContainer, () => authState.getState());
 
 window.addEventListener('app:resource-not-found', () => {
   const state = authState.getState();

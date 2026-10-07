@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: ttcs-classroom
+    runtime: node
+    plan: starter
+    region: singapore
+    rootDir: du-an-nhom-K15C6-N2-feature-DNKN16-17
+    buildCommand: npm ci && npm run build
+    startCommand: npm run server
+    healthCheckPath: /api/health
+    disk:
+      name: ttcs-classroom-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_FILE
+        value: /var/data/users.json
+      - key: SESSION_STORE_FILE
+        value: /var/data/revoked-sessions.json
+      - key: LOGIN_ATTEMPT_STORE_FILE
+        value: /var/data/login-attempts.json
+      - key: ATTENDANCE_DATA_FILE
+        value: /var/data/attendance.json
+      - key: GRADES_DATA_FILE
+        value: /var/data/grades.json
+      - key: TUITION_DATA_FILE
+        value: /var/data/tuition.json
+      - key: AUTH_TOKEN_SECRET
+        generateValue: true
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false

@@ -6,6 +6,8 @@ const userRoutes = require('./userRoutes');
 const attendanceRoutes = require('./attendanceRoutes');
 const sessionRoutes = require('./sessionRoutes');
 const classRoutes = require('./classRoutes');
+const gradeRoutes = require('./gradeRoutes');
+const tuitionRoutes = require('./tuitionRoutes');
 const AuthController = require('../controllers/authController');
 
 // API Health Check (tương thích cả 2 định dạng)
@@ -26,6 +28,8 @@ router.use('/users', userRoutes);
 router.use('/attendance', attendanceRoutes);
 router.use('/session', sessionRoutes);
 router.use('/classes', classRoutes);
+router.use('/grades', gradeRoutes);
+router.use('/tuition', tuitionRoutes);
 
 // Endpoint đặt lại mật khẩu trực tiếp theo đặc tả nhánh feature
 router.post('/forgot-password', AuthController.forgotPassword);

@@ -79,6 +79,23 @@ test('forgot-password: email không tồn tại nhận cùng thông báo, không
     assert.match(data.message, /SMTP chưa cấu hình/);
 });
 
+test('auth API liên kết luồng yêu cầu và đặt lại mật khẩu qua cùng namespace', async () => {
+    const requestResult = await post('/api/auth/forgot-password', { email: 'user@test.edu' });
+    assert.equal(requestResult.response.status, 200);
+    assert.equal(requestResult.data.success, true);
+
+    const token = latestResetToken('user@test.edu');
+    assert.ok(token, 'Yêu cầu qua /api/auth phải tạo token đặt lại');
+
+    const resetResult = await post('/api/auth/reset-password', {
+        token,
+        password: 'NamespacedPassword@123'
+    });
+    assert.equal(resetResult.response.status, 200);
+    assert.equal(resetResult.data.success, true);
+    assert.equal(require('./backend/controllers/authController').resetTokens.has(token), false);
+});
+
 test('forgot-password: email tồn tại tạo token nhưng không trả lộ địa chỉ email', async () => {
     const { response, data } = await post('/api/forgot-password', { email: 'user@test.edu' });
 
@@ -137,6 +154,62 @@ test('forgot-password: API gửi email chứa liên kết token dùng để đ�
     assert.ok(tokenEntry, 'Token từ liên kết phải được lưu để xác thực');
     assert.equal(tokenEntry.email, 'user@test.edu');
     assert.ok(tokenEntry.expiresAt >= beforeRequest + (30 * 60 * 1000) - 100);
+});
+
+test('forgot-password: SMTP lỗi ở local vẫn ghi và giữ liên kết đặt lại dùng được', async () => {
+    const nodemailer = require('nodemailer');
+    const AuthController = require('./backend/controllers/authController');
+    const originalCreateTransport = nodemailer.createTransport;
+    const originalEnv = {
+        SMTP_USER: process.env.SMTP_USER,
+        SMTP_PASS: process.env.SMTP_PASS,
+        RESET_PASSWORD_URL: process.env.RESET_PASSWORD_URL,
+        NODE_ENV: process.env.NODE_ENV
+    };
+    const originalConsoleInfo = console.info;
+    const originalConsoleError = console.error;
+    const loggedInfo = [];
+
+    process.env.SMTP_USER = 'reset-test@example.test';
+    process.env.SMTP_PASS = 'test-only-password';
+    process.env.RESET_PASSWORD_URL = 'https://classroom.example.test';
+    process.env.NODE_ENV = 'development';
+    nodemailer.createTransport = () => ({
+        sendMail: async () => {
+            throw new Error('SMTP unavailable');
+        }
+    });
+    console.info = (...args) => loggedInfo.push(args.join(' '));
+    console.error = () => {};
+
+    let response;
+    let data;
+    try {
+        ({ response, data } = await post('/api/forgot-password', { email: 'user@test.edu' }));
+    } finally {
+        nodemailer.createTransport = originalCreateTransport;
+        console.info = originalConsoleInfo;
+        console.error = originalConsoleError;
+        for (const [key, value] of Object.entries(originalEnv)) {
+            if (value === undefined) delete process.env[key];
+            else process.env[key] = value;
+        }
+    }
+
+    assert.equal(response.status, 200);
+    assert.equal(data.success, true);
+    assert.doesNotMatch(data.message, /SMTP lỗi|SMTP unavailable|user@test\.edu/i);
+
+    const loggedLink = loggedInfo.join('\n').match(/https:\/\/classroom\.example\.test\/reset-password\.html\?token=([a-f0-9]{64})/);
+    assert.ok(loggedLink, 'Backend terminal phải hiển thị liên kết dự phòng');
+    assert.ok(AuthController.resetTokens.has(loggedLink[1]), 'Token dự phòng vẫn phải có hiệu lực');
+
+    const { response: resetResponse, data: resetData } = await post('/api/reset-password', {
+        token: loggedLink[1],
+        password: 'LocalFallback@123'
+    });
+    assert.equal(resetResponse.status, 200);
+    assert.equal(resetData.success, true);
 });
 
 

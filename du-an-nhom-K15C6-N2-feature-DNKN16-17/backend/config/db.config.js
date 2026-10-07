@@ -46,8 +46,11 @@ class Database {
     }
 
     if (!fs.existsSync(this.dataFile)) {
-      this.writeUsers(INITIAL_USERS);
-      console.log('📦 Đã khởi tạo cơ sở dữ liệu với 28 tài khoản mẫu chuẩn EP-01.');
+      const initialUsers = process.env.NODE_ENV === 'production' ? [] : INITIAL_USERS;
+      this.writeUsers(initialUsers);
+      if (initialUsers.length) {
+        console.log('📦 Đã khởi tạo cơ sở dữ liệu với 28 tài khoản mẫu chuẩn EP-01.');
+      }
     }
   }
 
@@ -76,6 +79,9 @@ class Database {
   }
 
   reset() {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Không thể khôi phục dữ liệu mẫu trong môi trường production.');
+    }
     this.writeUsers(INITIAL_USERS);
     return [...INITIAL_USERS];
   }

@@ -5,8 +5,12 @@
     "name": "Lập trình Web",
     "room": "A101",
     "schedule": "Thứ 2 • 07:30–09:30",
-    "teacherId": "usr_026",
-    "status": "active"
+    "teacherId": "usr_002",
+    "status": "active",
+    "handoverAt": "2026-10-07T10:28:26.499Z",
+    "handoverBy": "usr_001",
+    "handoverByName": "Giáp Văn Hiếu",
+    "previousTeacherId": "usr_026"
   },
   {
     "id": "cls_002",

@@ -131,7 +131,7 @@ export function renderLoginForm(container) {
                 <label for="login-password" class="form-label">
                   Mật khẩu <span class="required">*</span>
                 </label>
-                <a href="#forgot" class="forgot-link" id="link-forgot-password">Quên mật khẩu?</a>
+                <a href="/forgot-password.html" class="forgot-link" id="link-forgot-password">Quên mật khẩu?</a>
               </div>
               <div class="input-container">
                 <span class="input-icon">

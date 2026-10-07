@@ -88,6 +88,38 @@ export function renderRoleDashboard(container) {
           { name: 'Báo cáo Hoạt động Tuần/Tháng', desc: 'Tổng hợp số liệu năng suất phòng ban', status: 'Trưởng nhóm' }
         ]
       },
+      ACCOUNTANT: {
+        title: 'Khu Vực Kế Toán',
+        route: '/accountant/dashboard',
+        badgeClass: 'role-manager',
+        accentColor: '#10b981',
+        icon: '💰',
+        modules: [
+          { name: 'Quản lý học phí', desc: 'Theo dõi và cập nhật nghiệp vụ học phí', status: 'Kế toán' },
+          { name: 'Báo cáo tài chính', desc: 'Xem báo cáo tài chính được phân quyền', status: 'Kế toán' }
+        ]
+      },
+      DEPARTMENT_HEAD: {
+        title: 'Khu Vực Trưởng Bộ Môn',
+        route: '/department-head/dashboard',
+        badgeClass: 'role-manager',
+        accentColor: '#8b5cf6',
+        icon: '🏫',
+        modules: [
+          { name: 'Theo dõi chuyên môn', desc: 'Theo dõi lớp học, điểm và báo cáo học thuật', status: 'Trưởng bộ môn' }
+        ]
+      },
+      TRAINING_STAFF: {
+        title: 'Khu Vực Nhân Viên Đào Tạo',
+        route: '/training/dashboard',
+        badgeClass: 'role-manager',
+        accentColor: '#06b6d4',
+        icon: '🗂️',
+        modules: [
+          { name: 'Hồ sơ học viên', desc: 'Quản lý hồ sơ người học theo quyền được cấp', status: 'Nhân viên đào tạo' },
+          { name: 'Quản lý lớp học', desc: 'Theo dõi và cập nhật thông tin lớp học', status: 'Nhân viên đào tạo' }
+        ]
+      },
       USER: {
         title: 'Không Gian Làm Việc Nhân Viên',
         route: '/user/workspace',

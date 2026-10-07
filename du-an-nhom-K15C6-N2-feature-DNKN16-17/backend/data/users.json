@@ -1,5 +1,19 @@
 [
   {
+    "id": "usr_fcb3190fc435f441",
+    "name": "TRAN MANH HUNG",
+    "email": "letranmanhhung2006@gmail.com",
+    "phone": "0327295830",
+    "role": "student",
+    "roles": [
+      "student"
+    ],
+    "roleLabel": "Học sinh",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "passwordHash": "scrypt$1ae85ea013eb0c74d922782bbc484855$46f6df34a067c3b418c4ccb134fdfad983a1a0a24f3d7c5b814b938d5761018c06d6e1de5bd140273b3ab9db31d8775b42171d8a2ae7e4448802986955fe533e"
+  },
+  {
     "id": "usr_mutka14e",
     "name": "NGO TRUNG HIEU",
     "email": "hieu12032006@gmail.com",
@@ -30,7 +44,10 @@
     "roleLabel": "Quản trị viên",
     "status": "active",
     "statusLabel": "Đang hoạt động",
-    "passwordHash": "scrypt$c5ee8451f4dbb7ccf7730b34b42874a6$90b27cac7268d2fd2bf129f2bfaeecbc0d2bbe1814e18c356532e94bdf612a0a9c7ddbc03b117b218d39831941d697b1bad4bcc60302cca281b9276deab31fb2"
+    "passwordHash": "scrypt$c5ee8451f4dbb7ccf7730b34b42874a6$90b27cac7268d2fd2bf129f2bfaeecbc0d2bbe1814e18c356532e94bdf612a0a9c7ddbc03b117b218d39831941d697b1bad4bcc60302cca281b9276deab31fb2",
+    "roles": [
+      "admin"
+    ]
   },
   {
     "id": "usr_002",

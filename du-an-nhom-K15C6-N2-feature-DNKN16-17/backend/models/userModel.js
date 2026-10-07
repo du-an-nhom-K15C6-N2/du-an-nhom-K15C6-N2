@@ -2,15 +2,17 @@ const db = require('../config/db.config');
 const config = require('../config/app.config');
 const { hashPasswordSync } = require('../security/password');
 const crypto = require('crypto');
+const {
+  ALLOWED_ROLES,
+  ROLE_CATALOG,
+  getRoles: getEffectiveRoles,
+  isValidRoleAssignment,
+  getRoleAssignmentError
+} = require('../config/rolePermissions');
 
-const ROLE_MAP = {
-  admin: 'Quản trị viên',
-  teacher: 'Giảng viên',
-  student: 'Học sinh',
-  assistant: 'Trợ giảng',
-  manager: 'Quản lý đào tạo'
-};
-const ALLOWED_ROLES = new Set(Object.keys(ROLE_MAP));
+const ROLE_MAP = Object.fromEntries(
+  Object.entries(ROLE_CATALOG).map(([role, definition]) => [role, definition.label])
+);
 
 const STATUS_MAP = {
   active: 'Đang hoạt động',
@@ -20,10 +22,7 @@ const STATUS_MAP = {
 
 class UserModel {
   static getRoles(user) {
-    if (Array.isArray(user?.roles)) {
-      return [...new Set(user.roles.filter(role => ALLOWED_ROLES.has(role)))];
-    }
-    return ALLOWED_ROLES.has(user?.role) ? [user.role] : [];
+    return getEffectiveRoles(user);
   }
 
   static getRoleLabels(roles) {
@@ -141,6 +140,9 @@ class UserModel {
     }
 
     const roles = userData.roles || [userData.role || 'student'];
+    if (!isValidRoleAssignment(roles)) {
+      throw new Error(getRoleAssignmentError(roles));
+    }
     const role = roles[0];
     const status = 'pending';
 
@@ -183,13 +185,41 @@ class UserModel {
     return user;
   }
 
+  static activatePendingAccount(id) {
+    const users = db.readUsers();
+    const user = users.find(candidate => candidate.id === id);
+    if (!user || user.status !== 'pending') return null;
+
+    user.status = 'active';
+    user.statusLabel = STATUS_MAP.active;
+    delete user.activationTokenHash;
+    delete user.activationExpiresAt;
+    db.writeUsers(users);
+    return user;
+  }
+
+  static renewActivation(id, { passwordHash, activationTokenHash, activationExpiresAt }) {
+    const users = db.readUsers();
+    const user = users.find(candidate => candidate.id === id);
+    if (!user) throw new Error('Không tìm thấy tài khoản người dùng.');
+    if (user.status !== 'pending') {
+      throw new Error('Chỉ có thể gửi lại email cho tài khoản đang chờ kích hoạt.');
+    }
+
+    user.passwordHash = passwordHash;
+    user.activationTokenHash = activationTokenHash;
+    user.activationExpiresAt = activationExpiresAt;
+    db.writeUsers(users);
+    return user;
+  }
+
   static setRoles(id, roles) {
     const users = db.readUsers();
     const user = users.find(candidate => candidate.id === id);
     if (!user) throw new Error('Không tìm thấy tài khoản người dùng cần cập nhật.');
     const uniqueRoles = [...new Set(roles)];
-    if (!uniqueRoles.length || uniqueRoles.some(role => !ALLOWED_ROLES.has(role))) {
-      throw new Error('Tài khoản phải có ít nhất một vai trò hợp lệ.');
+    if (!isValidRoleAssignment(uniqueRoles)) {
+      throw new Error(getRoleAssignmentError(uniqueRoles));
     }
     user.roles = uniqueRoles;
     user.role = uniqueRoles.includes(user.role) ? user.role : uniqueRoles[0];
@@ -236,8 +266,8 @@ class UserModel {
       : userData.role
         ? [userData.role]
         : UserModel.getRoles(users[index]);
-    if (!roles.length || roles.some(role => !ALLOWED_ROLES.has(role))) {
-      throw new Error('Tài khoản phải có ít nhất một vai trò hợp lệ.');
+    if (!isValidRoleAssignment(roles)) {
+      throw new Error(getRoleAssignmentError(roles));
     }
     const role = roles.includes(users[index].role) ? users[index].role : roles[0];
     const status = userData.status || users[index].status;
@@ -352,20 +382,54 @@ class UserModel {
     return db.reset();
   }
 
+  static hasActiveAdminCredentials() {
+    return db.readUsers().some(user =>
+      user.status === 'active'
+      && typeof user.passwordHash === 'string'
+      && /^scrypt\$[a-f0-9]{32}\$[a-f0-9]{128}$/i.test(user.passwordHash)
+      && UserModel.getRoles(user).includes('admin')
+    );
+  }
+
   static bootstrapAdminCredentials(email, password) {
-    if (typeof password !== 'string' || password.length < 8) {
-      throw new Error('Mật khẩu quản trị viên ban đầu phải có ít nhất 8 ký tự.');
+    if (typeof email !== 'string' || !email.trim()) {
+      throw new Error('Cần cấu hình email quản trị viên ban đầu hợp lệ.');
     }
-    const admin = this.findByEmail(email);
-    if (!admin || !this.getRoles(admin).includes('admin')) {
-      throw new Error('Không tìm thấy tài khoản quản trị viên để cấp mật khẩu ban đầu.');
+    if (typeof password !== 'string' || password.length < 12) {
+      throw new Error('Mật khẩu quản trị viên ban đầu phải có ít nhất 12 ký tự.');
     }
-    if (!admin.passwordHash) {
-      const users = db.readUsers();
-      const adminIndex = users.findIndex(user => user.id === admin.id);
-      users[adminIndex].passwordHash = hashPasswordSync(password);
-      db.writeUsers(users);
+
+    const users = db.readUsers();
+    const admin = users.find(user => user.email.toLowerCase() === email.trim().toLowerCase());
+    if (admin && !this.getRoles(admin).includes('admin')) {
+      throw new Error('Email bootstrap đã thuộc về tài khoản không phải quản trị viên.');
     }
+
+    if (admin) {
+      if (!admin.passwordHash) {
+        admin.passwordHash = hashPasswordSync(password);
+        db.writeUsers(users);
+      }
+      return;
+    }
+
+    if (process.env.NODE_ENV !== 'production' || users.length > 0) {
+      throw new Error('Không tìm thấy tài khoản quản trị viên ban đầu trong dữ liệu hiện có.');
+    }
+
+    const newAdmin = {
+      id: `usr_${crypto.randomBytes(8).toString('hex')}`,
+      name: 'Quản trị viên hệ thống',
+      email: email.trim().toLowerCase(),
+      phone: '',
+      role: 'admin',
+      roles: ['admin'],
+      roleLabel: ROLE_MAP.admin,
+      status: 'active',
+      statusLabel: STATUS_MAP.active,
+      passwordHash: hashPasswordSync(password)
+    };
+    db.writeUsers([newAdmin]);
   }
 }
 

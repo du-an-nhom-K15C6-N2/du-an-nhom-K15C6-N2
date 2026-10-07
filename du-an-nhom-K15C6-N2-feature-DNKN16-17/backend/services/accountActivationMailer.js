@@ -2,14 +2,21 @@ const nodemailer = require('nodemailer');
 const config = require('../config/app.config');
 
 function getTransporter() {
-  const user = process.env.SMTP_USER || config.SMTP_USER;
-  const pass = process.env.SMTP_PASS || config.SMTP_PASS;
+  const user = String(process.env.SMTP_USER || config.SMTP_USER || '').trim();
+  const pass = String(process.env.SMTP_PASS || config.SMTP_PASS || '').trim();
+  const placeholderValues = new Set([
+    'your-gmail@gmail.com',
+    'your-16-character-google-app-password',
+    'email_cua_ban@gmail.com',
+    'xxxx xxxx xxxx xxxx'
+  ]);
+
   if (
     process.env.NODE_ENV === 'test'
     || !user
     || !pass
-    || user === 'your-gmail@gmail.com'
-    || pass === 'your-16-character-google-app-password'
+    || placeholderValues.has(user.toLowerCase())
+    || placeholderValues.has(pass.toLowerCase())
   ) {
     return null;
   }

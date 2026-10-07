@@ -65,7 +65,10 @@
     teacher: 'Giảng viên',
     assistant: 'Trợ giảng',
     student: 'Học sinh / Sinh viên',
-    manager: 'Quản lý đào tạo'
+    manager: 'Quản lý đào tạo',
+    accountant: 'Kế toán',
+    department_head: 'Trưởng bộ môn',
+    training_staff: 'Nhân viên đào tạo'
   };
 
   function roleLabelFor(role) {
@@ -339,6 +342,40 @@
       }
     },
 
+    resendActivation: async function (id) {
+      try {
+        const res = await fetch(`/api/users/${id}/resend-activation`, {
+          method: 'POST',
+          headers: getAuthHeaders()
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          throw new Error(result.message || 'Không thể gửi lại email kích hoạt');
+        }
+        return result;
+      } catch (err) {
+        console.warn('Lỗi gọi API POST /api/users/:id/resend-activation:', err);
+        throw err;
+      }
+    },
+
+    activatePendingAccount: async function (id) {
+      try {
+        const res = await fetch(`/api/users/${id}/activate`, {
+          method: 'PATCH',
+          headers: getAuthHeaders()
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          throw new Error(result.message || 'Không thể kích hoạt tài khoản');
+        }
+        return result;
+      } catch (err) {
+        console.warn('Lỗi gọi API PATCH /api/users/:id/activate:', err);
+        throw err;
+      }
+    },
+
     /**
      * API Xóa tài khoản -> DELETE /api/users/:id
      */
@@ -477,9 +514,11 @@
           if (!this.lockoutExpiry || this.lockoutExpiry <= Date.now()) return;
           const isLockedEmail = loginEmailInput.value.trim().toLowerCase() === this.lockedEmail;
           const lockoutBox = document.getElementById('lockout-alert-box');
+          const countdownDisplay = document.getElementById('lockout-countdown-display');
           const passwordInput = document.getElementById('input-password');
           const submitButton = document.getElementById('btn-submit-login');
           if (lockoutBox) lockoutBox.style.display = isLockedEmail ? 'flex' : 'none';
+          if (countdownDisplay) countdownDisplay.hidden = !isLockedEmail;
           if (passwordInput) passwordInput.disabled = isLockedEmail;
           if (submitButton) submitButton.disabled = isLockedEmail;
           if (!isLockedEmail) {
@@ -625,13 +664,15 @@
 
     activateLockoutUI: function () {
       const lockoutBox = document.getElementById('lockout-alert-box');
+      const countdownDisplay = document.getElementById('lockout-countdown-display');
       const errorBox = document.getElementById('error-alert-box');
       const emailInput = document.getElementById('input-email');
       const pwdInput = document.getElementById('input-password');
       const submitBtn = document.getElementById('btn-submit-login');
       const timerDisplay = document.getElementById('lockout-timer-display');
 
-      if (lockoutBox) lockoutBox.style.display = 'flex';
+      if (lockoutBox) lockoutBox.hidden = true;
+      if (countdownDisplay) countdownDisplay.hidden = false;
       if (errorBox) errorBox.style.display = 'flex';
 
       if (emailInput) emailInput.disabled = false;
@@ -672,11 +713,13 @@
 
     deactivateLockoutUI: function () {
       const lockoutBox = document.getElementById('lockout-alert-box');
+      const countdownDisplay = document.getElementById('lockout-countdown-display');
       const emailInput = document.getElementById('input-email');
       const pwdInput = document.getElementById('input-password');
       const submitBtn = document.getElementById('btn-submit-login');
 
       if (lockoutBox) lockoutBox.style.display = 'none';
+      if (countdownDisplay) countdownDisplay.hidden = true;
       if (emailInput) emailInput.disabled = false;
       if (pwdInput) pwdInput.disabled = false;
       if (submitBtn) submitBtn.disabled = false;
@@ -1359,9 +1402,16 @@
                     <button type="button" class="btn-table-action btn-action-edit" onclick="app.openEditUserModal('${u.id}')" title="Sửa thông tin">
                       ✏️ Sửa
                     </button>
-                    <button type="button" class="btn-table-action btn-action-lock" onclick="app.toggleLockUser('${u.id}')" title="${u.status === 'locked' ? 'Mở khóa' : 'Khóa'}">
-                      ${u.status === 'locked' ? '🔓 Mở' : '🔒 Khóa'}
-                    </button>
+                    ${u.status === 'pending'
+                      ? `<button type="button" class="btn-table-action btn-action-activation" onclick="app.activatePendingUser('${u.id}')" title="Kích hoạt tài khoản trực tiếp">
+                          ✓ Kích hoạt
+                        </button>
+                        <button type="button" class="btn-table-action btn-action-activation" onclick="app.resendActivationEmail('${u.id}')" title="Gửi lại liên kết kích hoạt và mật khẩu tạm qua email">
+                          ✉️ Gửi email
+                        </button>`
+                      : `<button type="button" class="btn-table-action btn-action-lock" onclick="app.toggleLockUser('${u.id}')" title="${u.status === 'locked' ? 'Mở khóa' : 'Khóa'}">
+                          ${u.status === 'locked' ? '🔓 Mở' : '🔒 Khóa'}
+                        </button>`}
                     <button type="button" class="btn-table-action btn-action-delete" onclick="app.deleteUser('${u.id}', '${this.escapeHtml(u.name)}')" title="Xóa tài khoản">
                       🗑️
                     </button>
@@ -1487,6 +1537,7 @@
       const nameInput = document.getElementById('form-fullname');
       const emailInput = document.getElementById('form-email');
       const phoneInput = document.getElementById('form-phone');
+      const passwordInput = document.getElementById('form-password');
       const statusSelect = document.getElementById('form-status');
       const statusGroup = document.getElementById('form-status-group');
       const lockReasonGroup = document.getElementById('form-lock-reason-group');
@@ -1496,7 +1547,7 @@
       const modalAlert = document.getElementById('modal-error-alert');
 
       if (title) title.textContent = 'Thêm Tài Khoản Mới';
-      if (subtitle) subtitle.textContent = 'Hệ thống tự tạo mật khẩu tạm và gửi liên kết kích hoạt đến email.';
+      if (subtitle) subtitle.textContent = 'Nhập thông tin tài khoản và mật khẩu hoặc để hệ thống tự tạo mật khẩu tạm cho lần kích hoạt đầu tiên.';
       if (idInput) idInput.value = '';
       if (nameInput) nameInput.value = '';
       if (emailInput) {
@@ -1504,13 +1555,17 @@
         emailInput.disabled = false;
       }
       if (phoneInput) phoneInput.value = '';
+      if (passwordInput) {
+        passwordInput.value = '';
+        passwordInput.disabled = false;
+      }
       if (statusSelect) { statusSelect.value = 'pending'; statusSelect.disabled = true; }
       this.setRoleCheckboxes(['student']);
       if (statusGroup) statusGroup.style.display = 'none';
       if (lockReasonGroup) lockReasonGroup.style.display = 'none';
       if (lockReasonInput) lockReasonInput.value = '';
       if (infoLabel) infoLabel.textContent = '🔐 Kích hoạt:';
-      if (securityNote) securityNote.textContent = 'Mật khẩu tạm được tạo tự động, gửi qua email và chỉ đăng nhập được sau khi kích hoạt.';
+      if (securityNote) securityNote.textContent = 'Mật khẩu có thể nhập thủ công hoặc hệ thống sẽ tạo mật khẩu tạm và gửi qua email để kích hoạt.';
       if (modalAlert) modalAlert.style.display = 'none';
 
       this.clearModalErrors();
@@ -1535,6 +1590,7 @@
       const nameInput = document.getElementById('form-fullname');
       const emailInput = document.getElementById('form-email');
       const phoneInput = document.getElementById('form-phone');
+      const passwordInput = document.getElementById('form-password');
       const statusSelect = document.getElementById('form-status');
       const statusGroup = document.getElementById('form-status-group');
       const lockReasonGroup = document.getElementById('form-lock-reason-group');
@@ -1544,7 +1600,7 @@
       const modalAlert = document.getElementById('modal-error-alert');
 
       if (title) title.textContent = `Chỉnh Sửa Tài Khoản: ${user.name}`;
-      if (subtitle) subtitle.textContent = 'Cập nhật thông tin và quyền truy cập của tài khoản.';
+      if (subtitle) subtitle.textContent = 'Cập nhật thông tin và quyền truy cập của tài khoản. Để trống nếu không muốn đổi mật khẩu.';
       if (idInput) idInput.value = user.id;
       if (nameInput) nameInput.value = user.name;
       if (emailInput) {
@@ -1552,6 +1608,10 @@
         emailInput.disabled = false;
       }
       if (phoneInput) phoneInput.value = user.phone;
+      if (passwordInput) {
+        passwordInput.value = '';
+        passwordInput.placeholder = 'Để trống nếu không muốn đổi mật khẩu';
+      }
       this.setRoleCheckboxes(Array.isArray(user.roles) && user.roles.length ? user.roles : [user.role]);
       if (statusSelect) { statusSelect.value = user.status; statusSelect.disabled = true; }
       if (statusGroup) statusGroup.style.display = '';
@@ -1585,9 +1645,11 @@
       const errName = document.getElementById('err-fullname');
       const errEmail = document.getElementById('err-email');
       const errPhone = document.getElementById('err-phone');
+      const errPassword = document.getElementById('err-password');
       if (errName) errName.textContent = '';
       if (errEmail) errEmail.textContent = '';
       if (errPhone) errPhone.textContent = '';
+      if (errPassword) errPassword.textContent = '';
     },
 
     handleUserFormSubmit: async function (e) {
@@ -1597,6 +1659,7 @@
       const name = document.getElementById('form-fullname').value.trim();
       const email = document.getElementById('form-email').value.trim();
       const phone = document.getElementById('form-phone').value.trim();
+      const password = document.getElementById('form-password')?.value || '';
       const roles = [...document.querySelectorAll('input[name="user-role"]:checked')]
         .map(input => input.value);
       const status = document.getElementById('form-status').value;
@@ -1606,6 +1669,7 @@
       const errName = document.getElementById('err-fullname');
       const errEmail = document.getElementById('err-email');
       const errPhone = document.getElementById('err-phone');
+      const errPassword = document.getElementById('err-password');
       const errRole = document.getElementById('err-role');
       const modalAlert = document.getElementById('modal-error-alert');
       const modalErrorText = document.getElementById('modal-error-text');
@@ -1643,6 +1707,14 @@
         if (errPhone) errPhone.textContent = '';
       }
 
+      const passwordRequired = !id || password.length > 0;
+      if (passwordRequired && password.length < 8) {
+        if (errPassword) errPassword.textContent = 'Mật khẩu phải có ít nhất 8 ký tự.';
+        hasError = true;
+      } else if (errPassword) {
+        errPassword.textContent = '';
+      }
+
       if (hasError) return;
 
       // Loading spinner in modal
@@ -1657,13 +1729,15 @@
       try {
         if (id) {
           // UPDATE
-          const res = await MockApi.updateUser(id, { name, email, phone, roles, status });
+          const payload = { name, email, phone, roles, status };
+          if (password) payload.password = password;
+          const res = await MockApi.updateUser(id, payload);
           this.showToast(res.message, 'success');
           this.closeUserModal();
           this.loadUsersTable();
         } else {
           // CREATE (AC1 & AC2)
-          const res = await MockApi.createUser({ name, email, phone, roles });
+          const res = await MockApi.createUser({ name, email, phone, roles, password });
           this.showToast(res.message, 'success');
           this.closeUserModal();
           this.loadUsersTable();
@@ -1702,6 +1776,43 @@
       }
 
       this.openLockReasonModal(id, user.name);
+    },
+
+    resendActivationEmail: async function (id) {
+      const user = (this.currentTableUsers || []).find(candidate => candidate.id === id);
+      if (!user || user.status !== 'pending') {
+        this.showToast('Chỉ tài khoản đang chờ kích hoạt mới có thể gửi lại email.', 'error');
+        return;
+      }
+      const confirmed = window.confirm(
+        `Gửi lại email kích hoạt cho ${user.email}? Liên kết và mật khẩu tạm hiện tại sẽ bị thay thế.`
+      );
+      if (!confirmed) return;
+
+      try {
+        const result = await ApiService.resendActivation(id);
+        this.showToast(result.message, 'success');
+        this.loadUsersTable();
+      } catch (error) {
+        this.showToast(error.message, 'error');
+      }
+    },
+
+    activatePendingUser: async function (id) {
+      const user = (this.currentTableUsers || []).find(candidate => candidate.id === id);
+      if (!user || user.status !== 'pending') {
+        this.showToast('Chỉ tài khoản đang chờ kích hoạt mới có thể được kích hoạt.', 'error');
+        return;
+      }
+      if (!window.confirm(`Kích hoạt tài khoản ${user.email} ngay bây giờ?`)) return;
+
+      try {
+        const result = await ApiService.activatePendingAccount(id);
+        this.showToast(result.message, 'success');
+        this.loadUsersTable();
+      } catch (error) {
+        this.showToast(error.message, 'error');
+      }
     },
 
     openLockReasonModal: function (id, name) {
@@ -2023,7 +2134,7 @@
       }
 
       try {
-        const res = await fetch('/api/forgot-password', {
+        const res = await fetch('/api/auth/forgot-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })

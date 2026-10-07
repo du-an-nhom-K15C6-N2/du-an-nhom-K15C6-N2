@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "permissions": [
+    "profile.read",
+    "profile.password.change",
+    "users.read",
+    "users.create",
+    "users.update",
+    "users.manage",
+    "roles.manage",
+    "users.delete",
+    "classes.read",
+    "classes.manage",
+    "classes.handover",
+    "attendance.read",
+    "attendance.write",
+    "grades.read",
+    "grades.write",
+    "tuition.read",
+    "tuition.write",
+    "students.manage",
+    "reports.academic.read",
+    "reports.finance.read",
+    "system.configure"
+  ],
+  "roles": {
+    "admin": {
+      "label": "Quản trị viên",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "users.read",
+        "users.create",
+        "users.update",
+        "users.manage",
+        "roles.manage",
+        "users.delete",
+        "classes.read",
+        "classes.manage",
+        "classes.handover",
+        "attendance.read",
+        "attendance.write",
+        "grades.read",
+        "grades.write",
+        "tuition.read",
+        "tuition.write",
+        "students.manage",
+        "reports.academic.read",
+        "reports.finance.read",
+        "system.configure"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển", "path": "/admin/dashboard" },
+        { "id": "attendance", "label": "Điểm danh lớp học", "path": "/admin/attendance" },
+        { "id": "class-management", "label": "Quản lý lớp học", "path": "/admin/classes" },
+        { "id": "user-management", "label": "Quản lý người dùng", "path": "/admin/users" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "teacher": {
+      "label": "Giảng viên",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "classes.read",
+        "attendance.read",
+        "attendance.write",
+        "grades.read",
+        "grades.write"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển", "path": "/teacher/dashboard" },
+        { "id": "attendance", "label": "Điểm danh lớp học", "path": "/teacher/attendance" },
+        { "id": "class-management", "label": "Lớp học", "path": "/teacher/classes" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "assistant": {
+      "label": "Trợ giảng",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "classes.read",
+        "attendance.read",
+        "attendance.write",
+        "grades.read"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển", "path": "/assistant/dashboard" },
+        { "id": "attendance", "label": "Điểm danh lớp học", "path": "/assistant/attendance" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "student": {
+      "label": "Học sinh / Sinh viên",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "classes.read",
+        "grades.read",
+        "tuition.read"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển", "path": "/student/dashboard" },
+        { "id": "my-courses", "label": "Lớp học của tôi", "path": "/student/courses" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "manager": {
+      "label": "Quản lý đào tạo",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "users.read",
+        "classes.read",
+        "classes.manage",
+        "classes.handover",
+        "attendance.read",
+        "grades.read",
+        "students.manage",
+        "reports.academic.read"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển", "path": "/manager/dashboard" },
+        { "id": "class-management", "label": "Quản lý lớp học", "path": "/manager/classes" },
+        { "id": "user-management", "label": "Hồ sơ đào tạo", "path": "/manager/users" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "accountant": {
+      "label": "Kế toán",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "users.read",
+        "tuition.read",
+        "tuition.write",
+        "reports.finance.read"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển kế toán", "path": "/accountant/dashboard" },
+        { "id": "tuition", "label": "Quản lý học phí", "path": "/accountant/tuition" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "department_head": {
+      "label": "Trưởng bộ môn",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "users.read",
+        "classes.read",
+        "attendance.read",
+        "grades.read",
+        "grades.write",
+        "reports.academic.read"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển bộ môn", "path": "/department-head/dashboard" },
+        { "id": "classes", "label": "Lớp học", "path": "/department-head/classes" },
+        { "id": "grades", "label": "Quản lý điểm", "path": "/department-head/grades" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    },
+    "training_staff": {
+      "label": "Nhân viên đào tạo",
+      "permissions": [
+        "profile.read",
+        "profile.password.change",
+        "users.read",
+        "users.create",
+        "users.update",
+        "classes.read",
+        "classes.manage",
+        "attendance.read",
+        "grades.read",
+        "students.manage",
+        "reports.academic.read"
+      ],
+      "navigation": [
+        { "id": "dashboard", "label": "Bảng điều khiển đào tạo", "path": "/training/dashboard" },
+        { "id": "students", "label": "Quản lý hồ sơ học viên", "path": "/training/students" },
+        { "id": "classes", "label": "Quản lý lớp học", "path": "/training/classes" },
+        { "id": "profile-security", "label": "Đổi mật khẩu & Bảo mật", "path": "/profile/security" }
+      ]
+    }
+  }
+}

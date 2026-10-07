@@ -75,56 +75,16 @@ app.use((req, res, next) => {
 
 // 5. ERROR HANDLING MIDDLEWARES
 app.use(notFoundHandler);
-// DNKN-42: API cung cap du lieu quyen va vai tro cho giao dien dieu huong
-app.get('/api/auth/permissions', (req, res) => {
-  const role = (req.query.role || req.headers['x-user-role'] || 'USER').toUpperCase();
-
-  const roleNavigationMap = {
-    ADMIN: [
-      { id: 'dashboard', label: 'Bảng điều khiển', path: '/admin/dashboard' },
-      { id: 'attendance', label: 'Điểm danh lớp học', path: '/admin/attendance' },
-      { id: 'class-management', label: 'Quản lý lớp học', path: '/admin/classes' },
-      { id: 'user-management', label: 'Quản lý người dùng', path: '/admin/users' },
-      { id: 'system-logs', label: 'Nhật ký hệ thống', path: '/admin/logs' },
-      { id: 'approval', label: 'Phê duyệt yêu cầu', path: '/admin/approvals' },
-      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
-    ],
-    TEACHER: [
-      { id: 'dashboard', label: 'Bảng điều khiển', path: '/teacher/dashboard' },
-      { id: 'attendance', label: 'Điểm danh lớp học', path: '/teacher/attendance' },
-      { id: 'class-management', label: 'Quản lý lớp học', path: '/teacher/classes' },
-      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
-    ],
-    ASSISTANT: [
-      { id: 'dashboard', label: 'Bảng điều khiển', path: '/assistant/dashboard' },
-      { id: 'attendance', label: 'Điểm danh lớp học', path: '/assistant/attendance' },
-      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
-    ],
-    STUDENT: [
-      { id: 'dashboard', label: 'Bảng điều khiển', path: '/student/dashboard' },
-      { id: 'my-courses', label: 'Lớp học của tôi', path: '/student/courses' },
-      { id: 'my-tasks', label: 'Nhiệm vụ được giao', path: '/student/tasks' },
-      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
-    ],
-    USER: [
-      { id: 'dashboard', label: 'Bảng điều khiển', path: '/user/dashboard' },
-      { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', path: '/profile/security' }
-    ]
-  };
-
-  const navItems = roleNavigationMap[role] || roleNavigationMap['USER'];
-
-  return res.json({
-    success: true,
-    role: role,
-    navigation: navItems
-  });
-});
 app.use(errorHandler);
 
 function startServer() {
-  if (process.env.NODE_ENV === 'production' && !process.env.AUTH_TOKEN_SECRET) {
-    throw new Error('AUTH_TOKEN_SECRET phải được cấu hình trong môi trường production.');
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction && !process.env.DATA_FILE) {
+    throw new Error('DATA_FILE phải trỏ tới kho dữ liệu riêng, bền vững và không dùng dữ liệu mẫu trong production.');
+  }
+
+  if (isProduction && Buffer.byteLength(process.env.AUTH_TOKEN_SECRET || '', 'utf8') < 32) {
+    throw new Error('AUTH_TOKEN_SECRET phải có ít nhất 32 byte trong môi trường production.');
   }
 
   if (Boolean(process.env.BOOTSTRAP_ADMIN_EMAIL) !== Boolean(process.env.BOOTSTRAP_ADMIN_PASSWORD)) {
@@ -136,6 +96,10 @@ function startServer() {
       process.env.BOOTSTRAP_ADMIN_EMAIL,
       process.env.BOOTSTRAP_ADMIN_PASSWORD
     );
+  }
+
+  if (isProduction && !UserModel.hasActiveAdminCredentials()) {
+    throw new Error('Chưa có quản trị viên đang hoạt động. Cấu hình BOOTSTRAP_ADMIN_EMAIL và BOOTSTRAP_ADMIN_PASSWORD để khởi tạo lần đầu.');
   }
 
   const server = app.listen(config.PORT, () => {
