@@ -5,6 +5,24 @@
 
 const express = require('express');
 const router = express.Router();
+// DNKN-113: Nhận file ảnh đại diện
+const multer = require('multer');
+
+const avatarUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 2 * 1024 * 1024
+    },
+    fileFilter: (req, file, callback) => {
+        const allowedTypes = ['image/jpeg', 'image/png'];
+
+        if (!allowedTypes.includes(file.mimetype)) {
+            return callback(new Error('Chỉ chấp nhận ảnh JPG hoặc PNG.'));
+        }
+
+        callback(null, true);
+    }
+});
 const ProfileController = require('../controllers/profileController');
 const { requireAuth } = require('../middleware/authMiddleware');
 
@@ -18,4 +36,10 @@ router.get('/', ProfileController.getProfile);
 router.put('/', ProfileController.updateProfile);
 router.patch('/', ProfileController.updateProfile);
 
+// DNKN-113: API tải ảnh đại diện
+router.post(
+    '/avatar',
+    avatarUpload.single('avatar'),
+    ProfileController.uploadAvatar
+);
 module.exports = router;

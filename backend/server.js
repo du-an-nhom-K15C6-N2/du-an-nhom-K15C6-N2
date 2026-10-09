@@ -47,6 +47,12 @@ app.use('/css', express.static(path.join(frontendDir, 'css')));
 app.use('/js', express.static(path.join(config.FRONTEND_DIR, 'js')));
 app.use('/js', express.static(path.join(frontendDir, 'js')));
 
+// DNKN-113: Cho phép hiển thị ảnh đại diện đã lưu
+app.use(
+  '/uploads/avatars',
+  express.static(path.join(__dirname, 'uploads', 'avatars'))
+);
+
 // 3. API ROUTES
 app.use('/api', apiRoutes);
 

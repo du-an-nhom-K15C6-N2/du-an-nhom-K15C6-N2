@@ -11,6 +11,11 @@
 const UserModel = require('../models/userModel');
 const { isValidVietnamPhone, normalizeVietnamPhone } = require('../utils/phoneValidator');
 
+const fs = require('fs/promises');
+const path = require('path');
+const crypto = require('crypto');
+const sharp = require('sharp');
+
 class ProfileController {
   /**
    * [BE] API Lấy thông tin hồ sơ cá nhân của người dùng hiện tại
@@ -185,6 +190,98 @@ class ProfileController {
         data: UserModel.toPublicUser(updatedUser)
       });
     } catch (error) {
+      next(error);
+    }
+  }
+  // DNKN-113, DNKN-111, DNKN-115: Xử lý ảnh đại diện
+  static async uploadAvatar(req, res, next) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'Vui lòng đăng nhập.'
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng chọn ảnh JPG hoặc PNG.'
+        });
+      }
+
+      if (req.file.size > 2 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          message: 'Ảnh không được vượt quá 2MB.'
+        });
+      }
+
+      const metadata = await sharp(req.file.buffer, {
+        limitInputPixels: 16000000
+      }).metadata();
+
+      if (!['jpeg', 'png'].includes(metadata.format)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Chỉ chấp nhận ảnh JPG hoặc PNG.'
+        });
+      }
+
+      const uploadDir = path.join(__dirname, '../uploads/avatars');
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      const filename = crypto.randomUUID();
+      const avatarFile = filename + '.png';
+      const thumbnailFile = filename + '-thumb.png';
+
+      const avatarBuffer = await sharp(req.file.buffer, {
+        limitInputPixels: 16000000
+      })
+        .rotate()
+        .resize(300, 300, { fit: 'cover' })
+        .png()
+        .toBuffer();
+
+      const thumbnailBuffer = await sharp(avatarBuffer)
+        .resize(100, 100)
+        .png()
+        .toBuffer();
+
+      const avatarPath = path.join(uploadDir, avatarFile);
+      const thumbnailPath = path.join(uploadDir, thumbnailFile);
+
+      await fs.writeFile(avatarPath, avatarBuffer);
+      await fs.writeFile(thumbnailPath, thumbnailBuffer);
+
+      const avatarUrl = '/uploads/avatars/' + avatarFile;
+      const thumbnailUrl = '/uploads/avatars/' + thumbnailFile;
+
+      const updatedUser = UserModel.updateAvatar(
+        req.user.id,
+        avatarUrl,
+        thumbnailUrl
+      );
+
+      req.user = updatedUser;
+
+      return res.status(200).json({
+        success: true,
+        message: 'Cập nhật ảnh đại diện thành công.',
+        data: {
+          avatar: avatarUrl,
+          avatarThumbnail: thumbnailUrl
+        }
+      });
+    } catch (error) {
+      if (error.message?.includes('Input file') ||
+        error.message?.includes('unsupported image')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Tệp ảnh không hợp lệ.'
+        });
+      }
+
       next(error);
     }
   }

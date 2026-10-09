@@ -30,7 +30,9 @@
     "roleLabel": "Quản trị viên",
     "status": "active",
     "statusLabel": "Đang hoạt động",
-    "passwordHash": "scrypt$c5ee8451f4dbb7ccf7730b34b42874a6$90b27cac7268d2fd2bf129f2bfaeecbc0d2bbe1814e18c356532e94bdf612a0a9c7ddbc03b117b218d39831941d697b1bad4bcc60302cca281b9276deab31fb2"
+    "passwordHash": "scrypt$c5ee8451f4dbb7ccf7730b34b42874a6$90b27cac7268d2fd2bf129f2bfaeecbc0d2bbe1814e18c356532e94bdf612a0a9c7ddbc03b117b218d39831941d697b1bad4bcc60302cca281b9276deab31fb2",
+    "avatar": "/uploads/avatars/8f416723-eb12-4762-b3fa-e481c07da4f6.png",
+    "avatarThumbnail": "/uploads/avatars/8f416723-eb12-4762-b3fa-e481c07da4f6-thumb.png"
   },
   {
     "id": "usr_002",

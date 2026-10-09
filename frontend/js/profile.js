@@ -17,7 +17,9 @@
 
   // Lấy Auth Token từ LocalStorage hoặc SessionStorage
   function getAuthToken() {
-    return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+    return localStorage.getItem('dnkn_auth_token')
+      || sessionStorage.getItem('dnkn_auth_token')
+      || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
       || sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
   }
 
@@ -44,7 +46,7 @@
 
     const toast = document.createElement('div');
     toast.className = `toast toast-${type} slide-in`;
-    
+
     const icons = {
       success: '✓',
       error: '✕',
@@ -189,10 +191,37 @@
 
     // Header Meta
     const initials = getInitials(user.fullName || user.name);
+
     const avatarEl = document.getElementById('page-avatar');
-    if (avatarEl) avatarEl.textContent = initials;
     const navAvatarEl = document.getElementById('nav-user-avatar');
-    if (navAvatarEl) navAvatarEl.textContent = initials;
+
+    // DNKN-116: Hiển thị lại ảnh đại diện đã lưu
+    function displayAvatar(element, imageUrl) {
+      if (!element) return;
+
+      element.textContent = '';
+
+      if (imageUrl) {
+        const img = document.createElement('img');
+
+        img.src = imageUrl;
+        img.alt = 'Ảnh đại diện';
+
+        img.style.cssText =
+          'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+
+        img.onerror = () => {
+          element.textContent = initials;
+        };
+
+        element.appendChild(img);
+      } else {
+        element.textContent = initials;
+      }
+    }
+
+    displayAvatar(avatarEl, user.avatar);
+    displayAvatar(navAvatarEl, user.avatarThumbnail || user.avatar);
 
     const displayName = user.fullName || user.name || 'Người dùng';
     const fullnameEl = document.getElementById('page-fullname');
@@ -422,10 +451,10 @@
         if (result.ok && result.data.success) {
           showToast('Cập nhật hồ sơ cá nhân thành công!', 'success');
           const updatedUser = result.data.data;
-          
+
           // Cập nhật Storage
           saveStoredUser(updatedUser);
-          
+
           // Cập nhật View
           renderViewMode(updatedUser);
 
@@ -466,4 +495,191 @@
   document.addEventListener('DOMContentLoaded', () => {
     profileApp.init();
   });
+  // DNKN-112: Chọn và xem trước ảnh đại diện
+  function initAvatarUpload() {
+    const selectBtn = document.getElementById('avatar-select-btn');
+    const fileInput = document.getElementById('avatar-file-input');
+    const preview = document.getElementById('avatar-preview');
+    const previewContainer = document.getElementById('avatar-preview-container');
+    const status = document.getElementById('avatar-upload-status');
+    const cropContainer = document.getElementById('avatar-crop-container');
+    const cropImage = document.getElementById('avatar-crop-image');
+    const cropBtn = document.getElementById('avatar-crop-btn');
+
+    const saveBtn = document.getElementById('avatar-save-btn');
+    let croppedBlob = null;
+
+    if (!selectBtn || !fileInput || !preview || !previewContainer ||
+      !status || !cropContainer || !cropImage || !cropBtn) return;
+
+    let cropper = null;
+    let imageUrl = null;
+
+    selectBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      if (cropper) {
+        cropper.destroy();
+        cropper = null;
+      }
+
+      if (imageUrl) {
+        URL.revokeObjectURL(imageUrl);
+        imageUrl = null;
+      }
+
+      cropContainer.style.display = 'none';
+      previewContainer.style.display = 'none';
+
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        status.textContent = 'Chỉ chấp nhận ảnh JPG hoặc PNG!';
+        fileInput.value = '';
+        return;
+      }
+
+      if (file.size > 2 * 1024 * 1024) {
+        status.textContent = 'Ảnh không được vượt quá 2MB!';
+        fileInput.value = '';
+        return;
+      }
+
+      if (typeof Cropper === 'undefined') {
+        status.textContent = 'Chưa tải được thư viện cắt ảnh.';
+        return;
+      }
+
+      imageUrl = URL.createObjectURL(file);
+
+      cropImage.onload = () => {
+        cropContainer.style.display = 'block';
+
+        cropper = new Cropper(cropImage, {
+          aspectRatio: 1,
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 0.9,
+          zoomable: true,
+          movable: true,
+          responsive: true
+        });
+      };
+
+      cropImage.onerror = () => {
+        status.textContent = 'Không thể đọc ảnh đã chọn.';
+      };
+
+      cropImage.src = imageUrl;
+      status.textContent = 'Hãy điều chỉnh vùng cắt ảnh.';
+    });
+
+    cropBtn.addEventListener('click', () => {
+      if (!cropper) return;
+
+      const canvas = cropper.getCroppedCanvas({
+        width: 300,
+        height: 300,
+        imageSmoothingQuality: 'high'
+      });
+
+      if (!canvas) {
+        status.textContent = 'Không thể cắt ảnh.';
+        return;
+      }
+
+      preview.src = canvas.toDataURL('image/png');
+      previewContainer.style.display = 'block';
+      cropContainer.style.display = 'none';
+      // Chuẩn bị ảnh đã cắt để tải lên máy chủ
+      croppedBlob = null;
+      if (saveBtn) saveBtn.style.display = 'none';
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          status.textContent = 'Không thể tạo ảnh để lưu.';
+          return;
+        }
+
+        croppedBlob = blob;
+
+        if (saveBtn) {
+          saveBtn.style.display = 'inline-block';
+        }
+
+        status.textContent = 'Ảnh đã cắt. Nhấn Lưu ảnh đại diện.';
+      }, 'image/png');
+
+      cropper.destroy();
+      cropper = null;
+
+    });
+    // DNKN-116: Lưu ảnh đại diện lên máy chủ
+    if (saveBtn) {
+      saveBtn.addEventListener('click', async () => {
+        if (!croppedBlob) {
+          status.textContent = 'Vui lòng chọn và cắt ảnh trước.';
+          return;
+        }
+
+        const token = getAuthToken();
+
+        if (!token) {
+          status.textContent = 'Vui lòng đăng nhập trước khi đổi ảnh.';
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('avatar', croppedBlob, 'avatar.png');
+
+        saveBtn.disabled = true;
+        status.textContent = 'Đang tải ảnh lên...';
+
+        try {
+          const response = await fetch('/api/profile/avatar', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+            body: formData
+          });
+
+          const result = await response.json();
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Không thể lưu ảnh.');
+          }
+
+          const avatarUrl = result.data.avatar;
+
+          const pageAvatar = document.getElementById('page-avatar');
+
+          if (pageAvatar) {
+            pageAvatar.textContent = '';
+
+            const img = document.createElement('img');
+            img.src = avatarUrl;
+            img.alt = 'Ảnh đại diện';
+            img.style.cssText =
+              'width:100%;height:100%;object-fit:cover;border-radius:50%';
+
+            pageAvatar.appendChild(img);
+          }
+
+          status.textContent = 'Đã lưu ảnh đại diện thành công!';
+          saveBtn.style.display = 'none';
+          croppedBlob = null;
+
+        } catch (error) {
+          status.textContent = error.message;
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+    }
+  }
+
+  // Khởi tạo chức năng chọn ảnh
+  document.addEventListener('DOMContentLoaded', initAvatarUpload);
 })();

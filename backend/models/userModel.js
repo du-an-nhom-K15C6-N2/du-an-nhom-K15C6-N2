@@ -283,6 +283,28 @@ class UserModel {
       db.writeUsers(users);
     }
   }
+  // DNKN-113: Lưu ảnh đại diện vào tài khoản
+  static updateAvatar(id, avatarUrl, thumbnailUrl) {
+    const users = db.readUsers();
+
+    const index = users.findIndex(
+      user => String(user.id) === String(id)
+    );
+
+    if (index === -1) {
+      throw new Error('Không tìm thấy tài khoản người dùng.');
+    }
+
+    users[index] = {
+      ...users[index],
+      avatar: avatarUrl,
+      avatarThumbnail: thumbnailUrl
+    };
+
+    db.writeUsers(users);
+
+    return users[index];
+  }
 }
 
 module.exports = UserModel;
