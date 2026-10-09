@@ -1,0 +1,2463 @@
+diff --git a/backend/controllers/profileController.js b/backend/controllers/profileController.js
+index 79310c0..d4f711f 100644
+--- a/backend/controllers/profileController.js
++++ b/backend/controllers/profileController.js
+@@ -11,6 +11,11 @@
+ const UserModel = require('../models/userModel');
+ const { isValidVietnamPhone, normalizeVietnamPhone } = require('../utils/phoneValidator');
+ 
++const fs = require('fs/promises');
++const path = require('path');
++const crypto = require('crypto');
++const sharp = require('sharp');
++
+ class ProfileController {
+   /**
+    * [BE] API Lấy thông tin hồ sơ cá nhân của người dùng hiện tại
+@@ -188,6 +193,98 @@ class ProfileController {
+       next(error);
+     }
+   }
++  // DNKN-113, DNKN-111, DNKN-115: Xử lý ảnh đại diện
++  static async uploadAvatar(req, res, next) {
++    try {
++      if (!req.user) {
++        return res.status(401).json({
++          success: false,
++          message: 'Vui lòng đăng nhập.'
++        });
++      }
++
++      if (!req.file) {
++        return res.status(400).json({
++          success: false,
++          message: 'Vui lòng chọn ảnh JPG hoặc PNG.'
++        });
++      }
++
++      if (req.file.size > 2 * 1024 * 1024) {
++        return res.status(400).json({
++          success: false,
++          message: 'Ảnh không được vượt quá 2MB.'
++        });
++      }
++
++      const metadata = await sharp(req.file.buffer, {
++        limitInputPixels: 16000000
++      }).metadata();
++
++      if (!['jpeg', 'png'].includes(metadata.format)) {
++        return res.status(400).json({
++          success: false,
++          message: 'Chỉ chấp nhận ảnh JPG hoặc PNG.'
++        });
++      }
++
++      const uploadDir = path.join(__dirname, '../uploads/avatars');
++      await fs.mkdir(uploadDir, { recursive: true });
++
++      const filename = crypto.randomUUID();
++      const avatarFile = filename + '.png';
++      const thumbnailFile = filename + '-thumb.png';
++
++      const avatarBuffer = await sharp(req.file.buffer, {
++        limitInputPixels: 16000000
++      })
++        .rotate()
++        .resize(300, 300, { fit: 'cover' })
++        .png()
++        .toBuffer();
++
++      const thumbnailBuffer = await sharp(avatarBuffer)
++        .resize(100, 100)
++        .png()
++        .toBuffer();
++
++      const avatarPath = path.join(uploadDir, avatarFile);
++      const thumbnailPath = path.join(uploadDir, thumbnailFile);
++
++      await fs.writeFile(avatarPath, avatarBuffer);
++      await fs.writeFile(thumbnailPath, thumbnailBuffer);
++
++      const avatarUrl = '/uploads/avatars/' + avatarFile;
++      const thumbnailUrl = '/uploads/avatars/' + thumbnailFile;
++
++      const updatedUser = UserModel.updateAvatar(
++        req.user.id,
++        avatarUrl,
++        thumbnailUrl
++      );
++
++      req.user = updatedUser;
++
++      return res.status(200).json({
++        success: true,
++        message: 'Cập nhật ảnh đại diện thành công.',
++        data: {
++          avatar: avatarUrl,
++          avatarThumbnail: thumbnailUrl
++        }
++      });
++    } catch (error) {
++      if (error.message?.includes('Input file') ||
++        error.message?.includes('unsupported image')) {
++        return res.status(400).json({
++          success: false,
++          message: 'Tệp ảnh không hợp lệ.'
++        });
++      }
++
++      next(error);
++    }
++  }
+ }
+ 
+ module.exports = ProfileController;
+diff --git a/backend/models/userModel.js b/backend/models/userModel.js
+index 7c30c5a..47b1f5a 100644
+--- a/backend/models/userModel.js
++++ b/backend/models/userModel.js
+@@ -283,6 +283,28 @@ class UserModel {
+       db.writeUsers(users);
+     }
+   }
++  // DNKN-113: Lưu ảnh đại diện vào tài khoản
++  static updateAvatar(id, avatarUrl, thumbnailUrl) {
++    const users = db.readUsers();
++
++    const index = users.findIndex(
++      user => String(user.id) === String(id)
++    );
++
++    if (index === -1) {
++      throw new Error('Không tìm thấy tài khoản người dùng.');
++    }
++
++    users[index] = {
++      ...users[index],
++      avatar: avatarUrl,
++      avatarThumbnail: thumbnailUrl
++    };
++
++    db.writeUsers(users);
++
++    return users[index];
++  }
+ }
+ 
+ module.exports = UserModel;
+diff --git a/backend/routes/profileRoutes.js b/backend/routes/profileRoutes.js
+index 0b7973c..e70b38a 100644
+--- a/backend/routes/profileRoutes.js
++++ b/backend/routes/profileRoutes.js
+@@ -5,6 +5,24 @@
+ 
+ const express = require('express');
+ const router = express.Router();
++// DNKN-113: Nhận file ảnh đại diện
++const multer = require('multer');
++
++const avatarUpload = multer({
++    storage: multer.memoryStorage(),
++    limits: {
++        fileSize: 2 * 1024 * 1024
++    },
++    fileFilter: (req, file, callback) => {
++        const allowedTypes = ['image/jpeg', 'image/png'];
++
++        if (!allowedTypes.includes(file.mimetype)) {
++            return callback(new Error('Chỉ chấp nhận ảnh JPG hoặc PNG.'));
++        }
++
++        callback(null, true);
++    }
++});
+ const ProfileController = require('../controllers/profileController');
+ const { requireAuth } = require('../middleware/authMiddleware');
+ 
+@@ -18,4 +36,10 @@ router.get('/', ProfileController.getProfile);
+ router.put('/', ProfileController.updateProfile);
+ router.patch('/', ProfileController.updateProfile);
+ 
++// DNKN-113: API tải ảnh đại diện
++router.post(
++    '/avatar',
++    avatarUpload.single('avatar'),
++    ProfileController.uploadAvatar
++);
+ module.exports = router;
+diff --git a/backend/server.js b/backend/server.js
+index cfdb090..e371b4a 100644
+--- a/backend/server.js
++++ b/backend/server.js
+@@ -47,6 +47,12 @@ app.use('/css', express.static(path.join(frontendDir, 'css')));
+ app.use('/js', express.static(path.join(config.FRONTEND_DIR, 'js')));
+ app.use('/js', express.static(path.join(frontendDir, 'js')));
+ 
++// DNKN-113: Cho phép hiển thị ảnh đại diện đã lưu
++app.use(
++  '/uploads/avatars',
++  express.static(path.join(__dirname, 'uploads', 'avatars'))
++);
++
+ // 3. API ROUTES
+ app.use('/api', apiRoutes);
+ 
+diff --git a/frontend/index.html b/frontend/index.html
+index 97b92f5..b08632f 100644
+--- a/frontend/index.html
++++ b/frontend/index.html
+@@ -1,17 +1,26 @@
+ <!DOCTYPE html>
+ <html lang="vi" data-theme="dark">
++
+ <head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Đồ Án TTCS - Hệ Thống Quản Lý Lớp Học & Quản Trị Người Dùng</title>
+-  <meta name="description" content="Đồ án Thực tập cơ sở: Module Đăng nhập an toàn (EP-01) và Màn hình Quản lý người dùng phân quyền.">
++  <meta name="description"
++    content="Đồ án Thực tập cơ sở: Module Đăng nhập an toàn (EP-01) và Màn hình Quản lý người dùng phân quyền.">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
++  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
++    rel="stylesheet">
+   <link rel="stylesheet" href="css/styles.css">
+   <link rel="stylesheet" href="styles.css">
+-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
++  <link rel="icon"
++    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
++
++  <!-- DNKN87: Thu vien cat anh -->
++  <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css">
++
+ </head>
++
+ <body>
+   <!-- Ambient background glow elements -->
+   <div class="bg-mesh" aria-hidden="true">
+@@ -28,7 +37,8 @@
+     <div class="container header-container">
+       <div class="brand-logo" onclick="app.handleBrandClick()">
+         <div class="logo-icon-wrapper">
+-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
++          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
++            stroke-linecap="round" stroke-linejoin="round">
+             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+             <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+           </svg>
+@@ -52,29 +62,44 @@
+       <div class="header-actions">
+         <!-- Theme Toggle -->
+         <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Chuyển đổi giao diện Sáng/Tối">
+-          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+-          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
++          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++            stroke-width="2">
++            <circle cx="12" cy="12" r="5" />
++            <path
++              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
++          </svg>
++          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++            stroke-width="2">
++            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
++          </svg>
+         </button>
+ 
+         <!-- Authenticated User Profile Dropdown (Dynamic) -->
+         <div class="user-menu-wrapper" id="user-menu-wrapper" style="display: none;">
+-          <div class="user-profile-badge" id="user-profile-badge" onclick="app.showProfileModal()" title="Nhấn để xem và sửa hồ sơ cá nhân" style="cursor: pointer;">
++          <div class="user-profile-badge" id="user-profile-badge" onclick="app.showProfileModal()"
++            title="Nhấn để xem và sửa hồ sơ cá nhân" style="cursor: pointer;">
+             <div class="user-avatar" id="nav-user-avatar">AD</div>
+             <div class="user-info-text">
+               <span class="user-fullname" id="nav-user-name">Quản Trị Viên</span>
+               <span class="user-role-badge" id="nav-role-badge">Quản trị viên</span>
+             </div>
+           </div>
+-          <button type="button" class="btn-view-profile" id="btn-view-profile" onclick="app.showProfileModal()" title="Xem và sửa hồ sơ cá nhân">
++          <button type="button" class="btn-view-profile" id="btn-view-profile" onclick="app.showProfileModal()"
++            title="Xem và sửa hồ sơ cá nhân">
+             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+               <circle cx="12" cy="7" r="4"></circle>
+             </svg>
+             <span>Hồ sơ cá nhân</span>
+           </button>
+-          <button type="button" class="btn-change-password" onclick="app.showChangePasswordModal()">Đổi mật khẩu</button>
++          <button type="button" class="btn-change-password" onclick="app.showChangePasswordModal()">Đổi mật
++            khẩu</button>
+           <button type="button" class="btn-logout" id="logout-btn" onclick="app.logout()">
+-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
++            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
++              <polyline points="16 17 21 12 16 7" />
++              <line x1="21" y1="12" x2="9" y2="12" />
++            </svg>
+             <span>Đăng xuất</span>
+           </button>
+         </div>
+@@ -90,7 +115,7 @@
+          ==================================================================== -->
+     <section class="auth-section" id="auth-section">
+       <div class="auth-card-container">
+-        
++
+         <!-- Requirement Badge / User Story Header -->
+         <div class="requirement-callout">
+           <div class="callout-pill">Yêu cầu EP-01</div>
+@@ -101,13 +126,15 @@
+           <!-- Card Header -->
+           <div class="auth-card-header">
+             <div class="auth-icon-circle">
+-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
++              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
++                stroke-linecap="round" stroke-linejoin="round">
+                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+               </svg>
+             </div>
+             <h1 class="auth-title">Đăng Nhập Hệ Thống</h1>
+-            <p class="auth-subtitle">Vui lòng nhập email và mật khẩu của bạn để truy cập không gian làm việc an toàn.</p>
++            <p class="auth-subtitle">Vui lòng nhập email và mật khẩu của bạn để truy cập không gian làm việc an toàn.
++            </p>
+           </div>
+ 
+           <!-- Lockout Alert Box (AC 3: Bị khóa tạm 15 phút) -->
+@@ -121,7 +148,8 @@
+             </div>
+             <div class="lockout-details">
+               <h3 class="lockout-title">Tài Khoản Đã Bị Tạm Khóa An Toàn!</h3>
+-              <p class="lockout-desc">Bạn đã nhập sai 5 lần liên tiếp. Hệ thống đã kích hoạt khóa tạm thời <strong>15 phút</strong> để chống dò quét mật khẩu.</p>
++              <p class="lockout-desc">Bạn đã nhập sai 5 lần liên tiếp. Hệ thống đã kích hoạt khóa tạm thời <strong>15
++                  phút</strong> để chống dò quét mật khẩu.</p>
+               <div class="lockout-timer-wrapper">
+                 <span class="timer-label">Thời gian mở khóa sau:</span>
+                 <span class="timer-countdown" id="lockout-timer-display">15:00</span>
+@@ -140,7 +168,8 @@
+             </div>
+             <div class="error-text-content">
+               <strong id="error-message-text">Email hoặc mật khẩu không đúng</strong>
+-              <div class="attempts-hint" id="attempts-hint-text">Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.</div>
++              <div class="attempts-hint" id="attempts-hint-text">Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.
++              </div>
+             </div>
+           </div>
+ 
+@@ -161,7 +190,7 @@
+ 
+           <!-- Login Form -->
+           <form class="auth-form" id="login-form" novalidate onsubmit="app.handleLogin(event)">
+-            
++
+             <!-- Email Field -->
+             <div class="form-group">
+               <label for="input-email" class="form-label">
+@@ -175,15 +204,8 @@
+                     <polyline points="22,6 12,13 2,6"></polyline>
+                   </svg>
+                 </div>
+-                <input 
+-                  type="email" 
+-                  id="input-email" 
+-                  name="email" 
+-                  class="form-input" 
+-                  placeholder="name@school.edu.vn" 
+-                  autocomplete="username" 
+-                  required
+-                >
++                <input type="email" id="input-email" name="email" class="form-input" placeholder="name@school.edu.vn"
++                  autocomplete="username" required>
+               </div>
+               <span class="field-error-msg" id="email-field-error"></span>
+             </div>
+@@ -204,18 +226,22 @@
+                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                   </svg>
+                 </div>
+-                <input 
+-                  type="password" 
+-                  id="input-password" 
+-                  name="password" 
+-                  class="form-input" 
+-                  placeholder="••••••••" 
+-                  autocomplete="current-password" 
+-                  required
+-                >
+-                <button type="button" class="btn-toggle-pwd" id="toggle-pwd-btn" onclick="app.togglePasswordVisibility()" aria-label="Hiển thị hoặc ẩn mật khẩu">
+-                  <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+-                  <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
++                <input type="password" id="input-password" name="password" class="form-input" placeholder="••••••••"
++                  autocomplete="current-password" required>
++                <button type="button" class="btn-toggle-pwd" id="toggle-pwd-btn"
++                  onclick="app.togglePasswordVisibility()" aria-label="Hiển thị hoặc ẩn mật khẩu">
++                  <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++                    stroke-width="2">
++                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
++                    <circle cx="12" cy="12" r="3" />
++                  </svg>
++                  <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++                    stroke-width="2" style="display:none;">
++                    <path
++                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
++                    </path>
++                    <line x1="1" y1="1" x2="23" y2="23"></line>
++                  </svg>
+                 </button>
+               </div>
+               <span class="field-error-msg" id="password-field-error"></span>
+@@ -229,7 +255,9 @@
+                 <span class="checkbox-label">Ghi nhớ đăng nhập an toàn</span>
+               </label>
+               <div class="security-badge" title="Được bảo vệ bằng mã hóa End-to-End">
+-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
++                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
++                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
++                </svg>
+                 <span>SSL Encrypted</span>
+               </div>
+             </div>
+@@ -238,7 +266,8 @@
+             <button type="submit" class="btn-submit" id="btn-submit-login">
+               <span class="btn-spinner" id="login-spinner" style="display: none;"></span>
+               <span class="btn-text" id="login-btn-text">Đăng Nhập Vào Hệ Thống</span>
+-              <svg class="btn-icon" id="login-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++              <svg class="btn-icon" id="login-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
++                stroke="currentColor" stroke-width="2">
+                 <line x1="5" y1="12" x2="19" y2="12"></line>
+                 <polyline points="12 5 19 12 12 19"></polyline>
+               </svg>
+@@ -249,9 +278,12 @@
+           <div class="criteria-checklist">
+             <h4>Tiêu chuẩn chấp nhận EP-01:</h4>
+             <ul>
+-              <li class="check-item"><span class="check-icon">✓</span> <strong>AC1:</strong> Đăng nhập đúng điều hướng vào trang chủ tương ứng theo vai trò.</li>
+-              <li class="check-item"><span class="check-icon">✓</span> <strong>AC2:</strong> Sai thông tin hiển thị chính xác: <code>"Email hoặc mật khẩu không đúng"</code> (không tiết lộ email tồn tại hay không).</li>
+-              <li class="check-item"><span class="check-icon">✓</span> <strong>AC3:</strong> Khóa tạm 15 phút sau 5 lần sai liên tiếp kèm đồng hồ đếm ngược.</li>
++              <li class="check-item"><span class="check-icon">✓</span> <strong>AC1:</strong> Đăng nhập đúng điều hướng
++                vào trang chủ tương ứng theo vai trò.</li>
++              <li class="check-item"><span class="check-icon">✓</span> <strong>AC2:</strong> Sai thông tin hiển thị
++                chính xác: <code>"Email hoặc mật khẩu không đúng"</code> (không tiết lộ email tồn tại hay không).</li>
++              <li class="check-item"><span class="check-icon">✓</span> <strong>AC3:</strong> Khóa tạm 15 phút sau 5 lần
++                sai liên tiếp kèm đồng hồ đếm ngược.</li>
+             </ul>
+           </div>
+ 
+@@ -264,14 +296,15 @@
+          ==================================================================== -->
+     <section class="portal-section" id="portal-user-management" style="display: none;">
+       <div class="container">
+-        
++
+         <!-- Header / Banner Quản Trị -->
+         <div class="role-hero admin-hero">
+           <div class="role-hero-content">
+             <div class="role-chip">Màn Hình Quản Trị Hệ Thống • Phân Quyền Nhân Sự</div>
+             <h1 class="role-title">Quản Lý Tài Khoản Người Dùng</h1>
+             <p class="role-subtitle">
+-              Cấp quyền truy cập, chỉnh sửa thông tin và quản lý trạng thái tài khoản cho cán bộ, giảng viên và sinh viên mới.
++              Cấp quyền truy cập, chỉnh sửa thông tin và quản lý trạng thái tài khoản cho cán bộ, giảng viên và sinh
++              viên mới.
+             </p>
+           </div>
+           <div class="security-privacy-stamp">
+@@ -292,28 +325,27 @@
+         <div class="admin-notice-card">
+           <div class="notice-icon">💡</div>
+           <div class="notice-text">
+-            <strong>Tiêu chí nghiệm thu AC1:</strong> Khi thêm tài khoản mới thành công, hệ thống sẽ mô phỏng gửi email kích hoạt kèm mật khẩu tạm thời về hòm thư người dùng. Trường hợp trùng Email sẽ bị từ chối với thông báo lỗi cụ thể (AC2).
++            <strong>Tiêu chí nghiệm thu AC1:</strong> Khi thêm tài khoản mới thành công, hệ thống sẽ mô phỏng gửi email
++            kích hoạt kèm mật khẩu tạm thời về hòm thư người dùng. Trường hợp trùng Email sẽ bị từ chối với thông báo
++            lỗi cụ thể (AC2).
+           </div>
+         </div>
+ 
+         <!-- Filter & Search Toolbar (Yêu cầu a: Search Bar, Dropdowns, Nút Thêm mới) -->
+         <div class="management-toolbar-card">
+           <div class="toolbar-left-group">
+-            
++
+             <!-- Search Bar -->
+             <div class="search-input-wrapper">
+-              <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++              <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++                stroke-width="2">
+                 <circle cx="11" cy="11" r="8"></circle>
+                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+               </svg>
+-              <input 
+-                type="text" 
+-                id="user-search-input" 
+-                class="search-input" 
+-                placeholder="Tìm kiếm theo Họ tên, Email, Số điện thoại..." 
+-                oninput="app.handleUserSearch(event)"
+-              >
+-              <button type="button" class="btn-clear-search" id="clear-search-btn" onclick="app.clearSearch()" style="display:none;" title="Xóa tìm kiếm">×</button>
++              <input type="text" id="user-search-input" class="search-input"
++                placeholder="Tìm kiếm theo Họ tên, Email, Số điện thoại..." oninput="app.handleUserSearch(event)">
++              <button type="button" class="btn-clear-search" id="clear-search-btn" onclick="app.clearSearch()"
++                style="display:none;" title="Xóa tìm kiếm">×</button>
+             </div>
+ 
+             <!-- Role Filter Dropdown -->
+@@ -381,7 +413,8 @@
+           <!-- Pagination Section (Yêu cầu c: Phân trang mặc định 20 dòng/trang) -->
+           <div class="pagination-footer" id="pagination-footer">
+             <div class="pagination-info" id="pagination-info">
+-              Hiển thị <strong id="page-start">1</strong> - <strong id="page-end">20</strong> trên tổng số <strong id="total-users-count">28</strong> tài khoản
++              Hiển thị <strong id="page-start">1</strong> - <strong id="page-end">20</strong> trên tổng số <strong
++                id="total-users-count">28</strong> tài khoản
+             </div>
+ 
+             <div class="pagination-controls" id="pagination-controls">
+@@ -403,11 +436,14 @@
+             <div class="role-chip">Cổng Học Viên • Dữ Liệu Được Bảo Mật Tuyệt Đối</div>
+             <h1 class="role-title">Chào mừng, <span id="student-name">Nguyễn Văn An</span>!</h1>
+             <p class="role-subtitle">
+-              Mã sinh viên: <strong>SV2026-0812</strong> • Lớp: <strong>K15-CNTT02</strong> • Không gian học tập cá nhân an toàn (chỉ bạn và giảng viên mới có quyền xem điểm số).
++              Mã sinh viên: <strong>SV2026-0812</strong> • Lớp: <strong>K15-CNTT02</strong> • Không gian học tập cá nhân
++              an toàn (chỉ bạn và giảng viên mới có quyền xem điểm số).
+             </p>
+           </div>
+           <div class="security-privacy-stamp">
+-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
++            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
++            </svg>
+             <div>
+               <strong>Bảo Vệ Điểm Số Cá Nhân</strong>
+               <small>Chống nhìn trộm dữ liệu lớp học</small>
+@@ -428,7 +464,7 @@
+                 </div>
+                 <span class="status-badge-secure">🔒 Bảo mật tuyệt đối</span>
+               </div>
+-              
++
+               <div class="table-responsive">
+                 <table class="data-table">
+                   <thead>
+@@ -515,7 +551,8 @@
+           <div class="role-hero-content">
+             <div class="role-chip">Quản Lý Lớp Học • Bảo Toàn Bản Nháp</div>
+             <h1 class="role-title">Điểm danh lớp học</h1>
+-            <p class="role-subtitle">Ghi nhận tình trạng tham dự. Nội dung đang nhập được lưu tạm trên thiết bị này để khôi phục nếu phiên đăng nhập hết hạn.</p>
++            <p class="role-subtitle">Ghi nhận tình trạng tham dự. Nội dung đang nhập được lưu tạm trên thiết bị này để
++              khôi phục nếu phiên đăng nhập hết hạn.</p>
+           </div>
+         </div>
+         <div id="attendance-form-container"></div>
+@@ -555,20 +592,14 @@
+ 
+         <div class="modal-body">
+           <div class="form-grid-2">
+-            
++
+             <!-- Họ và tên -->
+             <div class="form-group">
+               <label for="form-fullname" class="form-label">
+                 <span>Họ và tên</span>
+                 <span class="required-star">*</span>
+               </label>
+-              <input 
+-                type="text" 
+-                id="form-fullname" 
+-                class="form-input" 
+-                placeholder="Ví dụ: Nguyễn Văn An" 
+-                required
+-              >
++              <input type="text" id="form-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required>
+               <span class="field-error-msg" id="err-fullname"></span>
+             </div>
+ 
+@@ -578,13 +609,7 @@
+                 <span>Địa chỉ Email</span>
+                 <span class="required-star">*</span>
+               </label>
+-              <input 
+-                type="email" 
+-                id="form-email" 
+-                class="form-input" 
+-                placeholder="name@school.edu.vn" 
+-                required
+-              >
++              <input type="email" id="form-email" class="form-input" placeholder="name@school.edu.vn" required>
+               <span class="field-error-msg" id="err-email"></span>
+             </div>
+ 
+@@ -594,13 +619,7 @@
+                 <span>Số điện thoại</span>
+                 <span class="required-star">*</span>
+               </label>
+-              <input 
+-                type="tel" 
+-                id="form-phone" 
+-                class="form-input" 
+-                placeholder="0912345678" 
+-                required
+-              >
++              <input type="tel" id="form-phone" class="form-input" placeholder="0912345678" required>
+               <span class="field-error-msg" id="err-phone"></span>
+             </div>
+ 
+@@ -625,16 +644,8 @@
+                 <span>Mật khẩu</span>
+                 <span class="required-star">*</span>
+               </label>
+-              <input 
+-                type="password" 
+-                id="form-password" 
+-                class="form-input" 
+-                placeholder="Ít nhất 8 ký tự" 
+-                minlength="8" 
+-                maxlength="1024" 
+-                autocomplete="new-password"
+-                required
+-              >
++              <input type="password" id="form-password" class="form-input" placeholder="Ít nhất 8 ký tự" minlength="8"
++                maxlength="1024" autocomplete="new-password" required>
+               <span class="field-error-msg" id="err-password"></span>
+             </div>
+ 
+@@ -644,16 +655,8 @@
+                 <span>Xác nhận mật khẩu</span>
+                 <span class="required-star">*</span>
+               </label>
+-              <input 
+-                type="password" 
+-                id="form-confirm-password" 
+-                class="form-input" 
+-                placeholder="Nhập lại mật khẩu" 
+-                minlength="8" 
+-                maxlength="1024" 
+-                autocomplete="new-password"
+-                required
+-              >
++              <input type="password" id="form-confirm-password" class="form-input" placeholder="Nhập lại mật khẩu"
++                minlength="8" maxlength="1024" autocomplete="new-password" required>
+               <span class="field-error-msg" id="err-confirm-password"></span>
+             </div>
+ 
+@@ -699,38 +702,46 @@
+       </div>
+       <div class="modal-body">
+         <p class="modal-desc">
+-          Để bảo vệ dữ liệu lớp học khỏi các nguy cơ chiếm đoạt tài khoản, hệ thống sẽ gửi mã OTP xác thực qua email trường.
++          Để bảo vệ dữ liệu lớp học khỏi các nguy cơ chiếm đoạt tài khoản, hệ thống sẽ gửi mã OTP xác thực qua email
++          trường.
+         </p>
+         <div class="form-group">
+           <label class="form-label" for="forgot-email-input">Nhập địa chỉ email trường:</label>
+-          <input type="email" id="forgot-email-input" class="form-input" placeholder="name@school.edu.vn" autocomplete="email" maxlength="254" required>
++          <input type="email" id="forgot-email-input" class="form-input" placeholder="name@school.edu.vn"
++            autocomplete="email" maxlength="254" required>
+         </div>
+       </div>
+       <div class="modal-footer">
+         <button type="button" class="btn-cancel" onclick="app.closeForgotModal()">Hủy bỏ</button>
+-        <button type="button" class="btn-submit btn-sm" id="forgot-submit-btn" onclick="app.handleForgotSubmit()">Gửi Yêu Cầu</button>
++        <button type="button" class="btn-submit btn-sm" id="forgot-submit-btn" onclick="app.handleForgotSubmit()">Gửi
++          Yêu Cầu</button>
+       </div>
+     </div>
+   </div>
+ 
+-  <div class="modal-overlay" id="change-password-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="change-password-title">
++  <div class="modal-overlay" id="change-password-modal" style="display: none;" role="dialog" aria-modal="true"
++    aria-labelledby="change-password-title">
+     <form class="modal-dialog" id="change-password-form" onsubmit="app.handleChangePassword(event)">
+       <div class="modal-header">
+         <h3 class="modal-title" id="change-password-title">Đổi mật khẩu</h3>
+-        <button type="button" class="btn-modal-close" onclick="app.closeChangePasswordModal()" aria-label="Đóng">&times;</button>
++        <button type="button" class="btn-modal-close" onclick="app.closeChangePasswordModal()"
++          aria-label="Đóng">&times;</button>
+       </div>
+       <div class="modal-body">
+         <div class="form-group">
+           <label class="form-label" for="current-password-input">Mật khẩu hiện tại</label>
+-          <input class="form-input" id="current-password-input" name="currentPassword" type="password" autocomplete="current-password" required>
++          <input class="form-input" id="current-password-input" name="currentPassword" type="password"
++            autocomplete="current-password" required>
+         </div>
+         <div class="form-group">
+           <label class="form-label" for="new-password-input">Mật khẩu mới (ít nhất 8 ký tự)</label>
+-          <input class="form-input" id="new-password-input" name="newPassword" type="password" minlength="8" maxlength="1024" autocomplete="new-password" required>
++          <input class="form-input" id="new-password-input" name="newPassword" type="password" minlength="8"
++            maxlength="1024" autocomplete="new-password" required>
+         </div>
+         <div class="form-group">
+           <label class="form-label" for="confirm-password-input">Xác nhận mật khẩu mới</label>
+-          <input class="form-input" id="confirm-password-input" name="confirmPassword" type="password" minlength="8" maxlength="1024" autocomplete="new-password" required>
++          <input class="form-input" id="confirm-password-input" name="confirmPassword" type="password" minlength="8"
++            maxlength="1024" autocomplete="new-password" required>
+         </div>
+         <p id="change-password-error" class="modal-alert-error" style="display:none;" role="alert"></p>
+       </div>
+@@ -742,23 +753,60 @@
+   </div>
+ 
+   <!-- Modal Xem và Cập Nhật Hồ Sơ Cá Nhân (Subtask DNKN-86) -->
+-  <div class="modal-overlay" id="profile-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
++  <div class="modal-overlay" id="profile-modal" style="display: none;" role="dialog" aria-modal="true"
++    aria-labelledby="profile-modal-title">
+     <div class="modal-dialog modal-dialog-lg" id="profile-modal-dialog">
+       <div class="modal-header">
+         <div class="modal-header-title-wrap">
+           <span class="modal-header-icon" style="font-size: 24px;">👤</span>
+           <div>
+             <h3 class="modal-title" id="profile-modal-title">Hồ Sơ Cá Nhân</h3>
+-            <p class="modal-subtitle" style="font-size: 13px; color: var(--text-secondary); margin: 0;">Thông tin liên lạc và chi tiết tài khoản của bạn</p>
++            <p class="modal-subtitle" style="font-size: 13px; color: var(--text-secondary); margin: 0;">Thông tin liên
++              lạc và chi tiết tài khoản của bạn</p>
+           </div>
+         </div>
+-        <button type="button" class="btn-modal-close" onclick="app.closeProfileModal()" aria-label="Đóng">&times;</button>
++        <button type="button" class="btn-modal-close" onclick="app.closeProfileModal()"
++          aria-label="Đóng">&times;</button>
+       </div>
+ 
+       <!-- CHẾ ĐỘ 1: XEM HỒ SƠ CÁ NHÂN -->
+       <div class="modal-body" id="profile-view-mode">
+         <div class="profile-hero-card">
+           <div class="profile-avatar-large" id="modal-view-avatar">US</div>
++
++          <!-- DNKN87: Đổi ảnh đại diện ngay trong cửa sổ hồ sơ -->
++          <div class="modal-avatar-upload">
++            <input type="file" id="modal-avatar-file" accept=".jpg,.jpeg,.png" style="display:none">
++
++            <button type="button" id="modal-avatar-select-btn">
++              Đổi ảnh đại diện
++            </button>
++
++            <!-- DNKN87: Cat va luu anh dai dien -->
++            <div id="modal-avatar-crop-container" style="display:none; margin-top:15px;">
++
++              <p>Điều chỉnh vùng cắt ảnh:</p>
++
++              <div style="width:280px; max-width:100%;">
++                <img id="modal-avatar-crop-image" alt="Ảnh cần cắt" style="display:block;max-width:100%;">
++              </div>
++
++              <button type="button" id="modal-avatar-crop-btn">
++                Cắt ảnh vuông
++              </button>
++
++              <div id="modal-avatar-preview-container" style="display:none; margin-top:12px;">
++                <p>Ảnh sau khi cắt:</p>
++                <img id="modal-avatar-preview" alt="Ảnh đại diện xem trước"
++                  style="width:100px;height:100px;object-fit:cover;border-radius:50%;">
++              </div>
++
++              <button type="button" id="modal-avatar-save-btn" style="display:none;">
++                Lưu ảnh đại diện
++              </button>
++            </div>
++            <p id="modal-avatar-status" role="status"></p>
++          </div>
+           <div class="profile-hero-info">
+             <h2 class="profile-hero-name" id="modal-view-name-hero">Đang tải...</h2>
+             <div class="profile-badges-row">
+@@ -814,11 +862,13 @@
+       </div>
+ 
+       <!-- CHẾ ĐỘ 2: FORM CẬP NHẬT HỒ SƠ CÁ NHÂN -->
+-      <form class="modal-body" id="profile-edit-mode" style="display: none;" onsubmit="app.handleProfileSubmit(event)" novalidate>
++      <form class="modal-body" id="profile-edit-mode" style="display: none;" onsubmit="app.handleProfileSubmit(event)"
++        novalidate>
+         <div class="form-notice-box">
+           <div class="notice-icon">🔒</div>
+           <div class="notice-text">
+-            Các trường <strong>Email</strong> và <strong>Vai trò</strong> là thông tin định danh hệ thống và không được phép tự thay đổi. Vui lòng đảm bảo số điện thoại đúng định dạng liên lạc tại Việt Nam.
++            Các trường <strong>Email</strong> và <strong>Vai trò</strong> là thông tin định danh hệ thống và không được
++            phép tự thay đổi. Vui lòng đảm bảo số điện thoại đúng định dạng liên lạc tại Việt Nam.
+           </div>
+         </div>
+ 
+@@ -828,7 +878,8 @@
+             <span>Họ và tên</span>
+             <span class="required-star">*</span>
+           </label>
+-          <input type="text" class="form-input" id="profile-input-name" name="name" required placeholder="Nhập họ và tên đầy đủ...">
++          <input type="text" class="form-input" id="profile-input-name" name="name" required
++            placeholder="Nhập họ và tên đầy đủ...">
+           <span class="field-error-msg" id="modal-profile-name-error"></span>
+         </div>
+ 
+@@ -840,7 +891,8 @@
+               <span class="badge-locked">🔒 Chỉ đọc</span>
+             </label>
+             <div class="input-wrapper input-readonly-wrapper">
+-              <input type="email" class="form-input input-readonly" id="profile-input-email" name="email" readonly disabled>
++              <input type="email" class="form-input input-readonly" id="profile-input-email" name="email" readonly
++                disabled>
+               <span class="input-lock-icon" title="Email định danh - Không thể tự sửa">🔒</span>
+             </div>
+             <small class="field-hint-text">Email do trường/trung tâm cấp.</small>
+@@ -853,7 +905,8 @@
+               <span class="badge-locked">🔒 Chỉ đọc</span>
+             </label>
+             <div class="input-wrapper input-readonly-wrapper">
+-              <input type="text" class="form-input input-readonly" id="profile-input-role" name="role" readonly disabled>
++              <input type="text" class="form-input input-readonly" id="profile-input-role" name="role" readonly
++                disabled>
+               <span class="input-lock-icon" title="Vai trò do Quản trị viên phân quyền">🔒</span>
+             </div>
+             <small class="field-hint-text">Phân quyền vai trò bởi Quản trị viên.</small>
+@@ -868,21 +921,14 @@
+               <span class="required-star">*</span>
+             </label>
+             <div class="input-wrapper">
+-              <input 
+-                type="tel" 
+-                class="form-input" 
+-                id="profile-input-phone" 
+-                name="phone" 
+-                required 
+-                placeholder="0981234567 hoặc +84..." 
+-                autocomplete="tel" 
+-                oninput="app.handleProfilePhoneInput(this)" 
+-                onblur="app.handleProfilePhoneBlur(this)"
+-              >
++              <input type="tel" class="form-input" id="profile-input-phone" name="phone" required
++                placeholder="0981234567 hoặc +84..." autocomplete="tel" oninput="app.handleProfilePhoneInput(this)"
++                onblur="app.handleProfilePhoneBlur(this)">
+               <span class="phone-check-icon" id="modal-profile-phone-check" style="display: none;">✓</span>
+             </div>
+             <span class="field-error-msg" id="modal-profile-phone-error"></span>
+-            <small class="field-hint-text" id="modal-profile-phone-hint">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc +84).</small>
++            <small class="field-hint-text" id="modal-profile-phone-hint">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc
++              +84).</small>
+           </div>
+ 
+           <!-- Ngày sinh -->
+@@ -900,7 +946,8 @@
+           <label class="form-label" for="profile-input-address">
+             <span>Địa chỉ hiện tại</span>
+           </label>
+-          <input type="text" class="form-input" id="profile-input-address" name="address" placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
++          <input type="text" class="form-input" id="profile-input-address" name="address"
++            placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
+         </div>
+ 
+         <p id="modal-profile-general-error" class="modal-alert-error" style="display:none;" role="alert"></p>
+@@ -919,7 +966,8 @@
+   <!-- Footer -->
+   <footer class="app-footer">
+     <div class="container footer-content">
+-      <p>© 2026 Đồ Án Môn Thực Tập Cơ Sở • Module Đăng Nhập & Quản Trị Tài Khoản • Phụ trách: <strong>Lập trình viên Frontend</strong></p>
++      <p>© 2026 Đồ Án Môn Thực Tập Cơ Sở • Module Đăng Nhập & Quản Trị Tài Khoản • Phụ trách: <strong>Lập trình viên
++          Frontend</strong></p>
+       <div class="footer-badges">
+         <span>Tiêu chí EP-01 (AC 1-2-3)</span>
+         <span>Quản trị người dùng (20 dòng/trang)</span>
+@@ -928,6 +976,8 @@
+     </div>
+   </footer>
+ 
++  <!-- DNKN87: CropperJS -->
++  <script src="/vendor/cropperjs/cropper.min.js"></script>
+   <script src="js/app.js"></script>
+   <script>
+     if (typeof app === 'undefined') {
+@@ -935,6 +985,8 @@
+       s.src = 'app.js';
+       document.body.appendChild(s);
+     }
++
+   </script>
+ </body>
+-</html>
++
++</html>
+\ No newline at end of file
+diff --git a/frontend/js/app.js b/frontend/js/app.js
+index ad3450a..ed996ea 100644
+--- a/frontend/js/app.js
++++ b/frontend/js/app.js
+@@ -1783,7 +1783,29 @@
+ 
+       const initials = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'US';
+       const avatarEl = document.getElementById('modal-view-avatar');
+-      if (avatarEl) avatarEl.textContent = initials;
++
++      if (avatarEl) {
++        avatarEl.textContent = '';
++
++        const avatarUrl = profileUser.avatarThumbnail || profileUser.avatar;
++
++        if (avatarUrl) {
++          const img = document.createElement('img');
++          img.src = avatarUrl;
++          img.alt = 'Ảnh đại diện';
++
++          img.style.cssText =
++            'width:100%;height:100%;object-fit:cover;border-radius:50%;';
++
++          img.onerror = () => {
++            avatarEl.textContent = initials;
++          };
++
++          avatarEl.appendChild(img);
++        } else {
++          avatarEl.textContent = initials;
++        }
++      }
+ 
+       const nameHero = document.getElementById('modal-view-name-hero');
+       if (nameHero) nameHero.textContent = name;
+@@ -1816,8 +1838,201 @@
+       this.toggleProfileEditMode(false);
+ 
+       modal.style.display = 'flex';
+-    },
++      this.initModalAvatarUpload();
++    },
++
++    // DNKN87: Chọn, cắt và xem trước ảnh đại diện
++    initModalAvatarUpload: function () {
++      const selectBtn = document.getElementById('modal-avatar-select-btn');
++      const fileInput = document.getElementById('modal-avatar-file');
++      const cropContainer = document.getElementById('modal-avatar-crop-container');
++      const cropImage = document.getElementById('modal-avatar-crop-image');
++      const cropBtn = document.getElementById('modal-avatar-crop-btn');
++      const previewContainer = document.getElementById('modal-avatar-preview-container');
++      const preview = document.getElementById('modal-avatar-preview');
++      const saveBtn = document.getElementById('modal-avatar-save-btn');
++      const status = document.getElementById('modal-avatar-status');
++
++      if (!selectBtn || !fileInput || !cropContainer ||
++        !cropImage || !cropBtn || !previewContainer ||
++        !preview || !saveBtn || !status) return;
++
++      if (selectBtn.dataset.initialized === 'true') return;
++      selectBtn.dataset.initialized = 'true';
++
++      let cropper = null;
++      let imageUrl = null;
++      let croppedBlob = null;
++
++      selectBtn.addEventListener('click', () => {
++        if (!getAuthToken()) {
++          status.textContent = 'Vui lòng đăng nhập trước khi đổi ảnh.';
++          return;
++        }
++        fileInput.click();
++      });
++
++      fileInput.addEventListener('change', () => {
++        const file = fileInput.files[0];
++        if (!file) return;
++
++        // DNKN87: Chan anh lon hon 2 MB
++        const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
++
++        if (file.size > MAX_AVATAR_SIZE) {
++          status.textContent = 'Ảnh không được vượt quá 2 MB.';
++          fileInput.value = '';
++
++          cropContainer.style.display = 'none';
++          previewContainer.style.display = 'none';
++          saveBtn.style.display = 'none';
++
++          croppedBlob = null;
++          return;
++        }
++
++        if (!['image/jpeg', 'image/png'].includes(file.type)) {
++          status.textContent = 'Chỉ chấp nhận ảnh JPG hoặc PNG.';
++          fileInput.value = '';
++          return;
++        }
++
++        if (file.size > 2 * 1024 * 1024) {
++          status.textContent = 'Ảnh không được vượt quá 2 MB.';
++          fileInput.value = '';
++          return;
++        }
++
++        if (typeof Cropper === 'undefined') {
++          status.textContent = 'Chưa tải được thư viện CropperJS.';
++          return;
++        }
++
++        if (cropper) cropper.destroy();
++        if (imageUrl) URL.revokeObjectURL(imageUrl);
++
++        croppedBlob = null;
++        previewContainer.style.display = 'none';
++        saveBtn.style.display = 'none';
++
++        imageUrl = URL.createObjectURL(file);
++        cropContainer.style.display = 'block';
++        status.textContent = 'Kéo và điều chỉnh vùng cắt ảnh.';
++
++        cropImage.onload = () => {
++          cropper = new Cropper(cropImage, {
++            aspectRatio: 1,
++            viewMode: 1,
++            autoCropArea: 1,
++            responsive: true
++          });
++        };
++
++        cropImage.src = imageUrl;
++      });
++
++      cropBtn.addEventListener('click', () => {
++        if (!cropper) {
++          status.textContent = 'Vui lòng chọn ảnh trước.';
++          return;
++        }
+ 
++        const canvas = cropper.getCroppedCanvas({
++          width: 300,
++          height: 300,
++          imageSmoothingQuality: 'high'
++        });
++
++        if (!canvas) {
++          status.textContent = 'Không thể cắt ảnh.';
++          return;
++        }
++
++        canvas.toBlob(blob => {
++          if (!blob) {
++            status.textContent = 'Không thể xử lý ảnh.';
++            return;
++          }
++
++          croppedBlob = blob;
++          preview.src = URL.createObjectURL(blob);
++          previewContainer.style.display = 'block';
++          saveBtn.style.display = 'inline-block';
++          status.textContent = 'Đã cắt ảnh vuông. Hãy kiểm tra ảnh xem trước.';
++        }, 'image/png');
++
++        cropper.destroy();
++        cropper = null;
++      });
++      // DNKN87: Luu anh dai dien len server
++      saveBtn.addEventListener('click', async () => {
++        if (!croppedBlob) {
++          status.textContent = 'Vui lòng cắt ảnh trước khi lưu.';
++          return;
++        }
++
++        const token = getAuthToken();
++
++        if (!token) {
++          status.textContent = 'Vui lòng đăng nhập để lưu ảnh.';
++          return;
++        }
++
++        saveBtn.disabled = true;
++        status.textContent = 'Đang lưu ảnh đại diện...';
++
++        try {
++          const formData = new FormData();
++          formData.append('avatar', croppedBlob, 'avatar.png');
++
++          const res = await fetch('/api/profile/avatar', {
++            method: 'POST',
++            headers: {
++              Authorization: `Bearer ${token}`
++            },
++            body: formData
++          });
++
++          const result = await res.json();
++
++          if (!res.ok || !result.success) {
++            throw new Error(result.message || 'Không thể lưu ảnh.');
++          }
++
++          status.textContent = 'Đã lưu ảnh đại diện thành công!';
++
++          const avatarUrl =
++            result.data?.avatarThumbnail || result.data?.avatar;
++
++          if (avatarUrl) {
++            const avatarEl = document.getElementById('modal-view-avatar');
++
++            if (avatarEl) {
++              avatarEl.textContent = '';
++
++              const img = document.createElement('img');
++              img.src = avatarUrl;
++              img.alt = 'Ảnh đại diện';
++              img.style.cssText =
++                'width:100%;height:100%;object-fit:cover;border-radius:50%;';
++
++              avatarEl.appendChild(img);
++            }
++          }
++
++          cropContainer.style.display = 'none';
++          previewContainer.style.display = 'none';
++          saveBtn.style.display = 'none';
++          croppedBlob = null;
++          fileInput.value = '';
++
++        } catch (error) {
++          status.textContent = error.message || 'Lưu ảnh thất bại.';
++        } finally {
++          saveBtn.disabled = false;
++        }
++      });
++    },
+     closeProfileModal: function () {
+       const modal = document.getElementById('profile-modal');
+       if (modal) modal.style.display = 'none';
+diff --git a/frontend/js/profile.js b/frontend/js/profile.js
+index ca65697..486c463 100644
+--- a/frontend/js/profile.js
++++ b/frontend/js/profile.js
+@@ -17,7 +17,9 @@
+ 
+   // Lấy Auth Token từ LocalStorage hoặc SessionStorage
+   function getAuthToken() {
+-    return localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
++    return localStorage.getItem('dnkn_auth_token')
++      || sessionStorage.getItem('dnkn_auth_token')
++      || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN)
+       || sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+   }
+ 
+@@ -44,7 +46,7 @@
+ 
+     const toast = document.createElement('div');
+     toast.className = `toast toast-${type} slide-in`;
+-    
++
+     const icons = {
+       success: '✓',
+       error: '✕',
+@@ -189,10 +191,37 @@
+ 
+     // Header Meta
+     const initials = getInitials(user.fullName || user.name);
++
+     const avatarEl = document.getElementById('page-avatar');
+-    if (avatarEl) avatarEl.textContent = initials;
+     const navAvatarEl = document.getElementById('nav-user-avatar');
+-    if (navAvatarEl) navAvatarEl.textContent = initials;
++
++    // DNKN-116: Hiển thị lại ảnh đại diện đã lưu
++    function displayAvatar(element, imageUrl) {
++      if (!element) return;
++
++      element.textContent = '';
++
++      if (imageUrl) {
++        const img = document.createElement('img');
++
++        img.src = imageUrl;
++        img.alt = 'Ảnh đại diện';
++
++        img.style.cssText =
++          'width:100%;height:100%;object-fit:cover;border-radius:50%;';
++
++        img.onerror = () => {
++          element.textContent = initials;
++        };
++
++        element.appendChild(img);
++      } else {
++        element.textContent = initials;
++      }
++    }
++
++    displayAvatar(avatarEl, user.avatar);
++    displayAvatar(navAvatarEl, user.avatarThumbnail || user.avatar);
+ 
+     const displayName = user.fullName || user.name || 'Người dùng';
+     const fullnameEl = document.getElementById('page-fullname');
+@@ -422,10 +451,10 @@
+         if (result.ok && result.data.success) {
+           showToast('Cập nhật hồ sơ cá nhân thành công!', 'success');
+           const updatedUser = result.data.data;
+-          
++
+           // Cập nhật Storage
+           saveStoredUser(updatedUser);
+-          
++
+           // Cập nhật View
+           renderViewMode(updatedUser);
+ 
+@@ -466,4 +495,191 @@
+   document.addEventListener('DOMContentLoaded', () => {
+     profileApp.init();
+   });
++  // DNKN-112: Chọn và xem trước ảnh đại diện
++  function initAvatarUpload() {
++    const selectBtn = document.getElementById('avatar-select-btn');
++    const fileInput = document.getElementById('avatar-file-input');
++    const preview = document.getElementById('avatar-preview');
++    const previewContainer = document.getElementById('avatar-preview-container');
++    const status = document.getElementById('avatar-upload-status');
++    const cropContainer = document.getElementById('avatar-crop-container');
++    const cropImage = document.getElementById('avatar-crop-image');
++    const cropBtn = document.getElementById('avatar-crop-btn');
++
++    const saveBtn = document.getElementById('avatar-save-btn');
++    let croppedBlob = null;
++
++    if (!selectBtn || !fileInput || !preview || !previewContainer ||
++      !status || !cropContainer || !cropImage || !cropBtn) return;
++
++    let cropper = null;
++    let imageUrl = null;
++
++    selectBtn.addEventListener('click', () => fileInput.click());
++
++    fileInput.addEventListener('change', () => {
++      const file = fileInput.files[0];
++      if (!file) return;
++
++      if (cropper) {
++        cropper.destroy();
++        cropper = null;
++      }
++
++      if (imageUrl) {
++        URL.revokeObjectURL(imageUrl);
++        imageUrl = null;
++      }
++
++      cropContainer.style.display = 'none';
++      previewContainer.style.display = 'none';
++
++      if (!['image/jpeg', 'image/png'].includes(file.type)) {
++        status.textContent = 'Chỉ chấp nhận ảnh JPG hoặc PNG!';
++        fileInput.value = '';
++        return;
++      }
++
++      if (file.size > 2 * 1024 * 1024) {
++        status.textContent = 'Ảnh không được vượt quá 2MB!';
++        fileInput.value = '';
++        return;
++      }
++
++      if (typeof Cropper === 'undefined') {
++        status.textContent = 'Chưa tải được thư viện cắt ảnh.';
++        return;
++      }
++
++      imageUrl = URL.createObjectURL(file);
++
++      cropImage.onload = () => {
++        cropContainer.style.display = 'block';
++
++        cropper = new Cropper(cropImage, {
++          aspectRatio: 1,
++          viewMode: 1,
++          dragMode: 'move',
++          autoCropArea: 0.9,
++          zoomable: true,
++          movable: true,
++          responsive: true
++        });
++      };
++
++      cropImage.onerror = () => {
++        status.textContent = 'Không thể đọc ảnh đã chọn.';
++      };
++
++      cropImage.src = imageUrl;
++      status.textContent = 'Hãy điều chỉnh vùng cắt ảnh.';
++    });
++
++    cropBtn.addEventListener('click', () => {
++      if (!cropper) return;
++
++      const canvas = cropper.getCroppedCanvas({
++        width: 300,
++        height: 300,
++        imageSmoothingQuality: 'high'
++      });
++
++      if (!canvas) {
++        status.textContent = 'Không thể cắt ảnh.';
++        return;
++      }
++
++      preview.src = canvas.toDataURL('image/png');
++      previewContainer.style.display = 'block';
++      cropContainer.style.display = 'none';
++      // Chuẩn bị ảnh đã cắt để tải lên máy chủ
++      croppedBlob = null;
++      if (saveBtn) saveBtn.style.display = 'none';
++
++      canvas.toBlob((blob) => {
++        if (!blob) {
++          status.textContent = 'Không thể tạo ảnh để lưu.';
++          return;
++        }
++
++        croppedBlob = blob;
++
++        if (saveBtn) {
++          saveBtn.style.display = 'inline-block';
++        }
++
++        status.textContent = 'Ảnh đã cắt. Nhấn Lưu ảnh đại diện.';
++      }, 'image/png');
++
++      cropper.destroy();
++      cropper = null;
++
++    });
++    // DNKN-116: Lưu ảnh đại diện lên máy chủ
++    if (saveBtn) {
++      saveBtn.addEventListener('click', async () => {
++        if (!croppedBlob) {
++          status.textContent = 'Vui lòng chọn và cắt ảnh trước.';
++          return;
++        }
++
++        const token = getAuthToken();
++
++        if (!token) {
++          status.textContent = 'Vui lòng đăng nhập trước khi đổi ảnh.';
++          return;
++        }
++
++        const formData = new FormData();
++        formData.append('avatar', croppedBlob, 'avatar.png');
++
++        saveBtn.disabled = true;
++        status.textContent = 'Đang tải ảnh lên...';
++
++        try {
++          const response = await fetch('/api/profile/avatar', {
++            method: 'POST',
++            headers: {
++              Authorization: `Bearer ${token}`
++            },
++            body: formData
++          });
++
++          const result = await response.json();
++
++          if (!response.ok || !result.success) {
++            throw new Error(result.message || 'Không thể lưu ảnh.');
++          }
++
++          const avatarUrl = result.data.avatar;
++
++          const pageAvatar = document.getElementById('page-avatar');
++
++          if (pageAvatar) {
++            pageAvatar.textContent = '';
++
++            const img = document.createElement('img');
++            img.src = avatarUrl;
++            img.alt = 'Ảnh đại diện';
++            img.style.cssText =
++              'width:100%;height:100%;object-fit:cover;border-radius:50%';
++
++            pageAvatar.appendChild(img);
++          }
++
++          status.textContent = 'Đã lưu ảnh đại diện thành công!';
++          saveBtn.style.display = 'none';
++          croppedBlob = null;
++
++        } catch (error) {
++          status.textContent = error.message;
++        } finally {
++          saveBtn.disabled = false;
++        }
++      });
++    }
++  }
++
++  // Khởi tạo chức năng chọn ảnh
++  document.addEventListener('DOMContentLoaded', initAvatarUpload);
+ })();
+diff --git a/frontend/profile.html b/frontend/profile.html
+index aef00e7..c548e1c 100644
+--- a/frontend/profile.html
++++ b/frontend/profile.html
+@@ -5,13 +5,17 @@
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Hồ Sơ Cá Nhân | EduClass Shield</title>
+-  <meta name="description" content="Xem và cập nhật thông tin hồ sơ cá nhân, số điện thoại liên lạc định dạng Việt Nam, ngày sinh, địa chỉ.">
++  <meta name="description"
++    content="Xem và cập nhật thông tin hồ sơ cá nhân, số điện thoại liên lạc định dạng Việt Nam, ngày sinh, địa chỉ.">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
++  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
++    rel="stylesheet">
+   <link rel="stylesheet" href="css/styles.css">
+   <link rel="stylesheet" href="styles.css">
+-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
++  <link rel="icon"
++    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
++  <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css">
+ </head>
+ 
+ <body>
+@@ -30,7 +34,8 @@
+     <div class="container header-container">
+       <a href="/" class="brand-logo" style="text-decoration: none;">
+         <div class="logo-icon-wrapper">
+-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
++          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
++            stroke-linecap="round" stroke-linejoin="round">
+             <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+             <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+           </svg>
+@@ -43,20 +48,24 @@
+ 
+       <div class="header-actions">
+         <!-- Quay lại bảng điều khiển -->
+-        <a href="/" class="btn-back-nav" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; text-decoration: none; color: var(--text-primary); background: var(--bg-card); border: 1px solid var(--border-card); font-size: 13px; font-weight: 500;">
++        <a href="/" class="btn-back-nav"
++          style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; text-decoration: none; color: var(--text-primary); background: var(--bg-card); border: 1px solid var(--border-card); font-size: 13px; font-weight: 500;">
+           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+-            <path d="M19 12H5M12 19l-7-7 7-7"/>
++            <path d="M19 12H5M12 19l-7-7 7-7" />
+           </svg>
+           <span>Về Trang Chủ</span>
+         </a>
+ 
+         <!-- Theme Toggle -->
+         <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Chuyển đổi giao diện Sáng/Tối">
+-          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++            stroke-width="2">
+             <circle cx="12" cy="12" r="5" />
+-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
++            <path
++              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+           </svg>
+-          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
++          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
++            stroke-width="2">
+             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+           </svg>
+         </button>
+@@ -85,10 +94,43 @@
+   <!-- MAIN APPLICATION CONTENT -->
+   <main class="main-content">
+     <div class="container" style="max-width: 900px; padding-top: 30px; padding-bottom: 60px;">
+-      
++
+       <!-- Profile Hero Banner -->
+       <div class="profile-page-header glass-panel">
+         <div class="profile-avatar-giant" id="page-avatar">AD</div>
++
++        <!-- DNKN87: Upload avatar -->
++        <div class="avatar-upload-section">
++          <input type="file" id="avatar-file-input" accept=".jpg,.jpeg,.png,image/jpeg,image/png" style="display:none">
++
++          <button type="button" id="avatar-select-btn">
++            Chọn ảnh đại diện
++          </button>
++
++          <div id="avatar-preview-container" style="display:none">
++            <p>Xem trước ảnh:</p>
++            <img id="avatar-preview" alt="Xem trước ảnh đại diện"
++              style="width:150px;height:150px;object-fit:cover;border-radius:50%">
++          </div>
++          <!-- DNKN-114: Khu vực cắt ảnh vuông -->
++          <div id="avatar-crop-container" style="display:none; margin-top:15px;">
++            <p>Điều chỉnh và cắt ảnh đại diện:</p>
++
++            <div style="width:280px; max-width:100%;">
++              <img id="avatar-crop-image" alt="Ảnh cần cắt" style="display:block; max-width:100%;">
++            </div>
++
++            <button type="button" id="avatar-crop-btn">
++              Cắt ảnh vuông
++            </button>
++          </div>
++          <!-- DNKN-116: Lưu ảnh đại diện -->
++          <button type="button" id="avatar-save-btn" style="display:none; margin-top:10px;">
++            Lưu ảnh đại diện
++          </button>
++
++          <p id="avatar-upload-status" role="status"></p>
++        </div>
+         <div class="profile-header-meta">
+           <div class="profile-title-row">
+             <h1 class="profile-user-fullname" id="page-fullname">Đang tải...</h1>
+@@ -103,8 +145,8 @@
+         <div class="profile-header-actions">
+           <button type="button" class="btn-toggle-edit" id="btn-toggle-edit" onclick="profileApp.toggleEditMode()">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
++              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
++              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+             </svg>
+             <span id="btn-toggle-edit-text">Chỉnh Sửa Hồ Sơ</span>
+           </button>
+@@ -133,7 +175,8 @@
+           <div class="profile-grid-item">
+             <div class="item-label-flex">
+               <span class="item-label">Địa chỉ Email</span>
+-              <span class="badge-locked" title="Email là định danh tài khoản, không được phép thay đổi">🔒 Cố định</span>
++              <span class="badge-locked" title="Email là định danh tài khoản, không được phép thay đổi">🔒 Cố
++                định</span>
+             </div>
+             <span class="item-val text-muted" id="view-email">---</span>
+           </div>
+@@ -164,7 +207,8 @@
+ 
+         <div class="profile-footer-tip">
+           <span class="tip-icon">💡</span>
+-          <span>Nếu thông tin liên lạc thay đổi, hãy nhấn <strong>"Chỉnh Sửa Hồ Sơ"</strong> để cập nhật ngay, giúp trung tâm liên lạc được khi cần thiết.</span>
++          <span>Nếu thông tin liên lạc thay đổi, hãy nhấn <strong>"Chỉnh Sửa Hồ Sơ"</strong> để cập nhật ngay, giúp
++            trung tâm liên lạc được khi cần thiết.</span>
+         </div>
+       </section>
+ 
+@@ -182,11 +226,13 @@
+         </div>
+ 
+         <form id="profile-edit-form" class="profile-form" onsubmit="profileApp.handleSubmit(event)" novalidate>
+-          
++
+           <div class="form-alert-info">
+             <div class="alert-icon">🔒</div>
+             <div class="alert-text">
+-              <strong>Quy định bảo mật hệ thống:</strong> Trường <strong>Email</strong> và <strong>Vai trò</strong> là thông tin định danh do quản trị viên cấp, người dùng không thể tự thay đổi. Số điện thoại phải tuân thủ đúng định dạng mạng viễn thông Việt Nam.
++              <strong>Quy định bảo mật hệ thống:</strong> Trường <strong>Email</strong> và <strong>Vai trò</strong> là
++              thông tin định danh do quản trị viên cấp, người dùng không thể tự thay đổi. Số điện thoại phải tuân thủ
++              đúng định dạng mạng viễn thông Việt Nam.
+             </div>
+           </div>
+ 
+@@ -196,7 +242,8 @@
+               <span>Họ và tên</span>
+               <span class="required-star">*</span>
+             </label>
+-            <input type="text" id="edit-name" name="name" class="form-input" placeholder="Nhập họ và tên đầy đủ..." required>
++            <input type="text" id="edit-name" name="name" class="form-input" placeholder="Nhập họ và tên đầy đủ..."
++              required>
+             <span class="field-error-msg" id="edit-name-error"></span>
+           </div>
+ 
+@@ -236,21 +283,14 @@
+                 <span class="required-star">*</span>
+               </label>
+               <div class="input-wrapper">
+-                <input 
+-                  type="tel" 
+-                  id="edit-phone" 
+-                  name="phone" 
+-                  class="form-input" 
+-                  placeholder="0981234567 hoặc +84..." 
+-                  autocomplete="tel" 
+-                  required
+-                  oninput="profileApp.handlePhoneInput(this)"
+-                  onblur="profileApp.handlePhoneBlur(this)"
+-                >
++                <input type="tel" id="edit-phone" name="phone" class="form-input" placeholder="0981234567 hoặc +84..."
++                  autocomplete="tel" required oninput="profileApp.handlePhoneInput(this)"
++                  onblur="profileApp.handlePhoneBlur(this)">
+                 <span class="phone-check-icon" id="edit-phone-check-icon" style="display: none;">✓</span>
+               </div>
+               <span class="field-error-msg" id="edit-phone-error"></span>
+-              <small class="field-hint" id="edit-phone-hint">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc mã quốc tế +84).</small>
++              <small class="field-hint" id="edit-phone-hint">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc mã quốc tế
++                +84).</small>
+             </div>
+ 
+             <!-- Ngày sinh -->
+@@ -268,7 +308,8 @@
+             <label class="form-label" for="edit-address">
+               <span>Địa chỉ liên hệ hiện tại</span>
+             </label>
+-            <input type="text" id="edit-address" name="address" class="form-input" placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
++            <input type="text" id="edit-address" name="address" class="form-input"
++              placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
+           </div>
+ 
+           <!-- Alert Lỗi tổng quát -->
+@@ -294,6 +335,9 @@
+     </div>
+   </footer>
+ 
++  <script src="/vendor/cropperjs/cropper.min.js"></script>
+   <script src="js/profile.js"></script>
++
+ </body>
+-</html>
++
++</html>
+\ No newline at end of file
+diff --git a/frontend/vendor/cropperjs/cropper.min.css b/frontend/vendor/cropperjs/cropper.min.css
+new file mode 100644
+index 0000000..8e34d75
+--- /dev/null
++++ b/frontend/vendor/cropperjs/cropper.min.css
+@@ -0,0 +1,9 @@
++/*!
++ * Cropper.js v1.6.2
++ * https://fengyuanchen.github.io/cropperjs
++ *
++ * Copyright 2015-present Chen Fengyuan
++ * Released under the MIT license
++ *
++ * Date: 2024-04-21T07:43:02.731Z
++ */.cropper-container{-webkit-touch-callout:none;direction:ltr;font-size:0;line-height:0;position:relative;-ms-touch-action:none;touch-action:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.cropper-container img{backface-visibility:hidden;display:block;height:100%;image-orientation:0deg;max-height:none!important;max-width:none!important;min-height:0!important;min-width:0!important;width:100%}.cropper-canvas,.cropper-crop-box,.cropper-drag-box,.cropper-modal,.cropper-wrap-box{bottom:0;left:0;position:absolute;right:0;top:0}.cropper-canvas,.cropper-wrap-box{overflow:hidden}.cropper-drag-box{background-color:#fff;opacity:0}.cropper-modal{background-color:#000;opacity:.5}.cropper-view-box{display:block;height:100%;outline:1px solid #39f;outline-color:rgba(51,153,255,.75);overflow:hidden;width:100%}.cropper-dashed{border:0 dashed #eee;display:block;opacity:.5;position:absolute}.cropper-dashed.dashed-h{border-bottom-width:1px;border-top-width:1px;height:33.33333%;left:0;top:33.33333%;width:100%}.cropper-dashed.dashed-v{border-left-width:1px;border-right-width:1px;height:100%;left:33.33333%;top:0;width:33.33333%}.cropper-center{display:block;height:0;left:50%;opacity:.75;position:absolute;top:50%;width:0}.cropper-center:after,.cropper-center:before{background-color:#eee;content:" ";display:block;position:absolute}.cropper-center:before{height:1px;left:-3px;top:0;width:7px}.cropper-center:after{height:7px;left:0;top:-3px;width:1px}.cropper-face,.cropper-line,.cropper-point{display:block;height:100%;opacity:.1;position:absolute;width:100%}.cropper-face{background-color:#fff;left:0;top:0}.cropper-line{background-color:#39f}.cropper-line.line-e{cursor:ew-resize;right:-3px;top:0;width:5px}.cropper-line.line-n{cursor:ns-resize;height:5px;left:0;top:-3px}.cropper-line.line-w{cursor:ew-resize;left:-3px;top:0;width:5px}.cropper-line.line-s{bottom:-3px;cursor:ns-resize;height:5px;left:0}.cropper-point{background-color:#39f;height:5px;opacity:.75;width:5px}.cropper-point.point-e{cursor:ew-resize;margin-top:-3px;right:-3px;top:50%}.cropper-point.point-n{cursor:ns-resize;left:50%;margin-left:-3px;top:-3px}.cropper-point.point-w{cursor:ew-resize;left:-3px;margin-top:-3px;top:50%}.cropper-point.point-s{bottom:-3px;cursor:s-resize;left:50%;margin-left:-3px}.cropper-point.point-ne{cursor:nesw-resize;right:-3px;top:-3px}.cropper-point.point-nw{cursor:nwse-resize;left:-3px;top:-3px}.cropper-point.point-sw{bottom:-3px;cursor:nesw-resize;left:-3px}.cropper-point.point-se{bottom:-3px;cursor:nwse-resize;height:20px;opacity:1;right:-3px;width:20px}@media (min-width:768px){.cropper-point.point-se{height:15px;width:15px}}@media (min-width:992px){.cropper-point.point-se{height:10px;width:10px}}@media (min-width:1200px){.cropper-point.point-se{height:5px;opacity:.75;width:5px}}.cropper-point.point-se:before{background-color:#39f;bottom:-50%;content:" ";display:block;height:200%;opacity:0;position:absolute;right:-50%;width:200%}.cropper-invisible{opacity:0}.cropper-bg{background-image:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAQMAAAAlPW0iAAAAA3NCSVQICAjb4U/gAAAABlBMVEXMzMz////TjRV2AAAACXBIWXMAAArrAAAK6wGCiw1aAAAAHHRFWHRTb2Z0d2FyZQBBZG9iZSBGaXJld29ya3MgQ1M26LyyjAAAABFJREFUCJlj+M/AgBVhF/0PAH6/D/HkDxOGAAAAAElFTkSuQmCC")}.cropper-hide{display:block;height:0;position:absolute;width:0}.cropper-hidden{display:none!important}.cropper-move{cursor:move}.cropper-crop{cursor:crosshair}.cropper-disabled .cropper-drag-box,.cropper-disabled .cropper-face,.cropper-disabled .cropper-line,.cropper-disabled .cropper-point{cursor:not-allowed}
+\ No newline at end of file
+diff --git a/frontend/vendor/cropperjs/cropper.min.js b/frontend/vendor/cropperjs/cropper.min.js
+new file mode 100644
+index 0000000..3102cb5
+--- /dev/null
++++ b/frontend/vendor/cropperjs/cropper.min.js
+@@ -0,0 +1,10 @@
++/*!
++ * Cropper.js v1.6.2
++ * https://fengyuanchen.github.io/cropperjs
++ *
++ * Copyright 2015-present Chen Fengyuan
++ * Released under the MIT license
++ *
++ * Date: 2024-04-21T07:43:05.335Z
++ */
++!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t="undefined"!=typeof globalThis?globalThis:t||self).Cropper=e()}(this,function(){"use strict";function C(e,t){var i,a=Object.keys(e);return Object.getOwnPropertySymbols&&(i=Object.getOwnPropertySymbols(e),t&&(i=i.filter(function(t){return Object.getOwnPropertyDescriptor(e,t).enumerable})),a.push.apply(a,i)),a}function S(a){for(var t=1;t<arguments.length;t++){var n=null!=arguments[t]?arguments[t]:{};t%2?C(Object(n),!0).forEach(function(t){var e,i;e=a,i=n[t=t],(t=D(t))in e?Object.defineProperty(e,t,{value:i,enumerable:!0,configurable:!0,writable:!0}):e[t]=i}):Object.getOwnPropertyDescriptors?Object.defineProperties(a,Object.getOwnPropertyDescriptors(n)):C(Object(n)).forEach(function(t){Object.defineProperty(a,t,Object.getOwnPropertyDescriptor(n,t))})}return a}function D(t){t=function(t,e){if("object"!=typeof t||!t)return t;var i=t[Symbol.toPrimitive];if(void 0===i)return("string"===e?String:Number)(t);if("object"!=typeof(i=i.call(t,e||"default")))return i;throw new TypeError("@@toPrimitive must return a primitive value.")}(t,"string");return"symbol"==typeof t?t:t+""}function j(t){return(j="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(t){return typeof t}:function(t){return t&&"function"==typeof Symbol&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t})(t)}function A(t,e){for(var i=0;i<e.length;i++){var a=e[i];a.enumerable=a.enumerable||!1,a.configurable=!0,"value"in a&&(a.writable=!0),Object.defineProperty(t,D(a.key),a)}}function P(t){return function(t){if(Array.isArray(t))return a(t)}(t)||function(t){if("undefined"!=typeof Symbol&&null!=t[Symbol.iterator]||null!=t["@@iterator"])return Array.from(t)}(t)||function(t,e){var i;if(t)return"string"==typeof t?a(t,e):"Map"===(i="Object"===(i=Object.prototype.toString.call(t).slice(8,-1))&&t.constructor?t.constructor.name:i)||"Set"===i?Array.from(t):"Arguments"===i||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(i)?a(t,e):void 0}(t)||function(){throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function a(t,e){(null==e||e>t.length)&&(e=t.length);for(var i=0,a=new Array(e);i<e;i++)a[i]=t[i];return a}var t="undefined"!=typeof window&&void 0!==window.document,h=t?window:{},e=!(!t||!h.document.documentElement)&&"ontouchstart"in h.document.documentElement,i=t&&"PointerEvent"in h,c="cropper",I="all",U="crop",q="move",$="zoom",B="e",k="w",O="s",T="n",E="ne",W="nw",H="se",N="sw",Q="".concat(c,"-crop"),K="".concat(c,"-disabled"),L="".concat(c,"-hidden"),Z="".concat(c,"-hide"),G="".concat(c,"-invisible"),n="".concat(c,"-modal"),V="".concat(c,"-move"),d="".concat(c,"Action"),m="".concat(c,"Preview"),F="crop",J="move",_="none",tt="crop",et="cropend",it="cropmove",at="cropstart",nt="dblclick",ot=i?"pointerdown":e?"touchstart":"mousedown",ht=i?"pointermove":e?"touchmove":"mousemove",rt=i?"pointerup pointercancel":e?"touchend touchcancel":"mouseup",st="zoom",ct="image/jpeg",dt=/^e|w|s|n|se|sw|ne|nw|all|crop|move|zoom$/,lt=/^data:/,pt=/^data:image\/jpeg;base64,/,mt=/^img|canvas$/i,ut={viewMode:0,dragMode:F,initialAspectRatio:NaN,aspectRatio:NaN,data:null,preview:"",responsive:!0,restore:!0,checkCrossOrigin:!0,checkOrientation:!0,modal:!0,guides:!0,center:!0,highlight:!0,background:!0,autoCrop:!0,autoCropArea:.8,movable:!0,rotatable:!0,scalable:!0,zoomable:!0,zoomOnTouch:!0,zoomOnWheel:!0,wheelZoomRatio:.1,cropBoxMovable:!0,cropBoxResizable:!0,toggleDragModeOnDblclick:!0,minCanvasWidth:0,minCanvasHeight:0,minCropBoxWidth:0,minCropBoxHeight:0,minContainerWidth:200,minContainerHeight:100,ready:null,cropstart:null,cropmove:null,cropend:null,crop:null,zoom:null},gt=Number.isNaN||h.isNaN;function p(t){return"number"==typeof t&&!gt(t)}function ft(t){return 0<t&&t<1/0}function vt(t){return void 0===t}function o(t){return"object"===j(t)&&null!==t}var wt=Object.prototype.hasOwnProperty;function u(t){if(!o(t))return!1;try{var e=t.constructor,i=e.prototype;return e&&i&&wt.call(i,"isPrototypeOf")}catch(t){return!1}}function l(t){return"function"==typeof t}var bt=Array.prototype.slice;function yt(t){return Array.from?Array.from(t):bt.call(t)}function z(i,a){return i&&l(a)&&(Array.isArray(i)||p(i.length)?yt(i).forEach(function(t,e){a.call(i,t,e,i)}):o(i)&&Object.keys(i).forEach(function(t){a.call(i,i[t],t,i)})),i}var g=Object.assign||function(i){for(var t=arguments.length,e=new Array(1<t?t-1:0),a=1;a<t;a++)e[a-1]=arguments[a];return o(i)&&0<e.length&&e.forEach(function(e){o(e)&&Object.keys(e).forEach(function(t){i[t]=e[t]})}),i},xt=/\.\d*(?:0|9){12}\d*$/;function Y(t,e){e=1<arguments.length&&void 0!==e?e:1e11;return xt.test(t)?Math.round(t*e)/e:t}var Mt=/^width|height|left|top|marginLeft|marginTop$/;function f(t,e){var i=t.style;z(e,function(t,e){Mt.test(e)&&p(t)&&(t="".concat(t,"px")),i[e]=t})}function v(t,e){var i;e&&(p(t.length)?z(t,function(t){v(t,e)}):t.classList?t.classList.add(e):(i=t.className.trim())?i.indexOf(e)<0&&(t.className="".concat(i," ").concat(e)):t.className=e)}function X(t,e){e&&(p(t.length)?z(t,function(t){X(t,e)}):t.classList?t.classList.remove(e):0<=t.className.indexOf(e)&&(t.className=t.className.replace(e,"")))}function r(t,e,i){e&&(p(t.length)?z(t,function(t){r(t,e,i)}):(i?v:X)(t,e))}var Ct=/([a-z\d])([A-Z])/g;function Dt(t){return t.replace(Ct,"$1-$2").toLowerCase()}function Bt(t,e){return o(t[e])?t[e]:t.dataset?t.dataset[e]:t.getAttribute("data-".concat(Dt(e)))}function w(t,e,i){o(i)?t[e]=i:t.dataset?t.dataset[e]=i:t.setAttribute("data-".concat(Dt(e)),i)}var kt,Ot,Tt=/\s\s*/,Et=(Ot=!1,t&&(kt=!1,i=function(){},e=Object.defineProperty({},"once",{get:function(){return Ot=!0,kt},set:function(t){kt=t}}),h.addEventListener("test",i,e),h.removeEventListener("test",i,e)),Ot);function s(i,t,a,e){var n=3<arguments.length&&void 0!==e?e:{},o=a;t.trim().split(Tt).forEach(function(t){var e;Et||(e=i.listeners)&&e[t]&&e[t][a]&&(o=e[t][a],delete e[t][a],0===Object.keys(e[t]).length&&delete e[t],0===Object.keys(e).length)&&delete i.listeners,i.removeEventListener(t,o,n)})}function b(o,t,h,e){var r=3<arguments.length&&void 0!==e?e:{},s=h;t.trim().split(Tt).forEach(function(a){var t,n;r.once&&!Et&&(t=o.listeners,s=function(){delete n[a][h],o.removeEventListener(a,s,r);for(var t=arguments.length,e=new Array(t),i=0;i<t;i++)e[i]=arguments[i];h.apply(o,e)},(n=void 0===t?{}:t)[a]||(n[a]={}),n[a][h]&&o.removeEventListener(a,n[a][h],r),n[a][h]=s,o.listeners=n),o.addEventListener(a,s,r)})}function y(t,e,i){var a;return l(Event)&&l(CustomEvent)?a=new CustomEvent(e,{detail:i,bubbles:!0,cancelable:!0}):(a=document.createEvent("CustomEvent")).initCustomEvent(e,!0,!0,i),t.dispatchEvent(a)}function Wt(t){t=t.getBoundingClientRect();return{left:t.left+(window.pageXOffset-document.documentElement.clientLeft),top:t.top+(window.pageYOffset-document.documentElement.clientTop)}}var Ht=h.location,Nt=/^(\w+:)\/\/([^:/?#]*):?(\d*)/i;function Lt(t){t=t.match(Nt);return null!==t&&(t[1]!==Ht.protocol||t[2]!==Ht.hostname||t[3]!==Ht.port)}function zt(t){var e="timestamp=".concat((new Date).getTime());return t+(-1===t.indexOf("?")?"?":"&")+e}function x(t){var e=t.rotate,i=t.scaleX,a=t.scaleY,n=t.translateX,t=t.translateY,o=[],n=(p(n)&&0!==n&&o.push("translateX(".concat(n,"px)")),p(t)&&0!==t&&o.push("translateY(".concat(t,"px)")),p(e)&&0!==e&&o.push("rotate(".concat(e,"deg)")),p(i)&&1!==i&&o.push("scaleX(".concat(i,")")),p(a)&&1!==a&&o.push("scaleY(".concat(a,")")),o.length?o.join(" "):"none");return{WebkitTransform:n,msTransform:n,transform:n}}function M(t,e){var i=t.pageX,t=t.pageY,a={endX:i,endY:t};return e?a:S({startX:i,startY:t},a)}function R(t,e){var i,a=t.aspectRatio,n=t.height,t=t.width,e=1<arguments.length&&void 0!==e?e:"contain",o=ft(t),h=ft(n);return o&&h?(i=n*a,"contain"===e&&t<i||"cover"===e&&i<t?n=t/a:t=n*a):o?n=t/a:h&&(t=n*a),{width:t,height:n}}var Yt=String.fromCharCode;var Xt=/^data:.*,/;function Rt(t){var e,i,a,n,o,h,r,s=new DataView(t);try{if(255===s.getUint8(0)&&216===s.getUint8(1))for(var c=s.byteLength,d=2;d+1<c;){if(255===s.getUint8(d)&&225===s.getUint8(d+1)){i=d;break}d+=1}if(a=i&&(n=i+10,"Exif"===function(t,e,i){var a="";i+=e;for(var n=e;n<i;n+=1)a+=Yt(t.getUint8(n));return a}(s,i+4,4))&&((r=18761===(o=s.getUint16(n)))||19789===o)&&42===s.getUint16(n+2,r)&&8<=(h=s.getUint32(n+4,r))?n+h:a)for(var l,p=s.getUint16(a,r),m=0;m<p;m+=1)if(l=a+12*m+2,274===s.getUint16(l,r)){l+=8,e=s.getUint16(l,r),s.setUint16(l,1,r);break}}catch(t){e=1}return e}var t={render:function(){this.initContainer(),this.initCanvas(),this.initCropBox(),this.renderCanvas(),this.cropped&&this.renderCropBox()},initContainer:function(){var t=this.element,e=this.options,i=this.container,a=this.cropper,n=Number(e.minContainerWidth),e=Number(e.minContainerHeight),n=(v(a,L),X(t,L),{width:Math.max(i.offsetWidth,0<=n?n:200),height:Math.max(i.offsetHeight,0<=e?e:100)});f(a,{width:(this.containerData=n).width,height:n.height}),v(t,L),X(a,L)},initCanvas:function(){var t=this.containerData,e=this.imageData,i=this.options.viewMode,a=Math.abs(e.rotate)%180==90,n=a?e.naturalHeight:e.naturalWidth,a=a?e.naturalWidth:e.naturalHeight,e=n/a,o=t.width,h=t.height,e=(t.height*e>t.width?3===i?o=t.height*e:h=t.width/e:3===i?h=t.width/e:o=t.height*e,{aspectRatio:e,naturalWidth:n,naturalHeight:a,width:o,height:h});this.canvasData=e,this.limited=1===i||2===i,this.limitCanvas(!0,!0),e.width=Math.min(Math.max(e.width,e.minWidth),e.maxWidth),e.height=Math.min(Math.max(e.height,e.minHeight),e.maxHeight),e.left=(t.width-e.width)/2,e.top=(t.height-e.height)/2,e.oldLeft=e.left,e.oldTop=e.top,this.initialCanvasData=g({},e)},limitCanvas:function(t,e){var i=this.options,a=this.containerData,n=this.canvasData,o=this.cropBoxData,h=i.viewMode,r=n.aspectRatio,s=this.cropped&&o;t&&(t=Number(i.minCanvasWidth)||0,i=Number(i.minCanvasHeight)||0,1<h?(t=Math.max(t,a.width),i=Math.max(i,a.height),3===h&&(t<i*r?t=i*r:i=t/r)):0<h&&(t?t=Math.max(t,s?o.width:0):i?i=Math.max(i,s?o.height:0):s&&((t=o.width)<(i=o.height)*r?t=i*r:i=t/r)),t=(r=R({aspectRatio:r,width:t,height:i})).width,i=r.height,n.minWidth=t,n.minHeight=i,n.maxWidth=1/0,n.maxHeight=1/0),e&&((s?0:1)<h?(r=a.width-n.width,t=a.height-n.height,n.minLeft=Math.min(0,r),n.minTop=Math.min(0,t),n.maxLeft=Math.max(0,r),n.maxTop=Math.max(0,t),s&&this.limited&&(n.minLeft=Math.min(o.left,o.left+(o.width-n.width)),n.minTop=Math.min(o.top,o.top+(o.height-n.height)),n.maxLeft=o.left,n.maxTop=o.top,2===h)&&(n.width>=a.width&&(n.minLeft=Math.min(0,r),n.maxLeft=Math.max(0,r)),n.height>=a.height)&&(n.minTop=Math.min(0,t),n.maxTop=Math.max(0,t))):(n.minLeft=-n.width,n.minTop=-n.height,n.maxLeft=a.width,n.maxTop=a.height))},renderCanvas:function(t,e){var i,a,n,o,h=this.canvasData,r=this.imageData;e&&(e={width:r.naturalWidth*Math.abs(r.scaleX||1),height:r.naturalHeight*Math.abs(r.scaleY||1),degree:r.rotate||0},r=e.width,o=e.height,e=e.degree,i=90==(e=Math.abs(e)%180)?{width:o,height:r}:(a=e%90*Math.PI/180,i=Math.sin(a),n=r*(a=Math.cos(a))+o*i,r=r*i+o*a,90<e?{width:r,height:n}:{width:n,height:r}),a=h.width*((o=i.width)/h.naturalWidth),n=h.height*((e=i.height)/h.naturalHeight),h.left-=(a-h.width)/2,h.top-=(n-h.height)/2,h.width=a,h.height=n,h.aspectRatio=o/e,h.naturalWidth=o,h.naturalHeight=e,this.limitCanvas(!0,!1)),(h.width>h.maxWidth||h.width<h.minWidth)&&(h.left=h.oldLeft),(h.height>h.maxHeight||h.height<h.minHeight)&&(h.top=h.oldTop),h.width=Math.min(Math.max(h.width,h.minWidth),h.maxWidth),h.height=Math.min(Math.max(h.height,h.minHeight),h.maxHeight),this.limitCanvas(!1,!0),h.left=Math.min(Math.max(h.left,h.minLeft),h.maxLeft),h.top=Math.min(Math.max(h.top,h.minTop),h.maxTop),h.oldLeft=h.left,h.oldTop=h.top,f(this.canvas,g({width:h.width,height:h.height},x({translateX:h.left,translateY:h.top}))),this.renderImage(t),this.cropped&&this.limited&&this.limitCropBox(!0,!0)},renderImage:function(t){var e=this.canvasData,i=this.imageData,a=i.naturalWidth*(e.width/e.naturalWidth),n=i.naturalHeight*(e.height/e.naturalHeight);g(i,{width:a,height:n,left:(e.width-a)/2,top:(e.height-n)/2}),f(this.image,g({width:i.width,height:i.height},x(g({translateX:i.left,translateY:i.top},i)))),t&&this.output()},initCropBox:function(){var t=this.options,e=this.canvasData,i=t.aspectRatio||t.initialAspectRatio,t=Number(t.autoCropArea)||.8,a={width:e.width,height:e.height};i&&(e.height*i>e.width?a.height=a.width/i:a.width=a.height*i),this.cropBoxData=a,this.limitCropBox(!0,!0),a.width=Math.min(Math.max(a.width,a.minWidth),a.maxWidth),a.height=Math.min(Math.max(a.height,a.minHeight),a.maxHeight),a.width=Math.max(a.minWidth,a.width*t),a.height=Math.max(a.minHeight,a.height*t),a.left=e.left+(e.width-a.width)/2,a.top=e.top+(e.height-a.height)/2,a.oldLeft=a.left,a.oldTop=a.top,this.initialCropBoxData=g({},a)},limitCropBox:function(t,e){var i,a,n=this.options,o=this.containerData,h=this.canvasData,r=this.cropBoxData,s=this.limited,c=n.aspectRatio;t&&(t=Number(n.minCropBoxWidth)||0,n=Number(n.minCropBoxHeight)||0,i=s?Math.min(o.width,h.width,h.width+h.left,o.width-h.left):o.width,a=s?Math.min(o.height,h.height,h.height+h.top,o.height-h.top):o.height,t=Math.min(t,o.width),n=Math.min(n,o.height),c&&(t&&n?t<n*c?n=t/c:t=n*c:t?n=t/c:n&&(t=n*c),i<a*c?a=i/c:i=a*c),r.minWidth=Math.min(t,i),r.minHeight=Math.min(n,a),r.maxWidth=i,r.maxHeight=a),e&&(s?(r.minLeft=Math.max(0,h.left),r.minTop=Math.max(0,h.top),r.maxLeft=Math.min(o.width,h.left+h.width)-r.width,r.maxTop=Math.min(o.height,h.top+h.height)-r.height):(r.minLeft=0,r.minTop=0,r.maxLeft=o.width-r.width,r.maxTop=o.height-r.height))},renderCropBox:function(){var t=this.options,e=this.containerData,i=this.cropBoxData;(i.width>i.maxWidth||i.width<i.minWidth)&&(i.left=i.oldLeft),(i.height>i.maxHeight||i.height<i.minHeight)&&(i.top=i.oldTop),i.width=Math.min(Math.max(i.width,i.minWidth),i.maxWidth),i.height=Math.min(Math.max(i.height,i.minHeight),i.maxHeight),this.limitCropBox(!1,!0),i.left=Math.min(Math.max(i.left,i.minLeft),i.maxLeft),i.top=Math.min(Math.max(i.top,i.minTop),i.maxTop),i.oldLeft=i.left,i.oldTop=i.top,t.movable&&t.cropBoxMovable&&w(this.face,d,i.width>=e.width&&i.height>=e.height?q:I),f(this.cropBox,g({width:i.width,height:i.height},x({translateX:i.left,translateY:i.top}))),this.cropped&&this.limited&&this.limitCanvas(!0,!0),this.disabled||this.output()},output:function(){this.preview(),y(this.element,tt,this.getData())}},i={initPreview:function(){var t=this.element,i=this.crossOrigin,e=this.options.preview,a=i?this.crossOriginUrl:this.url,n=t.alt||"The image to preview",o=document.createElement("img");i&&(o.crossOrigin=i),o.src=a,o.alt=n,this.viewBox.appendChild(o),this.viewBoxImage=o,e&&("string"==typeof(o=e)?o=t.ownerDocument.querySelectorAll(e):e.querySelector&&(o=[e]),z(this.previews=o,function(t){var e=document.createElement("img");w(t,m,{width:t.offsetWidth,height:t.offsetHeight,html:t.innerHTML}),i&&(e.crossOrigin=i),e.src=a,e.alt=n,e.style.cssText='display:block;width:100%;height:auto;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;image-orientation:0deg!important;"',t.innerHTML="",t.appendChild(e)}))},resetPreview:function(){z(this.previews,function(e){var i=Bt(e,m),i=(f(e,{width:i.width,height:i.height}),e.innerHTML=i.html,e),e=m;if(o(i[e]))try{delete i[e]}catch(t){i[e]=void 0}else if(i.dataset)try{delete i.dataset[e]}catch(t){i.dataset[e]=void 0}else i.removeAttribute("data-".concat(Dt(e)))})},preview:function(){var h=this.imageData,t=this.canvasData,e=this.cropBoxData,r=e.width,s=e.height,c=h.width,d=h.height,l=e.left-t.left-h.left,p=e.top-t.top-h.top;this.cropped&&!this.disabled&&(f(this.viewBoxImage,g({width:c,height:d},x(g({translateX:-l,translateY:-p},h)))),z(this.previews,function(t){var e=Bt(t,m),i=e.width,e=e.height,a=i,n=e,o=1;r&&(n=s*(o=i/r)),s&&e<n&&(a=r*(o=e/s),n=e),f(t,{width:a,height:n}),f(t.getElementsByTagName("img")[0],g({width:c*o,height:d*o},x(g({translateX:-l*o,translateY:-p*o},h))))}))}},e={bind:function(){var t=this.element,e=this.options,i=this.cropper;l(e.cropstart)&&b(t,at,e.cropstart),l(e.cropmove)&&b(t,it,e.cropmove),l(e.cropend)&&b(t,et,e.cropend),l(e.crop)&&b(t,tt,e.crop),l(e.zoom)&&b(t,st,e.zoom),b(i,ot,this.onCropStart=this.cropStart.bind(this)),e.zoomable&&e.zoomOnWheel&&b(i,"wheel",this.onWheel=this.wheel.bind(this),{passive:!1,capture:!0}),e.toggleDragModeOnDblclick&&b(i,nt,this.onDblclick=this.dblclick.bind(this)),b(t.ownerDocument,ht,this.onCropMove=this.cropMove.bind(this)),b(t.ownerDocument,rt,this.onCropEnd=this.cropEnd.bind(this)),e.responsive&&b(window,"resize",this.onResize=this.resize.bind(this))},unbind:function(){var t=this.element,e=this.options,i=this.cropper;l(e.cropstart)&&s(t,at,e.cropstart),l(e.cropmove)&&s(t,it,e.cropmove),l(e.cropend)&&s(t,et,e.cropend),l(e.crop)&&s(t,tt,e.crop),l(e.zoom)&&s(t,st,e.zoom),s(i,ot,this.onCropStart),e.zoomable&&e.zoomOnWheel&&s(i,"wheel",this.onWheel,{passive:!1,capture:!0}),e.toggleDragModeOnDblclick&&s(i,nt,this.onDblclick),s(t.ownerDocument,ht,this.onCropMove),s(t.ownerDocument,rt,this.onCropEnd),e.responsive&&s(window,"resize",this.onResize)}},St={resize:function(){var t,e,i,a,n,o,h;this.disabled||(t=this.options,a=this.container,e=this.containerData,i=a.offsetWidth/e.width,a=a.offsetHeight/e.height,1!=(n=Math.abs(i-1)>Math.abs(a-1)?i:a)&&(t.restore&&(o=this.getCanvasData(),h=this.getCropBoxData()),this.render(),t.restore)&&(this.setCanvasData(z(o,function(t,e){o[e]=t*n})),this.setCropBoxData(z(h,function(t,e){h[e]=t*n}))))},dblclick:function(){var t,e;this.disabled||this.options.dragMode===_||this.setDragMode((t=this.dragBox,e=Q,(t.classList?t.classList.contains(e):-1<t.className.indexOf(e))?J:F))},wheel:function(t){var e=this,i=Number(this.options.wheelZoomRatio)||.1,a=1;this.disabled||(t.preventDefault(),this.wheeling)||(this.wheeling=!0,setTimeout(function(){e.wheeling=!1},50),t.deltaY?a=0<t.deltaY?1:-1:t.wheelDelta?a=-t.wheelDelta/120:t.detail&&(a=0<t.detail?1:-1),this.zoom(-a*i,t))},cropStart:function(t){var e,i=t.buttons,a=t.button;this.disabled||("mousedown"===t.type||"pointerdown"===t.type&&"mouse"===t.pointerType)&&(p(i)&&1!==i||p(a)&&0!==a||t.ctrlKey)||(i=this.options,e=this.pointers,t.changedTouches?z(t.changedTouches,function(t){e[t.identifier]=M(t)}):e[t.pointerId||0]=M(t),a=1<Object.keys(e).length&&i.zoomable&&i.zoomOnTouch?$:Bt(t.target,d),dt.test(a)&&!1!==y(this.element,at,{originalEvent:t,action:a})&&(t.preventDefault(),this.action=a,this.cropping=!1,a===U)&&(this.cropping=!0,v(this.dragBox,n)))},cropMove:function(t){var e,i=this.action;!this.disabled&&i&&(e=this.pointers,t.preventDefault(),!1!==y(this.element,it,{originalEvent:t,action:i}))&&(t.changedTouches?z(t.changedTouches,function(t){g(e[t.identifier]||{},M(t,!0))}):g(e[t.pointerId||0]||{},M(t,!0)),this.change(t))},cropEnd:function(t){var e,i;this.disabled||(e=this.action,i=this.pointers,t.changedTouches?z(t.changedTouches,function(t){delete i[t.identifier]}):delete i[t.pointerId||0],e&&(t.preventDefault(),Object.keys(i).length||(this.action=""),this.cropping&&(this.cropping=!1,r(this.dragBox,n,this.cropped&&this.options.modal)),y(this.element,et,{originalEvent:t,action:e})))}},jt={change:function(t){function e(t){switch(t){case B:f+D.x>y&&(D.x=y-f);break;case k:p+D.x<w&&(D.x=w-p);break;case T:m+D.y<b&&(D.y=b-m);break;case O:v+D.y>x&&(D.y=x-v)}}var i,a,o,n=this.options,h=this.canvasData,r=this.containerData,s=this.cropBoxData,c=this.pointers,d=this.action,l=n.aspectRatio,p=s.left,m=s.top,u=s.width,g=s.height,f=p+u,v=m+g,w=0,b=0,y=r.width,x=r.height,M=!0,C=(!l&&t.shiftKey&&(l=u&&g?u/g:1),this.limited&&(w=s.minLeft,b=s.minTop,y=w+Math.min(r.width,h.width,h.left+h.width),x=b+Math.min(r.height,h.height,h.top+h.height)),c[Object.keys(c)[0]]),D={x:C.endX-C.startX,y:C.endY-C.startY};switch(d){case I:p+=D.x,m+=D.y;break;case B:0<=D.x&&(y<=f||l&&(m<=b||x<=v))?M=!1:(e(B),(u+=D.x)<0&&(d=k,p-=u=-u),l&&(m+=(s.height-(g=u/l))/2));break;case T:D.y<=0&&(m<=b||l&&(p<=w||y<=f))?M=!1:(e(T),g-=D.y,m+=D.y,g<0&&(d=O,m-=g=-g),l&&(p+=(s.width-(u=g*l))/2));break;case k:D.x<=0&&(p<=w||l&&(m<=b||x<=v))?M=!1:(e(k),u-=D.x,p+=D.x,u<0&&(d=B,p-=u=-u),l&&(m+=(s.height-(g=u/l))/2));break;case O:0<=D.y&&(x<=v||l&&(p<=w||y<=f))?M=!1:(e(O),(g+=D.y)<0&&(d=T,m-=g=-g),l&&(p+=(s.width-(u=g*l))/2));break;case E:if(l){if(D.y<=0&&(m<=b||y<=f)){M=!1;break}e(T),g-=D.y,m+=D.y,u=g*l}else e(T),e(B),!(0<=D.x)||f<y?u+=D.x:D.y<=0&&m<=b&&(M=!1),(!(D.y<=0)||b<m)&&(g-=D.y,m+=D.y);u<0&&g<0?(d=N,m-=g=-g,p-=u=-u):u<0?(d=W,p-=u=-u):g<0&&(d=H,m-=g=-g);break;case W:if(l){if(D.y<=0&&(m<=b||p<=w)){M=!1;break}e(T),g-=D.y,m+=D.y,p+=s.width-(u=g*l)}else e(T),e(k),!(D.x<=0)||w<p?(u-=D.x,p+=D.x):D.y<=0&&m<=b&&(M=!1),(!(D.y<=0)||b<m)&&(g-=D.y,m+=D.y);u<0&&g<0?(d=H,m-=g=-g,p-=u=-u):u<0?(d=E,p-=u=-u):g<0&&(d=N,m-=g=-g);break;case N:if(l){if(D.x<=0&&(p<=w||x<=v)){M=!1;break}e(k),u-=D.x,p+=D.x,g=u/l}else e(O),e(k),!(D.x<=0)||w<p?(u-=D.x,p+=D.x):0<=D.y&&x<=v&&(M=!1),(!(0<=D.y)||v<x)&&(g+=D.y);u<0&&g<0?(d=E,m-=g=-g,p-=u=-u):u<0?(d=H,p-=u=-u):g<0&&(d=W,m-=g=-g);break;case H:if(l){if(0<=D.x&&(y<=f||x<=v)){M=!1;break}e(B),g=(u+=D.x)/l}else e(O),e(B),!(0<=D.x)||f<y?u+=D.x:0<=D.y&&x<=v&&(M=!1),(!(0<=D.y)||v<x)&&(g+=D.y);u<0&&g<0?(d=W,m-=g=-g,p-=u=-u):u<0?(d=N,p-=u=-u):g<0&&(d=E,m-=g=-g);break;case q:this.move(D.x,D.y),M=!1;break;case $:this.zoom((a=S({},i=c),o=0,z(i,function(n,t){delete a[t],z(a,function(t){var e=Math.abs(n.startX-t.startX),i=Math.abs(n.startY-t.startY),a=Math.abs(n.endX-t.endX),t=Math.abs(n.endY-t.endY),e=Math.sqrt(e*e+i*i),i=(Math.sqrt(a*a+t*t)-e)/e;Math.abs(i)>Math.abs(o)&&(o=i)})}),o),t),M=!1;break;case U:D.x&&D.y?(i=Wt(this.cropper),p=C.startX-i.left,m=C.startY-i.top,u=s.minWidth,g=s.minHeight,0<D.x?d=0<D.y?H:E:D.x<0&&(p-=u,d=0<D.y?N:W),D.y<0&&(m-=g),this.cropped||(X(this.cropBox,L),this.cropped=!0,this.limited&&this.limitCropBox(!0,!0))):M=!1}M&&(s.width=u,s.height=g,s.left=p,s.top=m,this.action=d,this.renderCropBox()),z(c,function(t){t.startX=t.endX,t.startY=t.endY})}},At={crop:function(){return!this.ready||this.cropped||this.disabled||(this.cropped=!0,this.limitCropBox(!0,!0),this.options.modal&&v(this.dragBox,n),X(this.cropBox,L),this.setCropBoxData(this.initialCropBoxData)),this},reset:function(){return this.ready&&!this.disabled&&(this.imageData=g({},this.initialImageData),this.canvasData=g({},this.initialCanvasData),this.cropBoxData=g({},this.initialCropBoxData),this.renderCanvas(),this.cropped)&&this.renderCropBox(),this},clear:function(){return this.cropped&&!this.disabled&&(g(this.cropBoxData,{left:0,top:0,width:0,height:0}),this.cropped=!1,this.renderCropBox(),this.limitCanvas(!0,!0),this.renderCanvas(),X(this.dragBox,n),v(this.cropBox,L)),this},replace:function(e){var t=1<arguments.length&&void 0!==arguments[1]&&arguments[1];return!this.disabled&&e&&(this.isImg&&(this.element.src=e),t?(this.url=e,this.image.src=e,this.ready&&(this.viewBoxImage.src=e,z(this.previews,function(t){t.getElementsByTagName("img")[0].src=e}))):(this.isImg&&(this.replaced=!0),this.options.data=null,this.uncreate(),this.load(e))),this},enable:function(){return this.ready&&this.disabled&&(this.disabled=!1,X(this.cropper,K)),this},disable:function(){return this.ready&&!this.disabled&&(this.disabled=!0,v(this.cropper,K)),this},destroy:function(){var t=this.element;return t[c]&&(t[c]=void 0,this.isImg&&this.replaced&&(t.src=this.originalUrl),this.uncreate()),this},move:function(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:t,i=this.canvasData,a=i.left,i=i.top;return this.moveTo(vt(t)?t:a+Number(t),vt(e)?e:i+Number(e))},moveTo:function(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:t,i=this.canvasData,a=!1;return t=Number(t),e=Number(e),this.ready&&!this.disabled&&this.options.movable&&(p(t)&&(i.left=t,a=!0),p(e)&&(i.top=e,a=!0),a)&&this.renderCanvas(!0),this},zoom:function(t,e){var i=this.canvasData;return t=Number(t),this.zoomTo(i.width*(t=t<0?1/(1-t):1+t)/i.naturalWidth,null,e)},zoomTo:function(t,e,i){var a,n,o,h=this.options,r=this.canvasData,s=r.width,c=r.height,d=r.naturalWidth,l=r.naturalHeight;if(0<=(t=Number(t))&&this.ready&&!this.disabled&&h.zoomable){h=d*t,l=l*t;if(!1===y(this.element,st,{ratio:t,oldRatio:s/d,originalEvent:i}))return this;i?(t=this.pointers,d=Wt(this.cropper),t=t&&Object.keys(t).length?(o=n=a=0,z(t,function(t){var e=t.startX,t=t.startY;a+=e,n+=t,o+=1}),{pageX:a/=o,pageY:n/=o}):{pageX:i.pageX,pageY:i.pageY},r.left-=(h-s)*((t.pageX-d.left-r.left)/s),r.top-=(l-c)*((t.pageY-d.top-r.top)/c)):u(e)&&p(e.x)&&p(e.y)?(r.left-=(h-s)*((e.x-r.left)/s),r.top-=(l-c)*((e.y-r.top)/c)):(r.left-=(h-s)/2,r.top-=(l-c)/2),r.width=h,r.height=l,this.renderCanvas(!0)}return this},rotate:function(t){return this.rotateTo((this.imageData.rotate||0)+Number(t))},rotateTo:function(t){return p(t=Number(t))&&this.ready&&!this.disabled&&this.options.rotatable&&(this.imageData.rotate=t%360,this.renderCanvas(!0,!0)),this},scaleX:function(t){var e=this.imageData.scaleY;return this.scale(t,p(e)?e:1)},scaleY:function(t){var e=this.imageData.scaleX;return this.scale(p(e)?e:1,t)},scale:function(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:t,i=this.imageData,a=!1;return t=Number(t),e=Number(e),this.ready&&!this.disabled&&this.options.scalable&&(p(t)&&(i.scaleX=t,a=!0),p(e)&&(i.scaleY=e,a=!0),a)&&this.renderCanvas(!0,!0),this},getData:function(){var i,a,t=0<arguments.length&&void 0!==arguments[0]&&arguments[0],e=this.options,n=this.imageData,o=this.canvasData,h=this.cropBoxData;return this.ready&&this.cropped?(i={x:h.left-o.left,y:h.top-o.top,width:h.width,height:h.height},a=n.width/n.naturalWidth,z(i,function(t,e){i[e]=t/a}),t&&(o=Math.round(i.y+i.height),h=Math.round(i.x+i.width),i.x=Math.round(i.x),i.y=Math.round(i.y),i.width=h-i.x,i.height=o-i.y)):i={x:0,y:0,width:0,height:0},e.rotatable&&(i.rotate=n.rotate||0),e.scalable&&(i.scaleX=n.scaleX||1,i.scaleY=n.scaleY||1),i},setData:function(t){var e,i=this.options,a=this.imageData,n=this.canvasData,o={};return this.ready&&!this.disabled&&u(t)&&(e=!1,i.rotatable&&p(t.rotate)&&t.rotate!==a.rotate&&(a.rotate=t.rotate,e=!0),i.scalable&&(p(t.scaleX)&&t.scaleX!==a.scaleX&&(a.scaleX=t.scaleX,e=!0),p(t.scaleY))&&t.scaleY!==a.scaleY&&(a.scaleY=t.scaleY,e=!0),e&&this.renderCanvas(!0,!0),i=a.width/a.naturalWidth,p(t.x)&&(o.left=t.x*i+n.left),p(t.y)&&(o.top=t.y*i+n.top),p(t.width)&&(o.width=t.width*i),p(t.height)&&(o.height=t.height*i),this.setCropBoxData(o)),this},getContainerData:function(){return this.ready?g({},this.containerData):{}},getImageData:function(){return this.sized?g({},this.imageData):{}},getCanvasData:function(){var e=this.canvasData,i={};return this.ready&&z(["left","top","width","height","naturalWidth","naturalHeight"],function(t){i[t]=e[t]}),i},setCanvasData:function(t){var e=this.canvasData,i=e.aspectRatio;return this.ready&&!this.disabled&&u(t)&&(p(t.left)&&(e.left=t.left),p(t.top)&&(e.top=t.top),p(t.width)?(e.width=t.width,e.height=t.width/i):p(t.height)&&(e.height=t.height,e.width=t.height*i),this.renderCanvas(!0)),this},getCropBoxData:function(){var t,e=this.cropBoxData;return(t=this.ready&&this.cropped?{left:e.left,top:e.top,width:e.width,height:e.height}:t)||{}},setCropBoxData:function(t){var e,i,a=this.cropBoxData,n=this.options.aspectRatio;return this.ready&&this.cropped&&!this.disabled&&u(t)&&(p(t.left)&&(a.left=t.left),p(t.top)&&(a.top=t.top),p(t.width)&&t.width!==a.width&&(e=!0,a.width=t.width),p(t.height)&&t.height!==a.height&&(i=!0,a.height=t.height),n&&(e?a.height=a.width/n:i&&(a.width=a.height*n)),this.renderCropBox()),this},getCroppedCanvas:function(){var t,e,i,a,n,o,h,r,s,c,d,l,p,m,u,g,f,v,w,b,y,x,M,C,D,B,k,O=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{};return this.ready&&window.HTMLCanvasElement?(B=this.canvasData,u=this.image,l=this.imageData,a=B,v=O,g=l.aspectRatio,e=l.naturalWidth,n=l.naturalHeight,c=void 0===(c=l.rotate)?0:c,d=void 0===(d=l.scaleX)?1:d,l=void 0===(l=l.scaleY)?1:l,i=a.aspectRatio,r=a.naturalWidth,a=a.naturalHeight,h=void 0===(h=v.fillColor)?"transparent":h,p=void 0===(p=v.imageSmoothingEnabled)||p,m=void 0===(m=v.imageSmoothingQuality)?"low":m,o=void 0===(o=v.maxWidth)?1/0:o,k=void 0===(k=v.maxHeight)?1/0:k,t=void 0===(t=v.minWidth)?0:t,v=void 0===(v=v.minHeight)?0:v,w=document.createElement("canvas"),f=w.getContext("2d"),s=R({aspectRatio:i,width:o,height:k}),i=R({aspectRatio:i,width:t,height:v},"cover"),r=Math.min(s.width,Math.max(i.width,r)),s=Math.min(s.height,Math.max(i.height,a)),i=R({aspectRatio:g,width:o,height:k}),a=R({aspectRatio:g,width:t,height:v},"cover"),o=Math.min(i.width,Math.max(a.width,e)),k=Math.min(i.height,Math.max(a.height,n)),g=[-o/2,-k/2,o,k],w.width=Y(r),w.height=Y(s),f.fillStyle=h,f.fillRect(0,0,r,s),f.save(),f.translate(r/2,s/2),f.rotate(c*Math.PI/180),f.scale(d,l),f.imageSmoothingEnabled=p,f.imageSmoothingQuality=m,f.drawImage.apply(f,[u].concat(P(g.map(function(t){return Math.floor(Y(t))})))),f.restore(),t=w,this.cropped?(e=(v=this.getData(O.rounded)).x,i=v.y,a=v.width,n=v.height,1!=(o=t.width/Math.floor(B.naturalWidth))&&(e*=o,i*=o,a*=o,n*=o),h=R({aspectRatio:k=a/n,width:O.maxWidth||1/0,height:O.maxHeight||1/0}),r=R({aspectRatio:k,width:O.minWidth||0,height:O.minHeight||0},"cover"),c=(s=R({aspectRatio:k,width:O.width||(1!=o?t.width:a),height:O.height||(1!=o?t.height:n)})).width,d=s.height,c=Math.min(h.width,Math.max(r.width,c)),d=Math.min(h.height,Math.max(r.height,d)),p=(l=document.createElement("canvas")).getContext("2d"),l.width=Y(c),l.height=Y(d),p.fillStyle=O.fillColor||"transparent",p.fillRect(0,0,c,d),m=O.imageSmoothingEnabled,u=O.imageSmoothingQuality,p.imageSmoothingEnabled=void 0===m||m,u&&(p.imageSmoothingQuality=u),g=t.width,f=t.height,w=i,(v=e)<=-a||g<v?C=x=b=v=0:v<=0?(x=-v,v=0,C=b=Math.min(g,a+v)):v<=g&&(x=0,C=b=Math.min(a,g-v)),b<=0||w<=-n||f<w?D=M=y=w=0:w<=0?(M=-w,w=0,D=y=Math.min(f,n+w)):w<=f&&(M=0,D=y=Math.min(n,f-w)),B=[v,w,b,y],0<C&&0<D&&B.push(x*(k=c/a),M*k,C*k,D*k),p.drawImage.apply(p,[t].concat(P(B.map(function(t){return Math.floor(Y(t))})))),l):t):null},setAspectRatio:function(t){var e=this.options;return this.disabled||vt(t)||(e.aspectRatio=Math.max(0,t)||NaN,this.ready&&(this.initCropBox(),this.cropped)&&this.renderCropBox()),this},setDragMode:function(t){var e,i,a=this.options,n=this.dragBox,o=this.face;return this.ready&&!this.disabled&&(i=a.movable&&t===J,a.dragMode=t=(e=t===F)||i?t:_,w(n,d,t),r(n,Q,e),r(n,V,i),a.cropBoxMovable||(w(o,d,t),r(o,Q,e),r(o,V,i))),this}},Pt=h.Cropper,It=function(){function n(t){var e=1<arguments.length&&void 0!==arguments[1]?arguments[1]:{},i=this,a=n;if(!(i instanceof a))throw new TypeError("Cannot call a class as a function");if(!t||!mt.test(t.tagName))throw new Error("The first argument is required and must be an <img> or <canvas> element.");this.element=t,this.options=g({},ut,u(e)&&e),this.cropped=!1,this.disabled=!1,this.pointers={},this.ready=!1,this.reloading=!1,this.replaced=!1,this.sized=!1,this.sizing=!1,this.init()}return t=n,i=[{key:"noConflict",value:function(){return window.Cropper=Pt,n}},{key:"setDefaults",value:function(t){g(ut,u(t)&&t)}}],(e=[{key:"init",value:function(){var t,e=this.element,i=e.tagName.toLowerCase();if(!e[c]){if(e[c]=this,"img"===i){if(this.isImg=!0,t=e.getAttribute("src")||"",!(this.originalUrl=t))return;t=e.src}else"canvas"===i&&window.HTMLCanvasElement&&(t=e.toDataURL());this.load(t)}}},{key:"load",value:function(t){var e,i,a,n,o,h,r=this;t&&(this.url=t,this.imageData={},e=this.element,(i=this.options).rotatable||i.scalable||(i.checkOrientation=!1),i.checkOrientation&&window.ArrayBuffer?lt.test(t)?pt.test(t)?this.read((h=(h=t).replace(Xt,""),a=atob(h),h=new ArrayBuffer(a.length),z(n=new Uint8Array(h),function(t,e){n[e]=a.charCodeAt(e)}),h)):this.clone():(o=new XMLHttpRequest,h=this.clone.bind(this),this.reloading=!0,(this.xhr=o).onabort=h,o.onerror=h,o.ontimeout=h,o.onprogress=function(){o.getResponseHeader("content-type")!==ct&&o.abort()},o.onload=function(){r.read(o.response)},o.onloadend=function(){r.reloading=!1,r.xhr=null},i.checkCrossOrigin&&Lt(t)&&e.crossOrigin&&(t=zt(t)),o.open("GET",t,!0),o.responseType="arraybuffer",o.withCredentials="use-credentials"===e.crossOrigin,o.send()):this.clone())}},{key:"read",value:function(t){var e=this.options,i=this.imageData,a=Rt(t),n=0,o=1,h=1;1<a&&(this.url=function(t,e){for(var i=[],a=new Uint8Array(t);0<a.length;)i.push(Yt.apply(null,yt(a.subarray(0,8192)))),a=a.subarray(8192);return"data:".concat(e,";base64,").concat(btoa(i.join("")))}(t,ct),n=(t=function(t){var e=0,i=1,a=1;switch(t){case 2:i=-1;break;case 3:e=-180;break;case 4:a=-1;break;case 5:e=90,a=-1;break;case 6:e=90;break;case 7:e=90,i=-1;break;case 8:e=-90}return{rotate:e,scaleX:i,scaleY:a}}(a)).rotate,o=t.scaleX,h=t.scaleY),e.rotatable&&(i.rotate=n),e.scalable&&(i.scaleX=o,i.scaleY=h),this.clone()}},{key:"clone",value:function(){var t=this.element,e=this.url,i=t.crossOrigin,a=e,n=(this.options.checkCrossOrigin&&Lt(e)&&(i=i||"anonymous",a=zt(e)),this.crossOrigin=i,this.crossOriginUrl=a,document.createElement("img"));i&&(n.crossOrigin=i),n.src=a||e,n.alt=t.alt||"The image to crop",(this.image=n).onload=this.start.bind(this),n.onerror=this.stop.bind(this),v(n,Z),t.parentNode.insertBefore(n,t.nextSibling)}},{key:"start",value:function(){function t(t,e){g(a.imageData,{naturalWidth:t,naturalHeight:e,aspectRatio:t/e}),a.initialImageData=g({},a.imageData),a.sizing=!1,a.sized=!0,a.build()}var e,i,a=this,n=this.image,o=(n.onload=null,n.onerror=null,this.sizing=!0,h.navigator&&/(?:iPad|iPhone|iPod).*?AppleWebKit/i.test(h.navigator.userAgent));n.naturalWidth&&!o?t(n.naturalWidth,n.naturalHeight):(e=document.createElement("img"),i=document.body||document.documentElement,(this.sizingImage=e).onload=function(){t(e.width,e.height),o||i.removeChild(e)},e.src=n.src,o||(e.style.cssText="left:0;max-height:none!important;max-width:none!important;min-height:0!important;min-width:0!important;opacity:0;position:absolute;top:0;z-index:-1;",i.appendChild(e)))}},{key:"stop",value:function(){var t=this.image;t.onload=null,t.onerror=null,t.parentNode.removeChild(t),this.image=null}},{key:"build",value:function(){var t,e,i,a,n,o,h,r,s;this.sized&&!this.ready&&(t=this.element,e=this.options,i=this.image,a=t.parentNode,(n=document.createElement("div")).innerHTML='<div class="cropper-container" touch-action="none"><div class="cropper-wrap-box"><div class="cropper-canvas"></div></div><div class="cropper-drag-box"></div><div class="cropper-crop-box"><span class="cropper-view-box"></span><span class="cropper-dashed dashed-h"></span><span class="cropper-dashed dashed-v"></span><span class="cropper-center"></span><span class="cropper-face"></span><span class="cropper-line line-e" data-cropper-action="e"></span><span class="cropper-line line-n" data-cropper-action="n"></span><span class="cropper-line line-w" data-cropper-action="w"></span><span class="cropper-line line-s" data-cropper-action="s"></span><span class="cropper-point point-e" data-cropper-action="e"></span><span class="cropper-point point-n" data-cropper-action="n"></span><span class="cropper-point point-w" data-cropper-action="w"></span><span class="cropper-point point-s" data-cropper-action="s"></span><span class="cropper-point point-ne" data-cropper-action="ne"></span><span class="cropper-point point-nw" data-cropper-action="nw"></span><span class="cropper-point point-sw" data-cropper-action="sw"></span><span class="cropper-point point-se" data-cropper-action="se"></span></div></div>',o=(n=n.querySelector(".".concat(c,"-container"))).querySelector(".".concat(c,"-canvas")),h=n.querySelector(".".concat(c,"-drag-box")),s=(r=n.querySelector(".".concat(c,"-crop-box"))).querySelector(".".concat(c,"-face")),this.container=a,this.cropper=n,this.canvas=o,this.dragBox=h,this.cropBox=r,this.viewBox=n.querySelector(".".concat(c,"-view-box")),this.face=s,o.appendChild(i),v(t,L),a.insertBefore(n,t.nextSibling),X(i,Z),this.initPreview(),this.bind(),e.initialAspectRatio=Math.max(0,e.initialAspectRatio)||NaN,e.aspectRatio=Math.max(0,e.aspectRatio)||NaN,e.viewMode=Math.max(0,Math.min(3,Math.round(e.viewMode)))||0,v(r,L),e.guides||v(r.getElementsByClassName("".concat(c,"-dashed")),L),e.center||v(r.getElementsByClassName("".concat(c,"-center")),L),e.background&&v(n,"".concat(c,"-bg")),e.highlight||v(s,G),e.cropBoxMovable&&(v(s,V),w(s,d,I)),e.cropBoxResizable||(v(r.getElementsByClassName("".concat(c,"-line")),L),v(r.getElementsByClassName("".concat(c,"-point")),L)),this.render(),this.ready=!0,this.setDragMode(e.dragMode),e.autoCrop&&this.crop(),this.setData(e.data),l(e.ready)&&b(t,"ready",e.ready,{once:!0}),y(t,"ready"))}},{key:"unbuild",value:function(){var t;this.ready&&(this.ready=!1,this.unbind(),this.resetPreview(),(t=this.cropper.parentNode)&&t.removeChild(this.cropper),X(this.element,L))}},{key:"uncreate",value:function(){this.ready?(this.unbuild(),this.ready=!1,this.cropped=!1):this.sizing?(this.sizingImage.onload=null,this.sizing=!1,this.sized=!1):this.reloading?(this.xhr.onabort=null,this.xhr.abort()):this.image&&this.stop()}}])&&A(t.prototype,e),i&&A(t,i),Object.defineProperty(t,"prototype",{writable:!1}),t;var t,e,i}();return g(It.prototype,t,i,e,St,jt,At),It});
+\ No newline at end of file
+diff --git a/package-lock.json b/package-lock.json
+index b7a4767..52d3de2 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -9,13 +9,26 @@
+       "version": "1.0.0",
+       "dependencies": {
+         "cors": "^2.8.6",
++        "cropperjs": "^1.6.2",
+         "express": "^5.2.1",
+-        "nodemailer": "^10.0.14"
++        "multer": "^2.4.0",
++        "nodemailer": "^10.0.14",
++        "sharp": "^0.35.5"
+       },
+       "devDependencies": {
+         "vite": "^5.4.0"
+       }
+     },
++    "node_modules/@emnapi/runtime": {
++      "version": "1.11.3",
++      "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.11.3.tgz",
++      "integrity": "sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==",
++      "license": "MIT",
++      "optional": true,
++      "dependencies": {
++        "tslib": "^2.4.0"
++      }
++    },
+     "node_modules/@esbuild/aix-ppc64": {
+       "version": "0.21.5",
+       "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.21.5.tgz",
+@@ -407,6 +420,554 @@
+         "node": ">=12"
+       }
+     },
++    "node_modules/@img/colour": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz",
++      "integrity": "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@img/sharp-darwin-arm64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.35.5.tgz",
++      "integrity": "sha512-QRUlFQ0WxvdWyqqG/WtI3iupfD5rBzmCHXSdPsY91sAtVtTo7Q4cb6zOccZ3gqEqkr0f1As1ehLqmEpDsRf+lg==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-darwin-arm64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-darwin-x64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.35.5.tgz",
++      "integrity": "sha512-+BR255RhDlpygUpOc/Jdt1nT6DQ3XG/ERo5wbcdOf5Q320dKtPCKPLR1LJs9VGXRaMa8l1uUa0tkCNOXiAxZUw==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-darwin-x64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-freebsd-wasm32": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-freebsd-wasm32/-/sharp-freebsd-wasm32-0.35.5.tgz",
++      "integrity": "sha512-Y/z91nEZ4uIBX5X3nfTovjU9lHNKFYbL2lpHCLVNmXQK03VIZvXBBt0KxbPGp2SdGSF+2mQU4e+hQaWOt86iAw==",
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "dependencies": {
++        "@img/sharp-wasm32": "0.35.5"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-darwin-arm64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.4.tgz",
++      "integrity": "sha512-5R89nBYiRdUlSWJxPhO+GVtaXzXSxKnRu/xqMn3KTA3L9EB9Oy/P+Nn2f2vlhPuUdy/Zusb2DarbyTpGCfEDuw==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-darwin-x64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.3.4.tgz",
++      "integrity": "sha512-iR2OKH80yi0U+dUplyh3/xdpFvps6YkCwsXenIJxqxR1v9o+xtKTGbS9H7cps+2Vxjc8B1j96p75NmTGjIhtpQ==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-arm": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.3.4.tgz",
++      "integrity": "sha512-LmRtTsOHuvM2+wlO2Db37dx5MiZhB0FvSunciw48YjdOkZz9KAiRbm8ujeMOA1INqmei5NapFxYEK1D1ZSidmw==",
++      "cpu": [
++        "arm"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-arm64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.3.4.tgz",
++      "integrity": "sha512-Y3dgX/6lE2QhQb+Gxy0WZxfg9MEm/JBjamZpS2IklP7xIQoKN4hzAm7KcMVGtaVDt3neE9OKBC7vAfonA/Lr1A==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-ppc64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-ppc64/-/sharp-libvips-linux-ppc64-1.3.4.tgz",
++      "integrity": "sha512-Le6boB8Tai0Nis+gIxIpKx68UDVVIqdR8Tin5Yf1z2LJJQLDJvCDRqRu+jC2qCoD+eIomonmOwB4smBRxfVpYQ==",
++      "cpu": [
++        "ppc64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-riscv64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-riscv64/-/sharp-libvips-linux-riscv64-1.3.4.tgz",
++      "integrity": "sha512-aHkkIEHPRdQEegJN20MLmGtxYD9R2wQr3Cwpddnu5+YKMt6Uzax7S9h5gpZTo8wyrGuZSlfQ63OevL5mTyOC7Q==",
++      "cpu": [
++        "riscv64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-s390x": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.3.4.tgz",
++      "integrity": "sha512-ra/mB6MikESDUO7Yg+Mi95bFBb9GsObURuhnOv3OqknjGe9sZrG8tCe9q0xSIGrtLgvgw0gKnFWcK4blSgQOuQ==",
++      "cpu": [
++        "s390x"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linux-x64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.3.4.tgz",
++      "integrity": "sha512-GJ//SSXbnwSDes02umB3nDJLFcQzw8a18V8fyhqr6tV515tOEMdImjjxj1AoafMRz56F3PHgftnj1QEKSU1zkw==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linuxmusl-arm64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.3.4.tgz",
++      "integrity": "sha512-hvulFwtjUcagsis6BBxHwGFwWoNZjgYmULGVrZcyfNbjA8hKILbRxGg15/7w5HDyXHXUos/j6baAWqnCyQ2DWA==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-libvips-linuxmusl-x64": {
++      "version": "1.3.4",
++      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.3.4.tgz",
++      "integrity": "sha512-6zXKeE/p39I1AmA3cJG35eyBGNqNddLnUXjhwBnsGjFPWqf5VKkDBEqaEkPDoTEtkxwi2vv8Tcr2mDyP4So7Fg==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-linux-arm": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.35.5.tgz",
++      "integrity": "sha512-LEaXK2WdXVK5ykcw0buWyPMsmLLL2vpHLD6yrNSW+JGEL3BZPA4tpKN6iaMc4AxTTAoaX/sU1rOL51lcIz48ZQ==",
++      "cpu": [
++        "arm"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-arm": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linux-arm64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.35.5.tgz",
++      "integrity": "sha512-LYVx5JTsOM2CBzmxreh+nl64/3H6Xb09iSLknqH47z2T2DFFxDeFLP5y4dJwe6H7uGQlHPyEEtIqyo3DYsRwdQ==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-arm64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linux-ppc64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-ppc64/-/sharp-linux-ppc64-0.35.5.tgz",
++      "integrity": "sha512-QVxAAq8evVRI9ia2vqgwrmWucn5Dfv+JdWzj75pD8omHLPSP7f8p20O8jxzjCcuCEQEOtYOZUmX1hkiZ0kdevA==",
++      "cpu": [
++        "ppc64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-ppc64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linux-riscv64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-riscv64/-/sharp-linux-riscv64-0.35.5.tgz",
++      "integrity": "sha512-LtdreXguaavKODPIfzJ4kffx7UNt1omwtK0rch4EBbbSTXPnxWmYSayXdLJw0fJzQ97kHt1gL/yh4tvU+nCyRQ==",
++      "cpu": [
++        "riscv64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-riscv64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linux-s390x": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.35.5.tgz",
++      "integrity": "sha512-UZasTOFiYzotTsGOCu42BfUzP6Tu6Do/947iRm1RsLKvlllxwGcn4RN27LibGWceix4Y+Pmw3jsnTcCQIgWjqA==",
++      "cpu": [
++        "s390x"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-s390x": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linux-x64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.5.tgz",
++      "integrity": "sha512-SxFtLTeJInhAA9Q836kux2vZNeOBQEx658qvbboZScr0wIARym3IcGmW7KpVD5sbVg0Ojy+udFQdayYIZyoNog==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "glibc"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linux-x64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linuxmusl-arm64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.35.5.tgz",
++      "integrity": "sha512-9HbMclmI1zlNkFRs3z9/eBtDjfD0sGlrX1z6b1qwmiFY5ElDLh4BC0LPBdVp7z1DXFiKlIcznf+ZlsuZzLxQqg==",
++      "cpu": [
++        "arm64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linuxmusl-arm64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-linuxmusl-x64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.35.5.tgz",
++      "integrity": "sha512-4KOphqB035HrVdqLZfCgMzzERrQkkzOwRhl4OAkRO1YCldbaFjySXMaK534Mo0V+LndnlJk+sbUyLeU0ULyD1A==",
++      "cpu": [
++        "x64"
++      ],
++      "libc": [
++        "musl"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-libvips-linuxmusl-x64": "1.3.4"
++      }
++    },
++    "node_modules/@img/sharp-wasm32": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.35.5.tgz",
++      "integrity": "sha512-Ptsga1su4tQx+LLF1ECS9U6nz5kmrXKo6XVbtR48Ke3ZRxxgaWBu7IDtEe1quo8hiupwm6WFqxVlXaSf7IINGQ==",
++      "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
++      "optional": true,
++      "dependencies": {
++        "@emnapi/runtime": "^1.11.3"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-webcontainers-wasm32": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-webcontainers-wasm32/-/sharp-webcontainers-wasm32-0.35.5.tgz",
++      "integrity": "sha512-hfhF/FmoQyTUkA0bIKFOtw536BQSeBMe6BF6QyWlrPxT754+TFLaZ7sKKTfvvM0yJgKgaYTwnFCIZ/GuDw5SUA==",
++      "cpu": [
++        "wasm32"
++      ],
++      "license": "Apache-2.0",
++      "optional": true,
++      "dependencies": {
++        "@img/sharp-wasm32": "0.35.5"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-win32-arm64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.35.5.tgz",
++      "integrity": "sha512-X4t7g+7ZA5DKblCBEXGjUqqemj4vczING/5viFwAL8h4N3qYeyjwdCvRLHi4EdOUI+2Z7UFlp1VM+p/AuEtm6Q==",
++      "cpu": [
++        "arm64"
++      ],
++      "license": "Apache-2.0 AND LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-win32-ia32": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.35.5.tgz",
++      "integrity": "sha512-5Zm82LoBc43nhwNybZlG7Y1KO//Zhsn306fQl29ZOuStHLGTo3BWL83q3cznX0poxSAMuYL1On/BHBxkBeKr6A==",
++      "cpu": [
++        "ia32"
++      ],
++      "license": "Apache-2.0 AND LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": "^20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
++    "node_modules/@img/sharp-win32-x64": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.35.5.tgz",
++      "integrity": "sha512-x76eH0vEiHlcMQu8Y8IenntaACtddpT6W0wmXtWrnKcnKI7ME5DdgqhAD6SEWOEl1v2zDvkZDhFA9KnURwpfqg==",
++      "cpu": [
++        "x64"
++      ],
++      "license": "Apache-2.0 AND LGPL-3.0-or-later",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      }
++    },
+     "node_modules/@napi-rs/lzma-linux-x64-gnu": {
+       "version": "1.5.1",
+       "resolved": "https://registry.npmjs.org/@napi-rs/lzma-linux-x64-gnu/-/lzma-linux-x64-gnu-1.5.1.tgz",
+@@ -836,6 +1397,12 @@
+         "node": ">= 0.6"
+       }
+     },
++    "node_modules/append-field": {
++      "version": "1.0.0",
++      "resolved": "https://registry.npmjs.org/append-field/-/append-field-1.0.0.tgz",
++      "integrity": "sha512-klpgFSWLW1ZEs8svjfb7g4qWY0YS5imI82dTg+QahUvJ8YqAY0P10Uk8tTyh9ZGuYEZEMaeJYCF5BFuX552hsw==",
++      "license": "MIT"
++    },
+     "node_modules/body-parser": {
+       "version": "2.3.0",
+       "resolved": "https://registry.npmjs.org/body-parser/-/body-parser-2.3.0.tgz",
+@@ -873,6 +1440,17 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/busboy": {
++      "version": "1.6.0",
++      "resolved": "https://registry.npmjs.org/busboy/-/busboy-1.6.0.tgz",
++      "integrity": "sha512-8SFQbg/0hQ9xy3UNTB0YEnsNBbWfhf7RtnzpL7TkBiTBRfrQ9Fxcnz7VJsleJpyp6rVLvXiuORqjlHi5q+PYuA==",
++      "dependencies": {
++        "streamsearch": "^1.1.0"
++      },
++      "engines": {
++        "node": ">=10.16.0"
++      }
++    },
+     "node_modules/bytes": {
+       "version": "3.1.2",
+       "resolved": "https://registry.npmjs.org/bytes/-/bytes-3.1.2.tgz",
+@@ -968,6 +1546,12 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/cropperjs": {
++      "version": "1.6.2",
++      "resolved": "https://registry.npmjs.org/cropperjs/-/cropperjs-1.6.2.tgz",
++      "integrity": "sha512-nhymn9GdnV3CqiEHJVai54TULFAE3VshJTXSqSJKa8yXAKyBKDWdhHarnlIPrshJ0WMFTGuFvG02YjLXfPiuOA==",
++      "license": "MIT"
++    },
+     "node_modules/debug": {
+       "version": "4.4.3",
+       "resolved": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz",
+@@ -994,6 +1578,15 @@
+         "node": ">= 0.8"
+       }
+     },
++    "node_modules/detect-libc": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
++      "integrity": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==",
++      "license": "Apache-2.0",
++      "engines": {
++        "node": ">=8"
++      }
++    },
+     "node_modules/dunder-proto": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/dunder-proto/-/dunder-proto-1.0.1.tgz",
+@@ -1408,6 +2001,67 @@
+       "integrity": "sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==",
+       "license": "MIT"
+     },
++    "node_modules/multer": {
++      "version": "2.4.0",
++      "resolved": "https://registry.npmjs.org/multer/-/multer-2.4.0.tgz",
++      "integrity": "sha512-7dqa0ZcFfzbefdTuIkzOSMvZWC0J7FLqBOjJUZvDCXShIURWKxAyTT1wHhnE5q19c7jOJf43IYYKjBmZVZmvhg==",
++      "license": "MIT",
++      "dependencies": {
++        "append-field": "^1.0.0",
++        "busboy": "^1.6.0",
++        "type-is": "^1.6.18"
++      },
++      "engines": {
++        "node": ">= 10.16.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/express"
++      }
++    },
++    "node_modules/multer/node_modules/media-typer": {
++      "version": "0.3.0",
++      "resolved": "https://registry.npmjs.org/media-typer/-/media-typer-0.3.0.tgz",
++      "integrity": "sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/multer/node_modules/mime-db": {
++      "version": "1.52.0",
++      "resolved": "https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz",
++      "integrity": "sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/multer/node_modules/mime-types": {
++      "version": "2.1.35",
++      "resolved": "https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz",
++      "integrity": "sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==",
++      "license": "MIT",
++      "dependencies": {
++        "mime-db": "1.52.0"
++      },
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/multer/node_modules/type-is": {
++      "version": "1.6.18",
++      "resolved": "https://registry.npmjs.org/type-is/-/type-is-1.6.18.tgz",
++      "integrity": "sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==",
++      "license": "MIT",
++      "dependencies": {
++        "media-typer": "0.3.0",
++        "mime-types": "~2.1.24"
++      },
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
+     "node_modules/nanoid": {
+       "version": "3.3.19",
+       "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.19.tgz",
+@@ -1691,6 +2345,18 @@
+       "integrity": "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==",
+       "license": "MIT"
+     },
++    "node_modules/semver": {
++      "version": "7.8.5",
++      "resolved": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
++      "integrity": "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==",
++      "license": "ISC",
++      "bin": {
++        "semver": "bin/semver.js"
++      },
++      "engines": {
++        "node": ">=10"
++      }
++    },
+     "node_modules/send": {
+       "version": "1.2.1",
+       "resolved": "https://registry.npmjs.org/send/-/send-1.2.1.tgz",
+@@ -1742,6 +2408,55 @@
+       "integrity": "sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==",
+       "license": "ISC"
+     },
++    "node_modules/sharp": {
++      "version": "0.35.5",
++      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.35.5.tgz",
++      "integrity": "sha512-Ywn4OnzGukp7CDMrp08RQ50YKmuwG47brZgIVPTvBaaAfQlRlygrRqSrxdCiL9M+LlzLBiJ68IR1QqvzHyjC7g==",
++      "license": "Apache-2.0",
++      "dependencies": {
++        "@img/colour": "^1.1.0",
++        "detect-libc": "^2.1.2",
++        "semver": "^7.8.5"
++      },
++      "engines": {
++        "node": ">=20.9.0"
++      },
++      "funding": {
++        "url": "https://opencollective.com/libvips"
++      },
++      "optionalDependencies": {
++        "@img/sharp-darwin-arm64": "0.35.5",
++        "@img/sharp-darwin-x64": "0.35.5",
++        "@img/sharp-freebsd-wasm32": "0.35.5",
++        "@img/sharp-libvips-darwin-arm64": "1.3.4",
++        "@img/sharp-libvips-darwin-x64": "1.3.4",
++        "@img/sharp-libvips-linux-arm": "1.3.4",
++        "@img/sharp-libvips-linux-arm64": "1.3.4",
++        "@img/sharp-libvips-linux-ppc64": "1.3.4",
++        "@img/sharp-libvips-linux-riscv64": "1.3.4",
++        "@img/sharp-libvips-linux-s390x": "1.3.4",
++        "@img/sharp-libvips-linux-x64": "1.3.4",
++        "@img/sharp-libvips-linuxmusl-arm64": "1.3.4",
++        "@img/sharp-libvips-linuxmusl-x64": "1.3.4",
++        "@img/sharp-linux-arm": "0.35.5",
++        "@img/sharp-linux-arm64": "0.35.5",
++        "@img/sharp-linux-ppc64": "0.35.5",
++        "@img/sharp-linux-riscv64": "0.35.5",
++        "@img/sharp-linux-s390x": "0.35.5",
++        "@img/sharp-linux-x64": "0.35.5",
++        "@img/sharp-linuxmusl-arm64": "0.35.5",
++        "@img/sharp-linuxmusl-x64": "0.35.5",
++        "@img/sharp-webcontainers-wasm32": "0.35.5",
++        "@img/sharp-win32-arm64": "0.35.5",
++        "@img/sharp-win32-ia32": "0.35.5",
++        "@img/sharp-win32-x64": "0.35.5"
++      },
++      "peerDependenciesMeta": {
++        "@types/node": {
++          "optional": true
++        }
++      }
++    },
+     "node_modules/side-channel": {
+       "version": "1.1.1",
+       "resolved": "https://registry.npmjs.org/side-channel/-/side-channel-1.1.1.tgz",
+@@ -1833,6 +2548,14 @@
+         "node": ">= 0.8"
+       }
+     },
++    "node_modules/streamsearch": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/streamsearch/-/streamsearch-1.1.0.tgz",
++      "integrity": "sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==",
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
+     "node_modules/toidentifier": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/toidentifier/-/toidentifier-1.0.1.tgz",
+@@ -1842,6 +2565,13 @@
+         "node": ">=0.6"
+       }
+     },
++    "node_modules/tslib": {
++      "version": "2.8.1",
++      "resolved": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
++      "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
++      "license": "0BSD",
++      "optional": true
++    },
+     "node_modules/type-is": {
+       "version": "2.1.0",
+       "resolved": "https://registry.npmjs.org/type-is/-/type-is-2.1.0.tgz",
+diff --git a/package.json b/package.json
+index 17671dd..cb30c6c 100644
+--- a/package.json
++++ b/package.json
+@@ -16,7 +16,10 @@
+   },
+   "dependencies": {
+     "cors": "^2.8.6",
++    "cropperjs": "^1.6.2",
+     "express": "^5.2.1",
+-    "nodemailer": "^10.0.14"
++    "multer": "^2.4.0",
++    "nodemailer": "^10.0.14",
++    "sharp": "^0.35.5"
+   }
+ }
