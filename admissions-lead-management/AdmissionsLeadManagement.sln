@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdmissionsLeadManagement.API", "src\AdmissionsLeadManagement.API\AdmissionsLeadManagement.API.csproj", "{3E49FBF3-06C3-441A-9799-19A82D16DEB8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AdmissionsLeadManagement.Tests", "tests\AdmissionsLeadManagement.Tests\AdmissionsLeadManagement.Tests.csproj", "{4C3D0846-5BB5-429E-862D-89F8214C9CF2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3E49FBF3-06C3-441A-9799-19A82D16DEB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E49FBF3-06C3-441A-9799-19A82D16DEB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E49FBF3-06C3-441A-9799-19A82D16DEB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E49FBF3-06C3-441A-9799-19A82D16DEB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4C3D0846-5BB5-429E-862D-89F8214C9CF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C3D0846-5BB5-429E-862D-89F8214C9CF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C3D0846-5BB5-429E-862D-89F8214C9CF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C3D0846-5BB5-429E-862D-89F8214C9CF2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B622A5E-2980-449F-8CA0-A3A54AC2E29B}
+	EndGlobalSection
+EndGlobal

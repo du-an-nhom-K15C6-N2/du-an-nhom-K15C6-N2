@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Tư Vấn Tuyển Sinh - Tra Cứu & Lọc Lead</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tag-active { background-color: #2563eb !important; color: white !important; border-color: #2563eb !important; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <!-- Top Navigation -->
+    <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-indigo-700 flex items-center justify-center font-bold text-xl shadow-inner">
+                    <i class="fa-solid fa-graduation-cap text-amber-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-tight">HỆ THỐNG CRM TƯ VẤN TUYỂN SINH</h1>
+                    <p class="text-xs text-indigo-200">Tra cứu nhanh & Lịch sử trao đổi khi khách hàng gọi lại</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span> Sẵn sàng nhận cuộc gọi
+                </span>
+                <div class="text-right text-xs">
+                    <p class="font-semibold">Tư vấn viên: Nguyễn Thuỳ Linh</p>
+                    <p class="text-indigo-300">Khối Tuyển sinh CNTT</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Banner thông báo nghiệp vụ -->
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm flex items-start space-x-3">
+            <i class="fa-solid fa-phone-volume text-amber-600 text-xl mt-0.5"></i>
+            <div>
+                <h2 class="text-sm font-semibold text-amber-800">Tình huống tiếp nhận: Khách gọi lại sau 1 tháng</h2>
+                <p class="text-xs text-amber-700 mt-0.5">
+                    Nhập nhanh <b>Số điện thoại</b> hoặc chọn nút <b>[⚡ Cuộc gọi tháng trước]</b> bên dưới để tra cứu ngay nội dung ghi chú trao đổi lần trước (học bổng, ngành quan tâm, học phí...).
+                </p>
+            </div>
+        </div>
+
+        <!-- Bộ Lọc Đa Điều Kiện & Tìm Kiếm -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+            <form id="filterForm" class="space-y-4" onsubmit="event.preventDefault(); applyFilter();">
+                
+                <!-- Hàng 1: Ô tìm kiếm từ khóa chính & Nút hành động -->
+                <div class="flex flex-col md:flex-row gap-3">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="keyword" placeholder="Nhập Số điện thoại, Tên phụ huynh/học sinh, hoặc nội dung trao đổi cũ (ví dụ: học bổng, IELTS, học phí...)" 
+                               class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm placeholder:text-slate-400 outline-none transition" />
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm shadow-sm flex items-center gap-2 transition">
+                            <i class="fa-solid fa-filter"></i> Lọc dữ liệu
+                        </button>
+                        <button type="button" onclick="resetFilters()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium text-sm transition">
+                            <i class="fa-solid fa-rotate-left"></i> Đặt lại
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hàng 2: Các nút bấm chọn nhanh thời gian (Quick Time Range Filter) -->
+                <div class="border-t border-b border-slate-100 py-3 flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1">
+                        <i class="fa-regular fa-clock"></i> Khoảng thời gian:
+                    </span>
+                    <button type="button" onclick="selectQuickRange('LastMonth', this)" class="quick-range-btn px-3 py-1.5 rounded-md text-xs font-medium border border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition shadow-xs">
+                        ⚡ Cuộc gọi tháng trước (Tháng trước)
+                    </button>
+                    <button type="button" onclick="selectQuickRange('ThisMonth', this)" class="quick-range-btn px-3 py-1.5 rounded-md text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition">
+                        Tháng này
+                    </button>
+                    <button type="button" onclick="selectQuickRange('Last30Days', this)" class="quick-range-btn px-3 py-1.5 rounded-md text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition">
+                        30 ngày qua
+                    </button>
+                    <button type="button" onclick="selectQuickRange('Today', this)" class="quick-range-btn px-3 py-1.5 rounded-md text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition">
+                        Hôm nay
+                    </button>
+                    <button type="button" onclick="selectQuickRange('All', this)" class="quick-range-btn px-3 py-1.5 rounded-md text-xs font-medium border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition tag-active">
+                        Tất cả thời gian
+                    </button>
+                </div>
+
+                <!-- Hàng 3: Các tiêu chí lọc chi tiết -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-1">
+                    <!-- Trạng thái Lead -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Trạng thái Lead</label>
+                        <select id="statusFilter" class="w-full text-xs py-2 px-2.5 rounded-lg border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 outline-none">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="0">Mới tiếp nhận</option>
+                            <option value="1">Đã liên hệ</option>
+                            <option value="2">Đang tư vấn</option>
+                            <option value="3">Đã hẹn lịch</option>
+                            <option value="4">Hẹn gọi lại sau</option>
+                            <option value="5">Đã nhập học</option>
+                            <option value="6">Không nhu cầu</option>
+                        </select>
+                    </div>
+
+                    <!-- Nguồn Lead -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Nguồn tiếp cận</label>
+                        <select id="sourceFilter" class="w-full text-xs py-2 px-2.5 rounded-lg border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 outline-none">
+                            <option value="">-- Tất cả nguồn --</option>
+                            <option value="0">Facebook Ads</option>
+                            <option value="1">Google Search</option>
+                            <option value="2">Hotline</option>
+                            <option value="3">Website Landing Page</option>
+                            <option value="4">Ngày hội tuyển sinh</option>
+                            <option value="5">Người quen giới thiệu</option>
+                            <option value="6">Đến trực tiếp</option>
+                        </select>
+                    </div>
+
+                    <!-- Người phụ trách -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Tư vấn viên phụ trách</label>
+                        <select id="counselorFilter" class="w-full text-xs py-2 px-2.5 rounded-lg border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 outline-none">
+                            <option value="">-- Tất cả tư vấn viên --</option>
+                            <option value="1">Nguyễn Thuỳ Linh</option>
+                            <option value="2">Lê Hoàng Long</option>
+                            <option value="3">Trần Minh Quân</option>
+                        </select>
+                    </div>
+
+                    <!-- Lọc theo ngày nào -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Tiêu chí ngày</label>
+                        <select id="dateFilterType" class="w-full text-xs py-2 px-2.5 rounded-lg border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 outline-none">
+                            <option value="0">Ngày trao đổi gần nhất</option>
+                            <option value="1">Ngày tiếp nhận Lead</option>
+                        </select>
+                    </div>
+
+                    <!-- Từ ngày tùy chọn -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Từ ngày</label>
+                        <input type="date" id="fromDate" class="w-full text-xs py-1.5 px-2 rounded-lg border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 outline-none" />
+                    </div>
+
+                    <!-- Đến ngày tùy chọn -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Đến ngày</label>
+                        <input type="date" id="toDate" class="w-full text-xs py-1.5 px-2 rounded-lg border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 outline-none" />
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Thống kê kết quả & Thông tin trạng thái -->
+        <div class="flex flex-col sm:flex-row justify-between items-center text-xs text-slate-500 px-1">
+            <div id="resultSummary">Đang tải dữ liệu lead...</div>
+            <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+                <span>Sắp xếp theo:</span>
+                <select id="sortBy" onchange="applyFilter()" class="border border-slate-300 rounded px-2 py-1 bg-white text-xs outline-none">
+                    <option value="LastInteractionDate">Ngày trao đổi mới nhất</option>
+                    <option value="CreatedDate">Ngày tiếp nhận mới nhất</option>
+                    <option value="FullName">Họ tên A-Z</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách Lead & Cuộc trao đổi quá khứ -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100/80 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            <th class="py-3.5 px-4">Thông tin Thí sinh / Phụ huynh</th>
+                            <th class="py-3.5 px-4">Ngành quan tâm</th>
+                            <th class="py-3.5 px-4">Trạng thái</th>
+                            <th class="py-3.5 px-4">Nguồn & Phụ trách</th>
+                            <th class="py-3.5 px-4 w-5/12">Cuộc trao đổi gần nhất (Ghi chú quá khứ)</th>
+                            <th class="py-3.5 px-4 text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadTableBody" class="divide-y divide-slate-100 text-sm">
+                        <!-- Render dynamic items here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phân trang -->
+            <div class="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div id="paginationInfo" class="text-xs text-slate-500">Hiển thị trang 1 / 1</div>
+                <div class="flex space-x-2">
+                    <button id="prevBtn" onclick="changePage(-1)" class="px-3 py-1.5 rounded border border-slate-300 bg-white text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-40">
+                        <i class="fa-solid fa-chevron-left"></i> Trang trước
+                    </button>
+                    <button id="nextBtn" onclick="changePage(1)" class="px-3 py-1.5 rounded border border-slate-300 bg-white text-xs font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-40">
+                        Trang sau <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal Xem Chi Tiết Lịch Sử Trao Đổi (Timeline Dialog) -->
+    <div id="historyModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            <!-- Modal Header -->
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 id="modalLeadName" class="text-base font-bold">Lịch sử tư vấn</h3>
+                    <p id="modalLeadPhone" class="text-xs text-indigo-200">SĐT: --</p>
+                </div>
+                <button onclick="closeModal()" class="text-indigo-200 hover:text-white text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content: Timeline các cuộc gọi trong quá khứ -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-1">
+                <div>
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Dòng thời gian các cuộc gọi & trao đổi
+                    </h4>
+                    <div id="modalTimeline" class="space-y-4 border-l-2 border-indigo-200 ml-3 pl-4">
+                        <!-- Dynamic timeline items -->
+                    </div>
+                </div>
+
+                <!-- Form ghi chú cuộc gọi hiện tại khi khách đang gọi lại -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mt-4">
+                    <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-phone"></i> Ghi nhận cuộc trao đổi hiện tại (Khách gọi lại)
+                    </h4>
+                    <textarea id="newInteractionContent" rows="3" placeholder="Ghi chú nội dung trao đổi vừa diễn ra..." 
+                              class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-1 focus:ring-indigo-500 outline-none"></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <input type="text" id="newInteractionOutcome" placeholder="Kết quả (ví dụ: Chốt hẹn thứ 7 đến trường)" 
+                               class="text-xs p-2 rounded-lg border border-slate-300 w-2/3 outline-none" />
+                        <button onclick="saveNewInteraction()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg shadow-sm">
+                            <i class="fa-solid fa-check"></i> Lưu trao đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-slate-100 px-6 py-3 border-t border-slate-200 text-right">
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-300 hover:bg-slate-400 text-slate-800 text-xs font-medium rounded-lg">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
