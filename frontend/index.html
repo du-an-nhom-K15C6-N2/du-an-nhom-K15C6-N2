@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đồ Án TTCS - Hệ Thống Quản Lý Lớp Học & Quản Trị Người Dùng</title>
+  <meta name="description"
+    content="Đồ án Thực tập cơ sở: Module Đăng nhập an toàn (EP-01) và Màn hình Quản lý người dùng phân quyền.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+
+  <!-- DNKN87: Thu vien cat anh -->
+  <link rel="stylesheet" href="/vendor/cropperjs/cropper.min.css">
+
+</head>
+
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="bg-mesh" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Navigation Bar -->
+  <header class="app-header">
+    <div class="container header-container">
+      <div class="brand-logo" onclick="app.handleBrandClick()">
+        <div class="logo-icon-wrapper">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">EduClass <span>Manager</span></span>
+          <span class="brand-tagline">Đồ Án Thực Tập Cơ Sở • Quản Trị & Bảo Mật Lớp Học</span>
+        </div>
+      </div>
+
+      <!-- Center Navigation Tabs: CHỈ HIỂN THỊ TRONG TÀI KHOẢN QUẢN TRỊ VIÊN -->
+      <nav class="header-nav-tabs" id="header-nav-tabs" style="display: none;">
+        <button type="button" class="nav-tab-btn active" id="tab-nav-users" onclick="app.switchToAdminUserManagement()">
+          👥 Quản lý Người dùng
+        </button>
+        <button type="button" class="nav-tab-btn" id="tab-nav-attendance" onclick="app.switchToAttendance()">
+          📝 Điểm danh
+        </button>
+      </nav>
+
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <button type="button" class="theme-toggle-btn" id="theme-toggle-btn" aria-label="Chuyển đổi giao diện Sáng/Tối">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <circle cx="12" cy="12" r="5" />
+            <path
+              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+
+        <!-- Authenticated User Profile Dropdown (Dynamic) -->
+        <div class="user-menu-wrapper" id="user-menu-wrapper" style="display: none;">
+          <div class="user-profile-badge" id="user-profile-badge" onclick="app.showProfileModal()"
+            title="Nhấn để xem và sửa hồ sơ cá nhân" style="cursor: pointer;">
+            <div class="user-avatar" id="nav-user-avatar">AD</div>
+            <div class="user-info-text">
+              <span class="user-fullname" id="nav-user-name">Quản Trị Viên</span>
+              <span class="user-role-badge" id="nav-role-badge">Quản trị viên</span>
+            </div>
+          </div>
+          <button type="button" class="btn-view-profile" id="btn-view-profile" onclick="app.showProfileModal()"
+            title="Xem và sửa hồ sơ cá nhân">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Hồ sơ cá nhân</span>
+          </button>
+          <button type="button" class="btn-change-password" onclick="app.showChangePasswordModal()">Đổi mật
+            khẩu</button>
+          <button type="button" class="btn-logout" id="logout-btn" onclick="app.logout()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span>Đăng xuất</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APPLICATION CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- ====================================================================
+         SECTION 1: MÀN HÌNH ĐĂNG NHẬP (EP-01)
+         ==================================================================== -->
+    <section class="auth-section" id="auth-section">
+      <div class="auth-card-container">
+
+        <!-- Requirement Badge / User Story Header -->
+        <div class="requirement-callout">
+          <div class="callout-pill">Yêu cầu EP-01</div>
+          <p>Bảo mật dữ liệu lớp học • Khóa tạm 15 phút sau 5 lần sai • Phân quyền vai trò</p>
+        </div>
+
+        <div class="auth-card" id="auth-card">
+          <!-- Card Header -->
+          <div class="auth-card-header">
+            <div class="auth-icon-circle">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <h1 class="auth-title">Đăng Nhập Hệ Thống</h1>
+            <p class="auth-subtitle">Vui lòng nhập email và mật khẩu của bạn để truy cập không gian làm việc an toàn.
+            </p>
+          </div>
+
+          <!-- Lockout Alert Box (AC 3: Bị khóa tạm 15 phút) -->
+          <div class="lockout-alert-box" id="lockout-alert-box" style="display: none;" role="alert">
+            <div class="lockout-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="lockout-details">
+              <h3 class="lockout-title">Tài Khoản Đã Bị Tạm Khóa An Toàn!</h3>
+              <p class="lockout-desc">Bạn đã nhập sai 5 lần liên tiếp. Hệ thống đã kích hoạt khóa tạm thời <strong>15
+                  phút</strong> để chống dò quét mật khẩu.</p>
+              <div class="lockout-timer-wrapper">
+                <span class="timer-label">Thời gian mở khóa sau:</span>
+                <span class="timer-countdown" id="lockout-timer-display">15:00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- General Error Message Box (AC 2: Chính xác 'Email hoặc mật khẩu không đúng') -->
+          <div class="error-alert-box" id="error-alert-box" style="display: none;" role="alert">
+            <div class="error-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <div class="error-text-content">
+              <strong id="error-message-text">Email hoặc mật khẩu không đúng</strong>
+              <div class="attempts-hint" id="attempts-hint-text">Còn 4 lần thử trước khi tài khoản bị tạm khóa 15 phút.
+              </div>
+            </div>
+          </div>
+
+          <!-- Visual Attempt Meter (1 to 5 dots) -->
+          <div class="attempt-meter-container" id="attempt-meter-container" title="Chỉ số số lần nhập sai liên tiếp">
+            <div class="attempt-meter-labels">
+              <span>Số lần nhập sai liên tiếp:</span>
+              <span id="attempt-ratio-text">0 / 5</span>
+            </div>
+            <div class="meter-dots">
+              <span class="meter-dot" id="dot-1"></span>
+              <span class="meter-dot" id="dot-2"></span>
+              <span class="meter-dot" id="dot-3"></span>
+              <span class="meter-dot" id="dot-4"></span>
+              <span class="meter-dot" id="dot-5"></span>
+            </div>
+          </div>
+
+          <!-- Login Form -->
+          <form class="auth-form" id="login-form" novalidate onsubmit="app.handleLogin(event)">
+
+            <!-- Email Field -->
+            <div class="form-group">
+              <label for="input-email" class="form-label">
+                <span>Địa chỉ Email</span>
+                <span class="required-star">*</span>
+              </label>
+              <div class="input-wrapper">
+                <div class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                </div>
+                <input type="email" id="input-email" name="email" class="form-input" placeholder="name@school.edu.vn"
+                  autocomplete="username" required>
+              </div>
+              <span class="field-error-msg" id="email-field-error"></span>
+            </div>
+
+            <!-- Password Field with Show/Hide toggle -->
+            <div class="form-group">
+              <div class="form-label-row">
+                <label for="input-password" class="form-label">
+                  <span>Mật khẩu</span>
+                  <span class="required-star">*</span>
+                </label>
+                <a href="#forgot" class="forgot-link" onclick="app.showForgotModal(event)">Quên mật khẩu?</a>
+              </div>
+              <div class="input-wrapper">
+                <div class="input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                </div>
+                <input type="password" id="input-password" name="password" class="form-input" placeholder="••••••••"
+                  autocomplete="current-password" required>
+                <button type="button" class="btn-toggle-pwd" id="toggle-pwd-btn"
+                  onclick="app.togglePasswordVisibility()" aria-label="Hiển thị hoặc ẩn mật khẩu">
+                  <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg class="eye-closed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" style="display:none;">
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                    </path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+              <span class="field-error-msg" id="password-field-error"></span>
+            </div>
+
+            <!-- Remember me & Privacy note -->
+            <div class="form-meta-row">
+              <label class="checkbox-container">
+                <input type="checkbox" id="remember-me-checkbox" checked>
+                <span class="custom-checkbox"></span>
+                <span class="checkbox-label">Ghi nhớ đăng nhập an toàn</span>
+              </label>
+              <div class="security-badge" title="Được bảo vệ bằng mã hóa End-to-End">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+                <span>SSL Encrypted</span>
+              </div>
+            </div>
+
+            <!-- Submit Button with Loading State -->
+            <button type="submit" class="btn-submit" id="btn-submit-login">
+              <span class="btn-spinner" id="login-spinner" style="display: none;"></span>
+              <span class="btn-text" id="login-btn-text">Đăng Nhập Vào Hệ Thống</span>
+              <svg class="btn-icon" id="login-btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </form>
+
+          <!-- Acceptance Criteria Checklist -->
+          <div class="criteria-checklist">
+            <h4>Tiêu chuẩn chấp nhận EP-01:</h4>
+            <ul>
+              <li class="check-item"><span class="check-icon">✓</span> <strong>AC1:</strong> Đăng nhập đúng điều hướng
+                vào trang chủ tương ứng theo vai trò.</li>
+              <li class="check-item"><span class="check-icon">✓</span> <strong>AC2:</strong> Sai thông tin hiển thị
+                chính xác: <code>"Email hoặc mật khẩu không đúng"</code> (không tiết lộ email tồn tại hay không).</li>
+              <li class="check-item"><span class="check-icon">✓</span> <strong>AC3:</strong> Khóa tạm 15 phút sau 5 lần
+                sai liên tiếp kèm đồng hồ đếm ngược.</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: MÀN HÌNH QUẢN LÝ NGƯỜI DÙNG (USER MANAGEMENT)
+         ==================================================================== -->
+    <section class="portal-section" id="portal-user-management" style="display: none;">
+      <div class="container">
+
+        <!-- Header / Banner Quản Trị -->
+        <div class="role-hero admin-hero">
+          <div class="role-hero-content">
+            <div class="role-chip">Màn Hình Quản Trị Hệ Thống • Phân Quyền Nhân Sự</div>
+            <h1 class="role-title">Quản Lý Tài Khoản Người Dùng</h1>
+            <p class="role-subtitle">
+              Cấp quyền truy cập, chỉnh sửa thông tin và quản lý trạng thái tài khoản cho cán bộ, giảng viên và sinh
+              viên mới.
+            </p>
+          </div>
+          <div class="security-privacy-stamp">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            <div>
+              <strong>Phân Quyền RBAC</strong>
+              <small id="user-count-summary">Đang tải danh sách người dùng...</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification Banner / Alert khi có lỗi hoặc chú thích -->
+        <div class="admin-notice-card">
+          <div class="notice-icon">💡</div>
+          <div class="notice-text">
+            <strong>Tiêu chí nghiệm thu AC1:</strong> Khi thêm tài khoản mới thành công, hệ thống sẽ mô phỏng gửi email
+            kích hoạt kèm mật khẩu tạm thời về hòm thư người dùng. Trường hợp trùng Email sẽ bị từ chối với thông báo
+            lỗi cụ thể (AC2).
+          </div>
+        </div>
+
+        <!-- Filter & Search Toolbar (Yêu cầu a: Search Bar, Dropdowns, Nút Thêm mới) -->
+        <div class="management-toolbar-card">
+          <div class="toolbar-left-group">
+
+            <!-- Search Bar -->
+            <div class="search-input-wrapper">
+              <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="user-search-input" class="search-input"
+                placeholder="Tìm kiếm theo Họ tên, Email, Số điện thoại..." oninput="app.handleUserSearch(event)">
+              <button type="button" class="btn-clear-search" id="clear-search-btn" onclick="app.clearSearch()"
+                style="display:none;" title="Xóa tìm kiếm">×</button>
+            </div>
+
+            <!-- Role Filter Dropdown -->
+            <div class="filter-dropdown-wrapper">
+              <label for="filter-role-select" class="filter-label">Vai trò:</label>
+              <select id="filter-role-select" class="filter-select" onchange="app.handleFilterChange()">
+                <option value="all">Tất cả vai trò</option>
+                <option value="student">Học sinh / Sinh viên</option>
+                <option value="teacher">Giảng viên</option>
+                <option value="admin">Quản trị viên</option>
+                <option value="assistant">Trợ giảng</option>
+              </select>
+            </div>
+
+            <!-- Status Filter Dropdown -->
+            <div class="filter-dropdown-wrapper">
+              <label for="filter-status-select" class="filter-label">Trạng thái:</label>
+              <select id="filter-status-select" class="filter-select" onchange="app.handleFilterChange()">
+                <option value="all">Tất cả trạng thái</option>
+                <option value="active">Đang hoạt động</option>
+                <option value="locked">Đang bị khóa</option>
+                <option value="pending">Chờ kích hoạt</option>
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Add User Button -->
+          <div class="toolbar-right-group">
+            <button type="button" class="btn-primary-action btn-add-user" onclick="app.openAddUserModal()">
+              <span>Thêm tài khoản mới</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Table Data Section (Yêu cầu b: Bảng dữ liệu người dùng) -->
+        <div class="portal-card user-table-card">
+          <div class="table-responsive">
+            <table class="data-table user-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px; text-align: center;">STT</th>
+                  <th>Họ và tên</th>
+                  <th>Email</th>
+                  <th>Số điện thoại</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th style="text-align: right; width: 170px;">Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="user-table-body">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty State (when search returns 0 results) -->
+          <div class="table-empty-state" id="user-empty-state" style="display: none;">
+            <div class="empty-icon">🔍</div>
+            <h3>Không tìm thấy người dùng phù hợp</h3>
+            <p>Vui lòng thử từ khóa khác hoặc điều chỉnh bộ lọc vai trò, trạng thái.</p>
+            <button type="button" class="btn-outline-action" onclick="app.resetFilters()">Đặt lại bộ lọc</button>
+          </div>
+
+          <!-- Pagination Section (Yêu cầu c: Phân trang mặc định 20 dòng/trang) -->
+          <div class="pagination-footer" id="pagination-footer">
+            <div class="pagination-info" id="pagination-info">
+              Hiển thị <strong id="page-start">1</strong> - <strong id="page-end">20</strong> trên tổng số <strong
+                id="total-users-count">28</strong> tài khoản
+            </div>
+
+            <div class="pagination-controls" id="pagination-controls">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 3: PORTAL HỌC VIÊN (STUDENT ROLE)
+         ==================================================================== -->
+    <section class="portal-section" id="portal-student" style="display: none;">
+      <div class="container">
+        <div class="role-hero student-hero">
+          <div class="role-hero-content">
+            <div class="role-chip">Cổng Học Viên • Dữ Liệu Được Bảo Mật Tuyệt Đối</div>
+            <h1 class="role-title">Chào mừng, <span id="student-name">Nguyễn Văn An</span>!</h1>
+            <p class="role-subtitle">
+              Mã sinh viên: <strong>SV2026-0812</strong> • Lớp: <strong>K15-CNTT02</strong> • Không gian học tập cá nhân
+              an toàn (chỉ bạn và giảng viên mới có quyền xem điểm số).
+            </p>
+          </div>
+          <div class="security-privacy-stamp">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            <div>
+              <strong>Bảo Vệ Điểm Số Cá Nhân</strong>
+              <small>Chống nhìn trộm dữ liệu lớp học</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="portal-grid">
+          <div class="portal-col-main">
+            <div class="portal-card">
+              <div class="card-header-flex">
+                <div class="card-title-group">
+                  <div class="card-icon-tag icon-grades">📊</div>
+                  <div>
+                    <h2 class="card-title">Bảng Điểm Cá Nhân Của Bạn</h2>
+                    <p class="card-desc">Chỉ hiển thị cho tài khoản này - Sinh viên khác không thể xem trộm.</p>
+                  </div>
+                </div>
+                <span class="status-badge-secure">🔒 Bảo mật tuyệt đối</span>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Môn học</th>
+                      <th>Mã lớp</th>
+                      <th>Chuyên cần</th>
+                      <th>Giữa kỳ</th>
+                      <th>Đồ án / BTL</th>
+                      <th>Tổng kết</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Phát triển Ứng dụng Web</strong></td>
+                      <td>WEB-01</td>
+                      <td>9.5</td>
+                      <td>8.5</td>
+                      <td>9.0</td>
+                      <td><span class="score-highlight">8.9</span></td>
+                      <td><span class="badge-passed">Đạt (A)</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Cơ Sở Dữ Liệu Nâng Cao</strong></td>
+                      <td>DB-02</td>
+                      <td>10.0</td>
+                      <td>8.0</td>
+                      <td>8.5</td>
+                      <td><span class="score-highlight">8.6</span></td>
+                      <td><span class="badge-passed">Đạt (B+)</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>An Toàn & Bảo Mật Hệ Thống</strong></td>
+                      <td>SEC-04</td>
+                      <td>10.0</td>
+                      <td>9.0</td>
+                      <td>9.5</td>
+                      <td><span class="score-highlight">9.3</span></td>
+                      <td><span class="badge-passed">Xuất sắc (A+)</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="portal-col-side">
+            <div class="portal-card">
+              <h3 class="card-title-small">📝 Bài tập cá nhân cần nộp</h3>
+              <div class="assignment-list">
+                <div class="assignment-item pending">
+                  <div class="asg-title">Báo cáo kiểm thử xác thực EP-01</div>
+                  <div class="asg-meta">Hạn: Hôm nay 23:59 • Môn An toàn Web</div>
+                  <span class="badge-status-due">Chờ nộp bài</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 4: PORTAL GIẢNG VIÊN (TEACHER ROLE)
+         ==================================================================== -->
+    <section class="portal-section" id="portal-teacher" style="display: none;">
+      <div class="container">
+        <div class="role-hero teacher-hero">
+          <div class="role-hero-content">
+            <div class="role-chip">Cổng Giảng Viên • Quản Lý Lớp Học & Chấm Điểm</div>
+            <h1 class="role-title">Chào cô, <span id="teacher-name">ThS. Trần Thị Mai</span>!</h1>
+            <p class="role-subtitle">
+              Mã giảng viên: <strong>GV-1029</strong> • Khoa Công nghệ Thông tin • Quản lý lớp học và bảo vệ đề thi.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="portal-section" id="portal-attendance" style="display: none;">
+      <div class="container">
+        <div class="role-hero teacher-hero">
+          <div class="role-hero-content">
+            <div class="role-chip">Quản Lý Lớp Học • Bảo Toàn Bản Nháp</div>
+            <h1 class="role-title">Điểm danh lớp học</h1>
+            <p class="role-subtitle">Ghi nhận tình trạng tham dự. Nội dung đang nhập được lưu tạm trên thiết bị này để
+              khôi phục nếu phiên đăng nhập hết hạn.</p>
+          </div>
+        </div>
+        <div id="attendance-form-container"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       MODAL 1: THÊM / CHỈNH SỬA TÀI KHOẢN NGƯỜI DÙNG
+       ==================================================================== -->
+  <div class="modal-overlay" id="user-form-modal" style="display: none;" role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <div class="modal-icon-badge">👤</div>
+          <div>
+            <h3 class="modal-title" id="user-modal-title">Thêm Tài Khoản Mới</h3>
+            <p class="modal-subtitle">Hệ thống sẽ gửi email kích hoạt và mật khẩu tạm thời (AC1).</p>
+          </div>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="app.closeUserModal()" aria-label="Đóng">&times;</button>
+      </div>
+
+      <!-- Error Alert in Modal (e.g. Email trùng từ chối - AC2) -->
+      <div class="modal-alert-error" id="modal-error-alert" style="display: none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <span id="modal-error-text">Email đã tồn tại trong hệ thống.</span>
+      </div>
+
+      <form id="user-edit-form" novalidate onsubmit="app.handleUserFormSubmit(event)">
+        <input type="hidden" id="form-user-id" value="">
+
+        <div class="modal-body">
+          <div class="form-grid-2">
+
+            <!-- Họ và tên -->
+            <div class="form-group">
+              <label for="form-fullname" class="form-label">
+                <span>Họ và tên</span>
+                <span class="required-star">*</span>
+              </label>
+              <input type="text" id="form-fullname" class="form-input" placeholder="Ví dụ: Nguyễn Văn An" required>
+              <span class="field-error-msg" id="err-fullname"></span>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="form-email" class="form-label">
+                <span>Địa chỉ Email</span>
+                <span class="required-star">*</span>
+              </label>
+              <input type="email" id="form-email" class="form-input" placeholder="name@school.edu.vn" required>
+              <span class="field-error-msg" id="err-email"></span>
+            </div>
+
+            <!-- Số điện thoại -->
+            <div class="form-group">
+              <label for="form-phone" class="form-label">
+                <span>Số điện thoại</span>
+                <span class="required-star">*</span>
+              </label>
+              <input type="tel" id="form-phone" class="form-input" placeholder="0912345678" required>
+              <span class="field-error-msg" id="err-phone"></span>
+            </div>
+
+            <!-- Vai trò -->
+            <div class="form-group">
+              <label for="form-role" class="form-label">
+                <span>Vai trò người dùng</span>
+                <span class="required-star">*</span>
+              </label>
+              <select id="form-role" class="form-select" required>
+                <option value="student">Học sinh / Sinh viên</option>
+                <option value="teacher">Giảng viên</option>
+                <option value="assistant">Trợ giảng</option>
+                <option value="admin">Quản trị viên</option>
+              </select>
+              <span class="field-error-msg" id="err-role"></span>
+            </div>
+
+            <!-- Mật khẩu -->
+            <div class="form-group">
+              <label for="form-password" class="form-label">
+                <span>Mật khẩu</span>
+                <span class="required-star">*</span>
+              </label>
+              <input type="password" id="form-password" class="form-input" placeholder="Ít nhất 8 ký tự" minlength="8"
+                maxlength="1024" autocomplete="new-password" required>
+              <span class="field-error-msg" id="err-password"></span>
+            </div>
+
+            <!-- Xác nhận mật khẩu -->
+            <div class="form-group">
+              <label for="form-confirm-password" class="form-label">
+                <span>Xác nhận mật khẩu</span>
+                <span class="required-star">*</span>
+              </label>
+              <input type="password" id="form-confirm-password" class="form-input" placeholder="Nhập lại mật khẩu"
+                minlength="8" maxlength="1024" autocomplete="new-password" required>
+              <span class="field-error-msg" id="err-confirm-password"></span>
+            </div>
+
+            <!-- Trạng thái -->
+            <div class="form-group form-col-span-2">
+              <label for="form-status" class="form-label">
+                <span>Trạng thái tài khoản</span>
+                <span class="required-star">*</span>
+              </label>
+              <select id="form-status" class="form-select" required>
+                <option value="active">Đang hoạt động (Kích hoạt ngay)</option>
+                <option value="pending">Chờ kích hoạt (Gửi email mật khẩu tạm)</option>
+                <option value="locked">Tạm khóa tài khoản</option>
+              </select>
+            </div>
+
+          </div>
+
+          <!-- Security Notice -->
+          <div class="modal-info-box">
+            <span class="info-badge">🔐 Mật khẩu:</span>
+            <span>Mật khẩu có ít nhất 8 ký tự, bắt buộc phải nhập khi tạo tài khoản mới.</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" onclick="app.closeUserModal()">Hủy bỏ</button>
+          <button type="submit" class="btn-submit btn-sm" id="btn-save-user">
+            <span class="btn-spinner" id="modal-spinner" style="display:none;"></span>
+            <span id="btn-save-user-text">Lưu Thông Tin</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgot-modal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Quên Mật Khẩu Truy Cập</h3>
+        <button type="button" class="btn-modal-close" onclick="app.closeForgotModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Để bảo vệ dữ liệu lớp học khỏi các nguy cơ chiếm đoạt tài khoản, hệ thống sẽ gửi mã OTP xác thực qua email
+          trường.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="forgot-email-input">Nhập địa chỉ email trường:</label>
+          <input type="email" id="forgot-email-input" class="form-input" placeholder="name@school.edu.vn"
+            autocomplete="email" maxlength="254" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="app.closeForgotModal()">Hủy bỏ</button>
+        <button type="button" class="btn-submit btn-sm" id="forgot-submit-btn" onclick="app.handleForgotSubmit()">Gửi
+          Yêu Cầu</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="change-password-modal" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="change-password-title">
+    <form class="modal-dialog" id="change-password-form" onsubmit="app.handleChangePassword(event)">
+      <div class="modal-header">
+        <h3 class="modal-title" id="change-password-title">Đổi mật khẩu</h3>
+        <button type="button" class="btn-modal-close" onclick="app.closeChangePasswordModal()"
+          aria-label="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="current-password-input">Mật khẩu hiện tại</label>
+          <input class="form-input" id="current-password-input" name="currentPassword" type="password"
+            autocomplete="current-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new-password-input">Mật khẩu mới (ít nhất 8 ký tự)</label>
+          <input class="form-input" id="new-password-input" name="newPassword" type="password" minlength="8"
+            maxlength="1024" autocomplete="new-password" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm-password-input">Xác nhận mật khẩu mới</label>
+          <input class="form-input" id="confirm-password-input" name="confirmPassword" type="password" minlength="8"
+            maxlength="1024" autocomplete="new-password" required>
+        </div>
+        <p id="change-password-error" class="modal-alert-error" style="display:none;" role="alert"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="app.closeChangePasswordModal()">Hủy bỏ</button>
+        <button type="submit" class="btn-submit btn-sm" id="btn-change-password-submit">Cập nhật mật khẩu</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal Xem và Cập Nhật Hồ Sơ Cá Nhân (Subtask DNKN-86) -->
+  <div class="modal-overlay" id="profile-modal" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="profile-modal-title">
+    <div class="modal-dialog modal-dialog-lg" id="profile-modal-dialog">
+      <div class="modal-header">
+        <div class="modal-header-title-wrap">
+          <span class="modal-header-icon" style="font-size: 24px;">👤</span>
+          <div>
+            <h3 class="modal-title" id="profile-modal-title">Hồ Sơ Cá Nhân</h3>
+            <p class="modal-subtitle" style="font-size: 13px; color: var(--text-secondary); margin: 0;">Thông tin liên
+              lạc và chi tiết tài khoản của bạn</p>
+          </div>
+        </div>
+        <button type="button" class="btn-modal-close" onclick="app.closeProfileModal()"
+          aria-label="Đóng">&times;</button>
+      </div>
+
+      <!-- CHẾ ĐỘ 1: XEM HỒ SƠ CÁ NHÂN -->
+      <div class="modal-body" id="profile-view-mode">
+        <div class="profile-hero-card">
+          <div class="profile-avatar-large" id="modal-view-avatar">US</div>
+
+          <!-- DNKN87: Đổi ảnh đại diện ngay trong cửa sổ hồ sơ -->
+          <div class="modal-avatar-upload">
+            <input type="file" id="modal-avatar-file" accept=".jpg,.jpeg,.png" style="display:none">
+
+            <button type="button" id="modal-avatar-select-btn">
+              Đổi ảnh đại diện
+            </button>
+
+            <!-- DNKN87: Cat va luu anh dai dien -->
+            <div id="modal-avatar-crop-container" style="display:none; margin-top:15px;">
+
+              <p>Điều chỉnh vùng cắt ảnh:</p>
+
+              <div style="width:280px; max-width:100%;">
+                <img id="modal-avatar-crop-image" alt="Ảnh cần cắt" style="display:block;max-width:100%;">
+              </div>
+
+              <button type="button" id="modal-avatar-crop-btn">
+                Cắt ảnh vuông
+              </button>
+
+              <div id="modal-avatar-preview-container" style="display:none; margin-top:12px;">
+                <p>Ảnh sau khi cắt:</p>
+                <img id="modal-avatar-preview" alt="Ảnh đại diện xem trước"
+                  style="width:100px;height:100px;object-fit:cover;border-radius:50%;">
+              </div>
+
+              <button type="button" id="modal-avatar-save-btn" style="display:none;">
+                Lưu ảnh đại diện
+              </button>
+            </div>
+            <p id="modal-avatar-status" role="status"></p>
+          </div>
+          <div class="profile-hero-info">
+            <h2 class="profile-hero-name" id="modal-view-name-hero">Đang tải...</h2>
+            <div class="profile-badges-row">
+              <span class="profile-role-pill" id="modal-view-role-pill">Vai trò</span>
+              <span class="profile-status-pill" id="modal-view-status-pill">Đang hoạt động</span>
+            </div>
+            <p class="profile-hero-email" id="modal-view-email-hero">email@edu.vn</p>
+          </div>
+        </div>
+
+        <div class="profile-details-grid">
+          <div class="profile-detail-item">
+            <span class="detail-label">Họ và tên</span>
+            <span class="detail-value" id="modal-view-fullname">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <div class="item-label-flex">
+              <span class="detail-label">Email tài khoản</span>
+              <span class="badge-locked" title="Email không thể tự thay đổi">🔒 Cố định</span>
+            </div>
+            <span class="detail-value text-muted" id="modal-view-email">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <div class="item-label-flex">
+              <span class="detail-label">Vai trò hệ thống</span>
+              <span class="badge-locked" title="Do Quản trị viên phân quyền">🔒 Phân quyền</span>
+            </div>
+            <span class="detail-value" id="modal-view-role">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="detail-label">Số điện thoại liên lạc</span>
+            <span class="detail-value highlight-phone" id="modal-view-phone">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="detail-label">Ngày sinh</span>
+            <span class="detail-value" id="modal-view-dob">---</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="detail-label">Địa chỉ liên hệ</span>
+            <span class="detail-value" id="modal-view-address">---</span>
+          </div>
+        </div>
+
+        <div class="profile-view-actions">
+          <button type="button" class="btn-submit" onclick="app.toggleProfileEditMode(true)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Chỉnh Sửa Hồ Sơ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CHẾ ĐỘ 2: FORM CẬP NHẬT HỒ SƠ CÁ NHÂN -->
+      <form class="modal-body" id="profile-edit-mode" style="display: none;" onsubmit="app.handleProfileSubmit(event)"
+        novalidate>
+        <div class="form-notice-box">
+          <div class="notice-icon">🔒</div>
+          <div class="notice-text">
+            Các trường <strong>Email</strong> và <strong>Vai trò</strong> là thông tin định danh hệ thống và không được
+            phép tự thay đổi. Vui lòng đảm bảo số điện thoại đúng định dạng liên lạc tại Việt Nam.
+          </div>
+        </div>
+
+        <!-- Họ và tên -->
+        <div class="form-group">
+          <label class="form-label" for="profile-input-name">
+            <span>Họ và tên</span>
+            <span class="required-star">*</span>
+          </label>
+          <input type="text" class="form-input" id="profile-input-name" name="name" required
+            placeholder="Nhập họ và tên đầy đủ...">
+          <span class="field-error-msg" id="modal-profile-name-error"></span>
+        </div>
+
+        <div class="form-row-grid">
+          <!-- Email (Chỉ đọc) -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-email">
+              <span>Địa chỉ Email</span>
+              <span class="badge-locked">🔒 Chỉ đọc</span>
+            </label>
+            <div class="input-wrapper input-readonly-wrapper">
+              <input type="email" class="form-input input-readonly" id="profile-input-email" name="email" readonly
+                disabled>
+              <span class="input-lock-icon" title="Email định danh - Không thể tự sửa">🔒</span>
+            </div>
+            <small class="field-hint-text">Email do trường/trung tâm cấp.</small>
+          </div>
+
+          <!-- Vai trò (Chỉ đọc) -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-role">
+              <span>Vai trò người dùng</span>
+              <span class="badge-locked">🔒 Chỉ đọc</span>
+            </label>
+            <div class="input-wrapper input-readonly-wrapper">
+              <input type="text" class="form-input input-readonly" id="profile-input-role" name="role" readonly
+                disabled>
+              <span class="input-lock-icon" title="Vai trò do Quản trị viên phân quyền">🔒</span>
+            </div>
+            <small class="field-hint-text">Phân quyền vai trò bởi Quản trị viên.</small>
+          </div>
+        </div>
+
+        <div class="form-row-grid">
+          <!-- Số điện thoại với kiểm tra định dạng Việt Nam -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-phone">
+              <span>Số điện thoại (Việt Nam)</span>
+              <span class="required-star">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input type="tel" class="form-input" id="profile-input-phone" name="phone" required
+                placeholder="0981234567 hoặc +84..." autocomplete="tel" oninput="app.handleProfilePhoneInput(this)"
+                onblur="app.handleProfilePhoneBlur(this)">
+              <span class="phone-check-icon" id="modal-profile-phone-check" style="display: none;">✓</span>
+            </div>
+            <span class="field-error-msg" id="modal-profile-phone-error"></span>
+            <small class="field-hint-text" id="modal-profile-phone-hint">10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (hoặc
+              +84).</small>
+          </div>
+
+          <!-- Ngày sinh -->
+          <div class="form-group">
+            <label class="form-label" for="profile-input-dob">
+              <span>Ngày sinh</span>
+            </label>
+            <input type="date" class="form-input" id="profile-input-dob" name="dob">
+            <span class="field-error-msg" id="modal-profile-dob-error"></span>
+          </div>
+        </div>
+
+        <!-- Địa chỉ -->
+        <div class="form-group">
+          <label class="form-label" for="profile-input-address">
+            <span>Địa chỉ hiện tại</span>
+          </label>
+          <input type="text" class="form-input" id="profile-input-address" name="address"
+            placeholder="Ví dụ: Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội...">
+        </div>
+
+        <p id="modal-profile-general-error" class="modal-alert-error" style="display:none;" role="alert"></p>
+
+        <div class="modal-footer profile-modal-footer">
+          <button type="button" class="btn-cancel" onclick="app.toggleProfileEditMode(false)">Quay Lại Xem</button>
+          <button type="submit" class="btn-submit btn-sm" id="btn-modal-save-profile">
+            <span class="btn-spinner" id="modal-profile-save-spinner" style="display: none;"></span>
+            <span id="modal-profile-save-text">Lưu Thay Đổi</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="container footer-content">
+      <p>© 2026 Đồ Án Môn Thực Tập Cơ Sở • Module Đăng Nhập & Quản Trị Tài Khoản • Phụ trách: <strong>Lập trình viên
+          Frontend</strong></p>
+      <div class="footer-badges">
+        <span>Tiêu chí EP-01 (AC 1-2-3)</span>
+        <span>Quản trị người dùng (20 dòng/trang)</span>
+        <span>Mock API chuẩn RESTful</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DNKN87: CropperJS -->
+  <script src="/vendor/cropperjs/cropper.min.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if (typeof app === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'app.js';
+      document.body.appendChild(s);
+    }
+
+  </script>
+</body>
+
+</html>
