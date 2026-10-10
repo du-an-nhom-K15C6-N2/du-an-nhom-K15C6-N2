@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f3f6f4" />
+    <title>DNKN94 | Quản lý lead</title>
+    <link rel="stylesheet" href="/app.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">DNKN94 <span>Lead management</span></a>
+      <nav aria-label="Điều hướng">
+        <a href="/features/06-lead-list-by-permission-ui/">Danh sách phân quyền</a>
+        <a href="/features/02-lead-assignment-api/">Phân công hàng loạt</a>
+      </nav>
+      <div class="session">
+        <span id="session-label">Chưa đăng nhập</span>
+        <button id="logout-button" type="button" class="button secondary" hidden>Đăng xuất</button>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section id="login-panel" class="card login-card" aria-labelledby="login-title">
+        <p class="eyebrow">DNKN94 CRM</p>
+        <h1 id="login-title">Đăng nhập</h1>
+        <p class="muted">Phiên đăng nhập được xác thực bằng JWT; máy chủ kiểm tra trạng thái và quyền tài khoản trên PostgreSQL.</p>
+        <form id="login-form" class="form-grid">
+          <label>Email<input name="email" type="email" autocomplete="username" required maxlength="254" /></label>
+          <label>Mật khẩu<input name="password" type="password" autocomplete="current-password" required /></label>
+          <p class="notice error" id="login-error" role="alert" hidden></p>
+          <button class="button primary" type="submit">Đăng nhập</button>
+        </form>
+      </section>
+
+      <section id="workspace" hidden>
+        <div class="heading">
+          <div>
+            <p class="eyebrow">QUẢN LÝ KHÁCH HÀNG TIỀM NĂNG</p>
+            <h1>Danh sách lead</h1>
+            <p class="muted" id="scope-copy">Dữ liệu được giới hạn theo quyền tài khoản của bạn.</p>
+          </div>
+          <button id="create-button" class="button primary" type="button">+ Tạo lead</button>
+        </div>
+        <div class="card">
+          <div class="filters">
+            <label class="search">Tìm kiếm
+              <input id="search-input" type="search" placeholder="Tên, email hoặc số điện thoại" />
+            </label>
+            <label>Trạng thái
+              <select id="status-filter">
+                <option value="">Tất cả</option>
+                <option value="new">Mới</option>
+                <option value="contacted">Đã liên hệ</option>
+                <option value="qualified">Tiềm năng</option>
+                <option value="converted">Đã chuyển đổi</option>
+                <option value="lost">Không phù hợp</option>
+                <option value="pending">Chờ xử lý</option>
+              </select>
+            </label>
+            <label id="consultant-filter-wrap" hidden>Tư vấn viên
+              <select id="consultant-filter"><option value="">Tất cả tư vấn viên</option></select>
+            </label>
+            <button id="reload-button" class="button secondary" type="button">Làm mới</button>
+          </div>
+          <div id="banner" class="notice" role="status" hidden></div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Lead</th><th>Điện thoại</th><th>Trạng thái</th><th>Người phụ trách</th><th>Tạo lúc</th><th>Thao tác</th></tr></thead>
+              <tbody id="lead-rows"><tr><td colspan="6">Đăng nhập để tải dữ liệu.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span id="table-summary">—</span>
+            <div><button id="previous-page" class="button secondary" type="button">Trước</button><span id="page-indicator">Trang 1 / 1</span><button id="next-page" class="button secondary" type="button">Sau</button></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="lead-dialog">
+      <form id="lead-form" class="dialog-form">
+        <div class="dialog-heading"><div><p class="eyebrow">HỒ SƠ KHÁCH HÀNG</p><h2 id="dialog-title">Tạo lead</h2></div><button id="close-dialog" class="icon-button" type="button" aria-label="Đóng">×</button></div>
+        <input name="id" type="hidden" />
+        <label>Họ và tên<input name="name" required maxlength="200" /></label>
+        <label>Số điện thoại<input name="phone" type="tel" required maxlength="30" autocomplete="tel" /></label>
+        <p id="phone-feedback" class="field-feedback" aria-live="polite"></p>
+        <label>Email<input name="email" type="email" maxlength="254" /></label>
+        <label>Nguồn<input name="source" maxlength="100" placeholder="Website, giới thiệu..." /></label>
+        <label>Trạng thái
+          <select name="status">
+            <option value="new">Mới</option><option value="contacted">Đã liên hệ</option><option value="qualified">Tiềm năng</option><option value="converted">Đã chuyển đổi</option><option value="lost">Không phù hợp</option><option value="pending">Chờ xử lý</option>
+          </select>
+        </label>
+        <label id="assigned-wrap" hidden>Giao cho tư vấn viên<select name="assignedTo"><option value="">Chưa phân công</option></select></label>
+        <p id="form-error" class="notice error" role="alert" hidden></p>
+        <div class="dialog-actions"><button id="cancel-dialog" class="button secondary" type="button">Hủy</button><button class="button primary" id="save-button" type="submit">Lưu lead</button></div>
+      </form>
+    </dialog>
+    <footer>DNKN94 · Xác thực và phân quyền được thực hiện tại backend.</footer>
+  </body>
+</html>

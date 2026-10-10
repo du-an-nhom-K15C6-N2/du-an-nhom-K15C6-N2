@@ -1,19 +1,15 @@
 {
-  "name": "dnkn-85",
+  "name": "dnkn94-lead-management",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node features/features/04-bulk-lead-assignment-ui/src/server.js",
+    "test": "node --test features/features/04-bulk-lead-assignment-ui/test/*.test.js",
+    "db:migrate": "node features/features/04-bulk-lead-assignment-ui/src/migrate.js",
+    "db:bootstrap-admin": "node features/features/04-bulk-lead-assignment-ui/src/bootstrap-admin.js",
+    "db:create-user": "node features/features/04-bulk-lead-assignment-ui/src/create-user.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "cors": "^2.8.6",
-    "exceljs": "^4.4.0",
-    "express": "^5.2.1",
-    "multer": "^2.4.0"
+  "engines": {
+    "node": ">=20"
   }
 }
