@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Lý Hồ Sơ Cá Nhân - User Profile Management (DNKN-86)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .toast {
+      animation: slideIn 0.3s ease-out forwards;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <!-- Top Navigation Bar -->
+  <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-700 flex items-center justify-center font-bold text-xl shadow-inner">
+          <i class="fa-solid fa-id-card text-amber-300"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">Hệ Thống Quản Lý Đào Tạo</h1>
+          <p class="text-xs text-indigo-300">Module: Quản Lý Hồ Sơ Cá Nhân (User Story DNKN-86)</p>
+        </div>
+      </div>
+      
+      <!-- User Switching for Demo -->
+      <div class="flex items-center space-x-3">
+        <div class="text-right hidden sm:block">
+          <div id="nav-user-name" class="text-sm font-semibold">Đang tải...</div>
+          <div id="nav-user-role" class="text-xs text-indigo-200">Học sinh</div>
+        </div>
+        <select id="select-demo-user" class="bg-indigo-800 text-xs text-indigo-100 rounded-lg px-2.5 py-1.5 border border-indigo-700 focus:outline-none focus:ring-2 focus:ring-amber-400">
+          <option value="student">Tài khoản: Học sinh</option>
+          <option value="teacher">Tài khoản: Giảng viên</option>
+          <option value="admin">Tài khoản: Quản trị viên</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Banner -->
+  <div id="demo-mode-badge" class="bg-amber-50 border-b border-amber-200 py-1.5 px-4 text-center text-xs text-amber-800 flex items-center justify-center space-x-1">
+    <i class="fa-solid fa-circle-info text-amber-600"></i>
+    <span id="demo-mode-text">Đang kiểm tra kết nối máy chủ API...</span>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-20 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+
+    <!-- Profile Header Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 mb-6">
+      <div class="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+        
+        <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-5 text-center sm:text-left">
+          <!-- Avatar -->
+          <div class="relative">
+            <div id="avatar-initials" class="w-24 h-24 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 text-white flex items-center justify-center text-3xl font-extrabold shadow-md">
+              NA
+            </div>
+            <div class="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-full border-2 border-white" title="Trạng thái: Đang hoạt động"></div>
+          </div>
+
+          <!-- Info Title -->
+          <div>
+            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+              <h2 id="header-fullname" class="text-2xl font-bold text-slate-900">Nguyễn Văn An</h2>
+              <span id="header-role-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                Học sinh
+              </span>
+            </div>
+            <p id="header-email" class="text-sm text-slate-500 mb-2">student@edu.vn</p>
+            <p class="text-xs text-slate-400">
+              <i class="fa-regular fa-clock mr-1"></i>Cập nhật thông tin để trung tâm liên lạc khi có việc khẩn
+            </p>
+          </div>
+        </div>
+
+        <!-- Mode Toggle Button -->
+        <div>
+          <button id="btn-toggle-mode" onclick="toggleEditMode()" class="inline-flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+            <i id="btn-toggle-icon" class="fa-solid fa-pen-to-square"></i>
+            <span id="btn-toggle-label">Chỉnh Sửa Hồ Sơ</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- VIEW MODE SECTION -->
+    <div id="section-view" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+      <div class="border-b border-slate-100 pb-4 mb-6 flex justify-between items-center">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-regular fa-address-card text-indigo-600"></i>
+            Thông Tin Chi Tiết Hồ Sơ
+          </h3>
+          <p class="text-xs text-slate-500">Thông tin liên lạc hiện tại của bạn trong hệ thống trường học</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Họ và tên -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">HỌ VÀ TÊN</label>
+          <div id="view-fullname" class="text-base font-semibold text-slate-900">Nguyễn Văn An</div>
+        </div>
+
+        <!-- Số điện thoại -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">SỐ ĐIỆN THOẠI LIÊN HỆ</label>
+          <div id="view-phone" class="text-base font-semibold text-slate-900 flex items-center gap-2">
+            <span>0901234567</span>
+            <span class="text-xs font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <i class="fa-solid fa-check mr-1"></i>Hợp lệ
+            </span>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-semibold text-slate-500">EMAIL TÀI KHOẢN</label>
+            <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-medium">🔒 Cố định</span>
+          </div>
+          <div id="view-email" class="text-base font-semibold text-slate-900">student@edu.vn</div>
+        </div>
+
+        <!-- Vai trò -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-semibold text-slate-500">VAI TRÒ TRONG HỆ THỐNG</label>
+            <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-medium">🔒 Cố định</span>
+          </div>
+          <div id="view-role" class="text-base font-semibold text-slate-900">Học sinh</div>
+        </div>
+
+        <!-- Ngày sinh -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">NGÀY THÁNG NĂM SINH</label>
+          <div id="view-dob" class="text-base font-semibold text-slate-900">12/03/2004</div>
+        </div>
+
+        <!-- Địa chỉ -->
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-100">
+          <label class="block text-xs font-semibold text-slate-500 mb-1">ĐỊA CHỈ NƠI Ở</label>
+          <div id="view-address" class="text-base font-semibold text-slate-900">Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EDIT FORM SECTION -->
+    <div id="section-edit" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 hidden">
+      <div class="border-b border-slate-100 pb-4 mb-6">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <i class="fa-solid fa-user-pen text-indigo-600"></i>
+          Biểu Mẫu Cập Nhật Hồ Sơ Cá Nhân
+        </h3>
+        <p class="text-xs text-slate-500">Chỉnh sửa họ tên, số điện thoại, ngày sinh, địa chỉ. Email và vai trò được bảo vệ cố định.</p>
+      </div>
+
+      <!-- Form -->
+      <form id="profile-form" onsubmit="handleFormSubmit(event)" novalidate>
+        
+        <!-- General Error Box -->
+        <div id="form-general-error" class="hidden mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-sm text-rose-700 flex items-start space-x-3">
+          <i class="fa-solid fa-triangle-exclamation mt-0.5 text-rose-500"></i>
+          <span id="form-general-error-text"></span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- 1. Họ và tên -->
+          <div class="space-y-1.5">
+            <label for="input-fullname" class="block text-xs font-bold text-slate-700">
+              HỌ VÀ TÊN <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" id="input-fullname" required
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              placeholder="Nhập họ và tên đầy đủ...">
+            <p id="error-fullname" class="text-xs text-rose-600 font-medium hidden"></p>
+          </div>
+
+          <!-- 2. Số điện thoại (Validation VN) -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label for="input-phone" class="block text-xs font-bold text-slate-700">
+                SỐ ĐIỆN THOẠI VIỆT NAM <span class="text-rose-500">*</span>
+              </label>
+              <span id="phone-valid-badge" class="text-xs text-emerald-600 font-semibold hidden flex items-center gap-1">
+                <i class="fa-solid fa-circle-check"></i> Hợp lệ
+              </span>
+            </div>
+            <div class="relative">
+              <input type="tel" id="input-phone" required oninput="validatePhoneRealtime(this)" onblur="validatePhoneRealtime(this)"
+                class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                placeholder="VD: 0901234567 hoặc +84901234567">
+            </div>
+            <p id="error-phone" class="text-xs text-rose-600 font-medium hidden"></p>
+            <p id="hint-phone" class="text-[11px] text-slate-400">
+              Định dạng Việt Nam 10 chữ số (đầu 03, 05, 07, 08, 09 hoặc mã quốc tế +84).
+            </p>
+          </div>
+
+          <!-- 3. Email (Chỉ đọc) -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label for="input-email" class="block text-xs font-bold text-slate-700">
+                ĐỊA CHỈ EMAIL
+              </label>
+              <span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                <i class="fa-solid fa-lock text-[9px] mr-1"></i>Chỉ đọc
+              </span>
+            </div>
+            <input type="email" id="input-email" readonly disabled
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 text-sm cursor-not-allowed select-none"
+              value="student@edu.vn">
+            <p class="text-[11px] text-slate-400">Email dùng làm tên đăng nhập cố định, không thể tự thay đổi.</p>
+          </div>
+
+          <!-- 4. Vai trò (Chỉ đọc) -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label for="input-role" class="block text-xs font-bold text-slate-700">
+                VAI TRÒ TÀI KHOẢN
+              </label>
+              <span class="text-[10px] font-semibold bg-slate-100 text-slate-600 px-2 py-0.5 rounded border border-slate-200">
+                <i class="fa-solid fa-lock text-[9px] mr-1"></i>Chỉ đọc
+              </span>
+            </div>
+            <input type="text" id="input-role" readonly disabled
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 text-sm cursor-not-allowed select-none"
+              value="Học sinh (student)">
+            <p class="text-[11px] text-slate-400">Vai trò do Quản trị viên chỉ định phân quyền trong hệ thống.</p>
+          </div>
+
+          <!-- 5. Ngày sinh -->
+          <div class="space-y-1.5">
+            <label for="input-dob" class="block text-xs font-bold text-slate-700">
+              NGÀY SINH
+            </label>
+            <input type="date" id="input-dob"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+            <p id="error-dob" class="text-xs text-rose-600 font-medium hidden"></p>
+          </div>
+
+          <!-- 6. Địa chỉ -->
+          <div class="space-y-1.5 md:col-span-2">
+            <label for="input-address" class="block text-xs font-bold text-slate-700">
+              ĐỊA CHỈ LIÊN LẠC
+            </label>
+            <textarea id="input-address" rows="3"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              placeholder="Nhập địa chỉ nơi ở, tỉnh/thành phố..."></textarea>
+          </div>
+
+        </div>
+
+        <!-- Form Actions -->
+        <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-end items-center gap-3">
+          <button type="button" onclick="toggleEditMode(false)"
+            class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors">
+            Hủy Bỏ
+          </button>
+          <button type="submit" id="btn-submit"
+            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition-all flex items-center justify-center space-x-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span id="btn-submit-text">Lưu Cập Nhật Hồ Sơ</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+    <p>© 2026 Nhóm K15C6-N2 - Dự án Hệ Thống Quản Lý Đào Tạo | Story DNKN-86: Xem và cập nhật hồ sơ cá nhân</p>
+  </footer>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+[
+  {
+    "id": "usr_001",
+    "name": "Giáp Văn Hiếu",
+    "fullName": "Giáp Văn Hiếu",
+    "email": "admin@edu.vn",
+    "phone": "0981234567",
+    "role": "admin",
+    "roleLabel": "Quản trị viên",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dob": "1995-05-15",
+    "address": "Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội"
+  },
+  {
+    "id": "usr_002",
+    "name": "ThS. Trần Thị Mai",
+    "fullName": "ThS. Trần Thị Mai",
+    "email": "teacher@edu.vn",
+    "phone": "0912345678",
+    "role": "teacher",
+    "roleLabel": "Giảng viên",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dob": "1988-10-20",
+    "address": "Số 144 Xuân Thủy, Cầu Giấy, Hà Nội"
+  },
+  {
+    "id": "usr_003",
+    "name": "Nguyễn Văn An",
+    "fullName": "Nguyễn Văn An",
+    "email": "student@edu.vn",
+    "phone": "0901234567",
+    "role": "student",
+    "roleLabel": "Học sinh",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dob": "2004-03-12",
+    "address": "Số 234 Hoàng Quốc Việt, Cầu Giấy, Hà Nội"
+  },
+  {
+    "id": "usr_004",
+    "name": "Lê Thị Thu Thảo",
+    "fullName": "Lê Thị Thu Thảo",
+    "email": "thao.le@edu.vn",
+    "phone": "0934567890",
+    "role": "assistant",
+    "roleLabel": "Trợ giảng",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dob": "2000-08-05",
+    "address": "Số 18 Tam Khương, Đống Đa, Hà Nội"
+  }
+]
