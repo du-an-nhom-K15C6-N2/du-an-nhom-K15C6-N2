@@ -1,0 +1,127 @@
+﻿Here's the revised `README.md` file that incorporates the new content while maintaining the existing structure and information:
+
+# DNKN93
+
+## Overview
+
+
+## Repository Layout
+
+- `backend/` - ASP.NET Core (C#) backend project
+  - Implements Leads API, EF Core DbContext, services, migrations.
+- `frontend/` - Frontend application (React/Vue/Angular) used to interact with the API.
+- `data/` - Database seed scripts, SQL helpers, migration helpers.
+- `test/` - Automated tests (unit/integration) for backend and frontend.
+- `preview-server.js` - Node script to run a lightweight preview server for frontend static builds.
+- `README.md` - This file.
+
+## Getting Started
+
+### Prerequisites
+
+- .NET SDK 6.0+ or required version for the backend.
+- Node.js 14+ and npm/yarn for frontend and `preview-server.js`.
+- Database server (e.g., SQL Server / PostgreSQL) configured for local development.
+
+### Environment
+
+- Copy environment template files and fill in credentials:
+  - `backend/.env.example` -> `backend/.env`
+  - `frontend/.env.example` -> `frontend/.env`
+
+### Backend
+
+1. Restore packages and build:
+   - `cd backend && dotnet restore && dotnet build`
+2. Apply EF Core migrations:
+   - `dotnet ef database update --project backend --startup-project backend`
+   - If a migration needs to populate `PhoneNumberNormalized`, run the provided data migration or seed script in `data/`.
+3. Run the backend:
+   - `dotnet run --project backend`
+
+### Frontend
+
+1. Install dependencies:
+   - `cd frontend && npm install` (or `yarn`)
+2. Run dev server:
+   - `npm start` or `yarn start`
+3. Build for production:
+   - `npm run build`
+4. Preview build using `preview-server.js`:
+   - `node preview-server.js --dir frontend/dist --port 8080`
+
+### Running Tests
+
+- Backend unit tests: `dotnet test test/backend`
+- Frontend tests: `npm test` inside `frontend` folder
+
+## Phone Duplicate Check (Backend)
+
+This repository includes a phone duplicate detection feature for Lead entities. Key details:
+
+- Leads store both `PhoneNumber` (raw) and `PhoneNumberNormalized` (canonical form used for dedupe queries).
+- Normalization logic removes non-digits, converts Vietnamese country code `84` to leading `0`, and ensures consistent formatting.
+- A non-unique index exists on `PhoneNumberNormalized` to speed up duplicate checks at scale.
+- The service `IPhoneDuplicateChecker` / `PhoneDuplicateChecker` exposes `CheckAsync(rawPhone, excludingLeadId)` that:
+  - Normalizes `rawPhone`.
+  - Queries `Leads` where `PhoneNumberNormalized == normalized`.
+  - When updating a lead, pass `excludingLeadId` to exclude the current record.
+  - Returns a clear DTO (`DuplicatePhoneResult`) with `IsDuplicate`, `Message`, and optional existing lead info for UI warnings.
+
+### Feature: Kiểm Tra Trùng Số Điện Thoại
+
+#### Mục Đích
+- Phát hiện số điện thoại đã tồn tại trong hệ thống khi tạo mới hoặc cập nhật Lead, trả về cảnh báo/lỗi rõ ràng cho frontend.
+
+#### Mô Tả Chức Năng
+- Backend cung cấp API kiểm tra: nhận số điện thoại (và tùy chọn `excludingLeadId` khi đang cập nhật) và trả về kết quả trùng hoặc không trùng kèm thông tin Lead tồn tại (nếu có).
+- Trước khi so sánh, số điện thoại được chuẩn hóa (loại ký tự không phải số, chuyển mã vùng VN `84` thành `0` theo quy tắc hiện tại).
+- Nếu phát hiện trùng, API trả về HTTP 409 Conflict với payload chứa message và thông tin bản ghi trùng để UI hiển thị cảnh báo.
+
+#### Đường Dẫn Chính (Ví Dụ)
+- `POST /api/phone-check`  -> body: `{ "phone": "...", "excludingLeadId": "..." }`
+  - Response 200: `{ isDuplicate: false, message: '...' }`
+  - Response 409: `{ isDuplicate: true, message: 'Số điện thoại này đã tồn tại trong hệ thống.', existing: { existingLeadId, existingLeadName, existingPhone } }`
+
+### Chạy Tính Năng Cục Bộ (Tổng Quát)
+- **Backend**: .NET SDK cần thiết; chạy API demo (sử dụng InMemory DB) bằng `dotnet run` trong thư mục backend.
+- **Frontend**: Node.js; cài dependencies và chạy dev server (`npm install && npm start`) hoặc dùng `preview-server.js` để preview static bundle.
+
+### Kiểm Thử
+- Có bộ tests đơn vị cho `PhoneNormalizer` và `PhoneDuplicateChecker` sử dụng EF InMemory.
+
+### Migrations and Data Population
+
+- When adding `PhoneNumberNormalized` to an existing schema, provide an EF Core C# migration that:
+  1. Adds the new column.
+  2. Runs a data update step that normalizes existing `PhoneNumber` values (use the same normalization logic from code to avoid mismatches).
+  3. Creates the index: `IX_Leads_PhoneNumberNormalized`.
+
+### API Behavior on Duplicate Detection
+
+- **Create**: The backend checks for duplicates before inserting. If a duplicate is found, the API returns `409 Conflict` (or `400` depending on policy) with a JSON body:
+  {
+    "message": "Số điện thoại này đã tồn tại trong hệ thống.",
+    "existing": { "existingLeadId": "...", "existingLeadName": "...", "existingPhone": "..." }
+  }
+- **Update**: The same check runs excluding the lead being updated. If another lead uses the phone, the same response is returned.
+- The frontend should display a clear warning and optionally surface existing leaddetails.
+
+## Developer Notes
+
+- Prefer normalizing to E.164 if the system becomes multi-country; update the normalizer and re-run migrations.
+- Keep `PhoneNumberNormalized` indexed; avoid full table scans for dedupe checks in large datasets.
+- Unit tests should cover normalization edge cases and duplicate-check behavior (create vs update).
+
+## Contributing
+
+- Follow code style and formatting rules in `.editorconfig` and `CONTRIBUTING.md`.
+- Add unit tests for any change to normalizer or duplicate-check logic.
+
+## Contact
+
+- For questions about DNKN93, add an issue or reach out to the repository maintainers.
+
+----
+
+This revised README maintains the original structure while integrating the new content seamlessly, ensuring clarity and coherence throughout the document.

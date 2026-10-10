@@ -1,0 +1,108 @@
+﻿Here's the improved `README.md` file that incorporates the new content while maintaining the existing structure and information:
+
+# DNKN93
+
+## Overview
+
+DNKN93 is a full-stack project containing backend and frontend code, data scripts, tests, and a preview server entry point. This README explains the repository layout, setup, common development tasks, and specifics for the phone-duplicate-check feature implemented in the backend.
+
+## Repository Layout
+
+- `backend/` - ASP.NET Core (C#) backend project
+  - Implements Leads API, EF Core DbContext, services, migrations.
+- `frontend/` - Frontend application (React/Vue/Angular) used to interact with the API.
+- `data/` - Database seed scripts, SQL helpers, migration helpers.
+- `test/` - Automated tests (unit/integration) for backend and frontend.
+- `preview-server.js` - Node script to run a lightweight preview server for frontend static builds.
+- `README.md` - This file.
+
+## Getting Started
+
+### Prerequisites
+
+- .NET SDK 6.0+ or required version for the backend.
+- Node.js 14+ and npm/yarn for frontend and `preview-server.js`.
+- Database server (e.g., SQL Server / PostgreSQL) configured for local development.
+
+### Environment
+
+- Copy environment template files and fill in credentials:
+  - `backend/.env.example` -> `backend/.env`
+  - `frontend/.env.example` -> `frontend/.env`
+
+### Backend
+
+1. Restore packages and build:
+   - `cd backend && dotnet restore && dotnet build`
+2. Apply EF Core migrations:
+   - `dotnet ef database update --project backend --startup-project backend`
+   - If a migration needs to populate `PhoneNumberNormalized`, run the provided data migration or seed script in `data/`.
+3. Run the backend:
+   - `dotnet run --project backend`
+
+### Frontend
+
+1. Install dependencies:
+   - `cd frontend && npm install` (or `yarn`)
+2. Run dev server:
+   - `npm start` or `yarn start`
+3. Build for production:
+   - `npm run build`
+4. Preview build using `preview-server.js`:
+   - `node preview-server.js --dir frontend/dist --port 8080`
+
+### Running Tests
+
+- Backend unit tests: `dotnet test test/backend`
+- Frontend tests: `npm test` inside `frontend` folder
+
+## Phone Duplicate Check (Backend)
+
+This repository includes a phone duplicate detection feature for Lead entities. Key details:
+
+- Leads store both `PhoneNumber` (raw) and `PhoneNumberNormalized` (canonical form used for dedupe queries).
+- Normalization logic removes non-digits, converts Vietnamese country code `84` to leading `0`, and ensures consistent formatting.
+- A non-unique index exists on `PhoneNumberNormalized` to speed up duplicate checks at scale.
+- The service `IPhoneDuplicateChecker` / `PhoneDuplicateChecker` exposes `CheckAsync(rawPhone, excludingLeadId)` that:
+  - Normalizes `rawPhone`.
+  - Queries `Leads` where `PhoneNumberNormalized == normalized`.
+  - When updating a lead, pass `excludingLeadId` to exclude the current record.
+  - Returns a clear DTO (`DuplicatePhoneResult`) with `IsDuplicate`, `Message`, and optional existing lead info for UI warnings.
+
+### Migrations and Data Population
+
+- When adding `PhoneNumberNormalized` to an existing schema, provide an EF Core C# migration that:
+  1. Adds the new column.
+  2. Runs a data update step that normalizes existing `PhoneNumber` values (use the same normalization logic from code to avoid mismatches).
+  3. Creates the index: `IX_Leads_PhoneNumberNormalized`.
+
+### API Behavior on Duplicate Detection
+
+- **Create**: The backend checks for duplicates before inserting. If a duplicate is found, the API returns `409 Conflict` (or `400` depending on policy) with a JSON body:
+  {
+    "message": "Số điện thoại này đã tồn tại trong hệ thống.",
+    "existing": { "existingLeadId": "...", "existingLeadName": "...", "existingPhone": "..." }
+  }
+- **Update**: The same check runs excluding the lead being updated. If another lead uses the phone, the same response is returned.
+- The frontend should display a clear warning and optionally surface existing lead details.
+
+## Developer Notes
+
+- Prefer normalizing to E.164 if the system becomes multi-country; update the normalizer and re-run migrations.
+- Keep `PhoneNumberNormalized` indexed; avoid full table scans for dedupe checks in large datasets.
+- Unit tests should cover normalization edge cases and duplicate-check behavior (create vs update).
+
+## Contributing
+
+- Follow code style and formatting rules in `.editorconfig` and `CONTRIBUTING.md`.
+- Add unit tests for any change to normalizer or duplicate-check logic.
+
+## Contact
+
+- For questions about DNKN93, add an issue or reach out to the repository maintainers.
+
+----
+
+Additions or changes you want in this README? I can customize language (Vietnamese), add exact commands/DB connection strings, or provide an EF Core migration C# example to populate `PhoneNumberNormalized`.
+
+This revised README maintains the original structure while integrating the new content seamlessly, ensuring clarity and coherence throughout the document.
