@@ -1,36 +1,27 @@
-Hệ Thống Quản Lý Đào Tạo
-Dự án thuộc học phần: Thực tập cơ sở
-Nhóm: K15C6-N2
-Hệ thống Quản lý Đào tạo (TMS) là giải pháp phần mềm giúp tối ưu hóa và tự động hóa các quy trình quản lý đào tạo trong các trường đại học, trung tâm hoặc doanh nghiệp. Hệ thống hỗ trợ kết nối giữa Quản trị viên (Admin), Giảng viên (Lecturer) và Sinh viên/Học viên (Student).
-Mục tiêu chính
-- Quản lý thông tin khóa học, môn học, lớp học và lịch trình đào tạo.
-- Quản lý đăng ký học tập, điểm số và kết quả học tập của sinh viên.
-- Theo dõi tiến độ giảng dạy và đếm buổi điểm danh.
-- Cung cấp báo cáo, thống kê trực quan cho ban quản lý.
-Tính năng chính
-1. Quản trị viên (Admin)
-- Quản lý người dùng: Thêm, sửa, xóa, phân quyền (Sinh viên, Giảng viên, Admin).
-- Quản lý danh mục: Chương trình đào tạo, khoa/ngành, môn học, phòng học.
-- Quản lý lớp học & Học kỳ: Mở lớp học phần, gán giảng viên giảng dạy.
-- Thống kê & Báo cáo: Xuất báo cáo điểm, số lượng sinh viên, học phí.
-2. Giảng viên (Lecturer)
-- Lịch dạy: Xem thời khóa biểu giảng dạy theo tuần/tháng.
-- Điểm danh: Điểm danh sinh viên theo từng buổi học.
-- Quản lý điểm: Nhập, sửa và quản lý điểm quá trình, điểm thi.
-- Tài liệu: Đăng tải bài giảng, bài tập cho lớp học phần.
-3. Sinh viên (Student)
-- Đăng ký học tập: Đăng ký môn học/lớp học phần theo kế hoạch.
-- Xem thời khóa biểu: Theo dõi lịch học, phòng học hàng ngày.
-- Xem kết quả học tập: Tra cứu bảng điểm chi tiết và điểm trung bình tích lũy (GPA).
-- Phản hồi & Thông báo: Nhận thông báo từ nhà trường, gửi phản hồi về môn học.
-Công nghệ sử dụng
-- Frontend: React.js / Vue.js / HTML5, CSS3, JavaScript (TailwindCSS / Bootstrap)
-- Backend: Node.js (Express) / Java (Spring Boot) / Python (Django/FastAPI) / PHP (Laravel)
-- Database: PostgreSQL / MySQL / MongoDB
-- Authentication: JWT (JSON Web Tokens) / OAuth2
-- Tools & Version Control: Git, GitHub, Postman, Docker (nếu có)
-Hướng dẫn cài đặt & Chạy ứng dụng
-Yêu cầu hệ thống
-- Node.js 
-- Database: MySQL / PostgreSQL đã được cài đặt và cấu hình.
-- Git
+# DNKN93 – Lead Management
+
+## 1. Giới thiệu
+Chức năng Lead Management (Quản lý khách hàng tiềm năng) hỗ trợ quản lý thông tin khách hàng tiềm năng trong hệ thống, giúp nhân viên theo dõi và xử lý dữ liệu khách hàng phục vụ hoạt động tư vấn và chăm sóc khách hàng.
+
+## 2. Mục tiêu
+- Quản lý thông tin khách hàng tiềm năng tập trung.
+- Hỗ trợ theo dõi và cập nhật thông tin Lead.
+- Tạo cơ sở dữ liệu phục vụ quá trình tư vấn và chuyển đổi khách hàng tiềm năng thành khách hàng thực tế.
+
+## 3. Phạm vi chức năng
+- Tiếp nhận và quản lý thông tin khách hàng tiềm năng.
+- Theo dõi danh sách Lead.
+- Cập nhật thông tin và trạng thái Lead.
+- Hỗ trợ tra cứu thông tin Lead khi cần thiết.
+
+*Lưu ý: Điều chỉnh danh sách chức năng trên theo đúng những gì đã được triển khai trong code DNKN93.*
+
+## 4. Công nghệ sử dụng
+- Ngôn ngữ và framework: Theo cấu hình thực tế của dự án.
+- Git/GitHub: Quản lý mã nguồn và phát triển trên nhánh riêng.
+
+## 5. Nhánh phát triển
+`feature/DNKN93-lead-management`
+
+## 6. Kết quả
+Chức năng được phát triển độc lập trên nhánh DNKN93, phục vụ việc quản lý khách hàng tiềm năng và tích hợp vào hệ thống chung khi cần thiết.
