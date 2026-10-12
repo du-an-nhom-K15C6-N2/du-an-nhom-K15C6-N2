@@ -1,0 +1,20 @@
+[
+  {
+    "id": "stu_HV20260001",
+    "studentCode": "HV20260001",
+    "leadId": "lead_005",
+    "fullName": "Trần Bảo Nam",
+    "phone": "0934567891",
+    "email": "nam.tb@gmail.com",
+    "major": "Kỹ thuật Phần mềm (CNTT)",
+    "course": "Kỹ thuật Phần mềm K15",
+    "address": "Số 56 Nguyễn Trãi, Thanh Xuân, Hà Nội",
+    "dob": "2005-09-02",
+    "source": "Người quen giới thiệu",
+    "tuitionFee": 18500000,
+    "enrolledDate": "2026-10-09",
+    "status": "enrolled",
+    "statusLabel": "Đã nhập học",
+    "createdAt": "2026-10-09T10:00:00.000Z"
+  }
+]

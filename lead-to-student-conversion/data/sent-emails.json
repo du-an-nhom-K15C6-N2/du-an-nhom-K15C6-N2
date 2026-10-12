@@ -1,0 +1,11 @@
+[
+  {
+    "id": "email_001",
+    "to": "nam.tb@gmail.com",
+    "subject": "[Hệ Thống Quản Lý Đào Tạo] Thông báo tài khoản học viên và xác nhận nhập học",
+    "studentCode": "HV20260001",
+    "fullName": "Trần Bảo Nam",
+    "sentAt": "2026-10-09T10:00:01.000Z",
+    "status": "sent"
+  }
+]

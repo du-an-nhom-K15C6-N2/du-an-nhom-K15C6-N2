@@ -1,0 +1,25 @@
+[
+  {
+    "id": "usr_counselor_01",
+    "name": "Nguyễn Thuỳ Linh",
+    "fullName": "Nguyễn Thuỳ Linh",
+    "email": "linh.counselor@edu.vn",
+    "role": "counselor",
+    "roleLabel": "Tư vấn tuyển sinh",
+    "status": "active",
+    "statusLabel": "Đang hoạt động"
+  },
+  {
+    "id": "usr_stu_HV20260001",
+    "studentCode": "HV20260001",
+    "name": "Trần Bảo Nam",
+    "fullName": "Trần Bảo Nam",
+    "email": "nam.tb@gmail.com",
+    "phone": "0934567891",
+    "role": "student",
+    "roleLabel": "Học sinh",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "createdAt": "2026-10-09T10:00:00.000Z"
+  }
+]

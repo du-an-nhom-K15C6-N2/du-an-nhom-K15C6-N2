@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chuyển Đổi Lead Thành Hồ Sơ Học Viên - Story DNKN-174</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .badge-closed-won { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-enrolled { background-color: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .badge-contacted { background-color: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+    .badge-new { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    .animate-scale-in { animation: scaleIn 0.2s ease-out forwards; }
+    @keyframes scaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between">
+
+  <!-- Header -->
+  <header class="bg-indigo-900 text-white shadow-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-indigo-700 flex items-center justify-center font-bold text-xl shadow-inner">
+          <i class="fa-solid fa-user-graduate text-amber-300"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">Hệ Thống Quản Lý Đào Tạo & Tuyển Sinh</h1>
+          <p class="text-xs text-indigo-300">Module: Chuyển Lead Đã Chốt Sang Hồ Sơ Học Viên (DNKN-174)</p>
+        </div>
+      </div>
+      
+      <!-- Counselor Info -->
+      <div class="flex items-center space-x-4">
+        <div class="text-right hidden sm:block">
+          <div class="text-sm font-semibold text-white">Nguyễn Thuỳ Linh</div>
+          <div class="text-xs text-indigo-200">Tư vấn tuyển sinh</div>
+        </div>
+        <div class="w-9 h-9 rounded-full bg-indigo-700 border-2 border-indigo-400 flex items-center justify-center font-bold text-amber-300 text-sm">
+          TL
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Status Bar Banner -->
+  <div id="connection-banner" class="bg-emerald-50 border-b border-emerald-200 py-1.5 px-4 text-center text-xs text-emerald-800 flex items-center justify-center space-x-2">
+    <i class="fa-solid fa-server"></i>
+    <span id="connection-text">Đang kiểm tra kết nối máy chủ API...</span>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed top-20 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+    <!-- KPI / Overview Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-users"></i>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng số Lead</div>
+          <div id="stat-total-leads" class="text-2xl font-bold text-slate-800">5</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-handshake"></i>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lead Đã Chốt (Sẵn sàng)</div>
+          <div id="stat-closed-leads" class="text-2xl font-bold text-emerald-600">2</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đã Chuyển Học Viên</div>
+          <div id="stat-enrolled-students" class="text-2xl font-bold text-purple-600">1</div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+          <i class="fa-solid fa-envelope-circle-check"></i>
+        </div>
+        <div>
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Đã Gửi</div>
+          <div id="stat-sent-emails" class="text-2xl font-bold text-amber-600">1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex flex-wrap items-center justify-between border-b border-slate-200 pb-3 mb-6 gap-4">
+      <div class="flex space-x-2">
+        <button id="tab-btn-leads" onclick="switchTab('leads')"
+          class="px-4 py-2 rounded-xl text-sm font-semibold bg-indigo-600 text-white shadow-sm transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-list-check"></i>
+          Danh Sách Lead Tuyển Sinh
+        </button>
+        <button id="tab-btn-students" onclick="switchTab('students')"
+          class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-user-graduate"></i>
+          Hồ Sơ Học Viên Đã Tạo
+        </button>
+        <button id="tab-btn-emails" onclick="switchTab('emails')"
+          class="px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition-colors flex items-center gap-2">
+          <i class="fa-solid fa-envelope"></i>
+          Nhật Ký Gửi Email
+        </button>
+      </div>
+
+      <!-- Quick Action / Filter -->
+      <div id="leads-filter-bar" class="flex items-center space-x-2 w-full sm:w-auto">
+        <div class="relative flex-1 sm:w-64">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+          <input type="text" id="input-search-lead" oninput="filterLeads()"
+            placeholder="Tìm theo tên, SĐT, ngành..."
+            class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <select id="select-status-filter" onchange="filterLeads()"
+          class="px-3 py-1.5 rounded-xl border border-slate-300 text-xs text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="all">Tất cả trạng thái</option>
+          <option value="closed_won" selected>Đã chốt (Sẵn sàng chuyển)</option>
+          <option value="enrolled">Đã nhập học (Đã khóa)</option>
+          <option value="contacted">Đang tư vấn</option>
+          <option value="new">Mới tiếp nhận</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- TAB 1: DANH SÁCH LEADS -->
+    <div id="tab-content-leads" class="space-y-4">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <th class="py-3.5 px-4">Khách Hàng (Lead)</th>
+                <th class="py-3.5 px-4">Liên Hệ (SĐT / Email)</th>
+                <th class="py-3.5 px-4">Ngành / Khóa Đăng Ký</th>
+                <th class="py-3.5 px-4">Học Phí</th>
+                <th class="py-3.5 px-4">Trạng Thái</th>
+                <th class="py-3.5 px-4 text-center">Thao Tác Chuyển Đổi</th>
+              </tr>
+            </thead>
+            <tbody id="leads-table-body" class="divide-y divide-slate-100">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: DANH SÁCH HỌC VIÊN -->
+    <div id="tab-content-students" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i class="fa-solid fa-graduation-cap text-indigo-600"></i>
+              Danh Sách Học Viên Chính Thức (Tự Động Sinh Từ Lead)
+            </h3>
+            <p class="text-xs text-slate-500">Học viên đã có mã sinh viên và tài khoản đăng nhập hệ thống</p>
+          </div>
+          <span class="text-xs text-purple-700 bg-purple-50 px-3 py-1 rounded-full font-semibold border border-purple-200" id="badge-student-count">
+            1 học viên
+          </span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <th class="py-3.5 px-4">Mã Học Viên</th>
+                <th class="py-3.5 px-4">Họ Và Tên</th>
+                <th class="py-3.5 px-4">Tài Khoản Đăng Nhập</th>
+                <th class="py-3.5 px-4">Khóa Học / Ngành</th>
+                <th class="py-3.5 px-4">Ngày Nhập Học</th>
+                <th class="py-3.5 px-4">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body" class="divide-y divide-slate-100">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: NHẬT KÝ EMAIL -->
+    <div id="tab-content-emails" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-slate-100 bg-slate-50">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-envelope-circle-check text-amber-600"></i>
+            Nhật Ký Gửi Email Thông Báo Tài Khoản & Chào Mừng
+          </h3>
+          <p class="text-xs text-slate-500">Hệ thống tự động kích hoạt gửi thư ngay khi hoàn tất chuyển đổi</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
+                <th class="py-3.5 px-4">Học Viên Nhận</th>
+                <th class="py-3.5 px-4">Email Người Nhận</th>
+                <th class="py-3.5 px-4">Tiêu Đề Thư</th>
+                <th class="py-3.5 px-4">Thời Gian Gửi</th>
+                <th class="py-3.5 px-4">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="emails-table-body" class="divide-y divide-slate-100">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL XÁC NHẬN CHUYỂN ĐỔI LEAD THÀNH HỌC VIÊN -->
+  <div id="modal-convert" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-scale-in">
+      
+      <!-- Modal Header -->
+      <div class="bg-gradient-to-r from-indigo-900 to-indigo-800 text-white px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-lg bg-indigo-700 flex items-center justify-center text-amber-300 font-bold">
+            <i class="fa-solid fa-bolt"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold">Xác Nhận Chuyển Đổi Thành Hồ Sơ Học Viên</h3>
+            <p class="text-xs text-indigo-200">Không cần nhập lại thông tin khách đã cung cấp</p>
+          </div>
+        </div>
+        <button onclick="closeConvertModal()" class="text-indigo-200 hover:text-white text-lg">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-5">
+        
+        <!-- Info Banner -->
+        <div class="bg-blue-50 border border-blue-200 rounded-xl p-3.5 text-xs text-blue-800 flex items-start space-x-2.5">
+          <i class="fa-solid fa-circle-check text-blue-600 text-sm mt-0.5"></i>
+          <div>
+            <strong>Dữ liệu tự động sao chép:</strong> Toàn bộ thông tin từ Lead sẽ được kế thừa sang hồ sơ học viên, hệ thống sẽ tự động cấp mã và tài khoản đăng nhập.
+          </div>
+        </div>
+
+        <!-- Student Code Preview Box -->
+        <div class="bg-indigo-50/80 border border-indigo-200 rounded-xl p-4 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-indigo-600 font-semibold uppercase tracking-wider">Mã học viên dự kiến sinh:</div>
+            <div id="modal-preview-student-code" class="text-xl font-black text-indigo-950 font-mono">HV2026xxxx</div>
+          </div>
+          <span class="text-xs px-2.5 py-1 bg-indigo-600 text-white font-semibold rounded-lg shadow-sm">
+            Tự động sinh duy nhất
+          </span>
+        </div>
+
+        <!-- Copied Data Details -->
+        <div class="border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50/50 text-xs">
+          <div class="font-bold text-slate-700 text-sm border-b border-slate-200 pb-2 flex items-center justify-between">
+            <span>Thông tin chuyển sang hồ sơ:</span>
+            <span class="text-[11px] font-normal text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">✓ Kế thừa 100%</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <span class="text-slate-400 block font-medium">Họ và tên:</span>
+              <strong id="modal-lead-fullname" class="text-slate-800 text-sm">-</strong>
+            </div>
+            <div>
+              <span class="text-slate-400 block font-medium">Số điện thoại:</span>
+              <strong id="modal-lead-phone" class="text-slate-800 font-mono text-sm">-</strong>
+            </div>
+            <div>
+              <span class="text-slate-400 block font-medium">Email học viên:</span>
+              <strong id="modal-lead-email" class="text-slate-800">-</strong>
+            </div>
+            <div>
+              <span class="text-slate-400 block font-medium">Khóa học / Ngành:</span>
+              <strong id="modal-lead-course" class="text-slate-800 text-indigo-700">-</strong>
+            </div>
+            <div class="col-span-2">
+              <span class="text-slate-400 block font-medium">Địa chỉ nơi ở:</span>
+              <span id="modal-lead-address" class="text-slate-800">-</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Automatic Options -->
+        <div class="space-y-2 text-xs">
+          <label class="flex items-center space-x-2 text-slate-700 cursor-pointer">
+            <input type="checkbox" id="chk-create-account" checked disabled class="rounded text-indigo-600">
+            <span>Tự động tạo tài khoản người dùng đăng nhập hệ thống (Vai trò: <strong>Học sinh</strong>)</span>
+          </label>
+          <label class="flex items-center space-x-2 text-slate-700 cursor-pointer">
+            <input type="checkbox" id="chk-send-email" checked class="rounded text-indigo-600">
+            <span>Tự động gửi email kích hoạt và mật khẩu khởi tạo đến hòm thư học viên</span>
+          </label>
+        </div>
+
+        <!-- Lock Warning Notice -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-start space-x-2">
+          <i class="fa-solid fa-lock text-amber-600 mt-0.5"></i>
+          <div>
+            <strong>Lưu ý quan trọng:</strong> Sau khi xác nhận chuyển đổi, Lead sẽ chuyển sang trạng thái <strong>"Đã nhập học"</strong> và bị <strong>khóa chỉnh sửa vĩnh viễn</strong> để bảo toàn tính toàn vẹn dữ liệu.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="bg-slate-100 px-6 py-4 flex justify-end items-center space-x-3 border-t border-slate-200">
+        <button type="button" onclick="closeConvertModal()"
+          class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+          Hủy Bỏ
+        </button>
+        <button type="button" id="btn-confirm-convert" onclick="executeConversion()"
+          class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-md transition-all flex items-center space-x-2">
+          <i class="fa-solid fa-check"></i>
+          <span id="btn-convert-text">Xác Nhận Chuyển Đổi Ngay</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL THÀNH CÔNG -->
+  <div id="modal-success" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 p-6 text-center space-y-4 animate-scale-in">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl mx-auto shadow-inner">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+
+      <h3 class="text-xl font-bold text-slate-900">Chuyển Đổi Thành Công!</h3>
+      <p id="success-desc" class="text-xs text-slate-500">Lead đã được chuyển thành hồ sơ học viên chính thức trong hệ thống.</p>
+
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-left space-y-2 text-xs">
+        <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+          <span class="text-slate-500">Mã học viên chính thức:</span>
+          <span id="success-student-code" class="font-bold text-indigo-700 font-mono text-sm">-</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+          <span class="text-slate-500">Tài khoản đăng nhập:</span>
+          <span id="success-username" class="font-semibold text-slate-800">-</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-slate-200 pb-2">
+          <span class="text-slate-500">Mật khẩu khởi tạo:</span>
+          <span id="success-password" class="font-mono bg-slate-200 px-2 py-0.5 rounded font-bold text-slate-900">-</span>
+        </div>
+        <div class="flex justify-between items-center pt-1">
+          <span class="text-slate-500">Trạng thái gửi email:</span>
+          <span id="success-email-status" class="text-emerald-600 font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-envelope-circle-check"></i> Đã gửi thư thành công
+          </span>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-center space-x-3">
+        <button onclick="closeSuccessModal(); switchTab('students');"
+          class="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-700 transition-colors shadow">
+          Xem Danh Sách Học Viên
+        </button>
+        <button onclick="closeSuccessModal();"
+          class="px-4 py-2.5 rounded-xl bg-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-300 transition-colors">
+          Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+    <p>© 2026 Nhóm K15C6-N2 - Hệ Thống Quản Lý Đào Tạo | Story DNKN-174: Chuyển Lead Đã Chốt Sang Hồ Sơ Học Viên</p>
+  </footer>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

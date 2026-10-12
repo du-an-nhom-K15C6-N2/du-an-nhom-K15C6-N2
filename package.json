@@ -1,0 +1,17 @@
+{
+  "name": "dnkn-174",
+  "version": "1.0.0",
+  "description": "Hệ thống Quản lý Đào tạo - Module Chuyển Lead Đã Chốt Sang Hồ Sơ Học Viên (DNKN-174)",
+  "main": "lead-to-student-conversion/server.js",
+  "scripts": {
+    "start": "node lead-to-student-conversion/server.js",
+    "test": "node --test lead-to-student-conversion/tests/conversion.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}
