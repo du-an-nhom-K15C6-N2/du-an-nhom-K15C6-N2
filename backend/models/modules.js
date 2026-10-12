@@ -2,7 +2,7 @@ module.exports = [
   { id: 'programs', name: 'Chương trình đào tạo', group: 'Đào tạo', status: 'Đang xây dựng' },
   { id: 'courses', name: 'Học phần', group: 'Đào tạo', status: 'Đang xây dựng' },
   { id: 'terms', name: 'Học kỳ', group: 'Tổ chức', status: 'Đang xây dựng' },
-  { id: 'classes', name: 'Lớp học', group: 'Tổ chức', status: 'Đang xây dựng' },
+  { id: 'classes', name: 'Lớp học', group: 'Tổ chức', status: 'Hoạt động' },
   { id: 'schedules', name: 'Thời khóa biểu', group: 'Giảng dạy', status: 'Đang xây dựng' },
   { id: 'attendance', name: 'Điểm danh', group: 'Giảng dạy', status: 'Đang xây dựng' },
   { id: 'people', name: 'Người học & giảng viên', group: 'Nhân sự', status: 'Đang xây dựng' },

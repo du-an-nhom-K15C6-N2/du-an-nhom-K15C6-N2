@@ -41,6 +41,9 @@ function renderModule(module) {
   const description = escapeHtml(moduleDescriptions[module.id] || 'Phân hệ quản lý đào tạo.');
   const fields = ['Mã định danh', 'Tên', 'Trạng thái', 'Ngày cập nhật'];
 
+  const isClasses = module.id === 'classes';
+  const isPeople = module.id === 'people';
+
   breadcrumb.textContent = module.name;
   pageContent.innerHTML = `
     <div class="page-heading">
@@ -49,16 +52,41 @@ function renderModule(module) {
     </div>
     <div class="module-view">
       <section class="panel">
-        <div class="panel-heading"><div><p class="eyebrow">KHUNG PHÂN HỆ</p><h2>Thông tin quản lý</h2></div><span class="status-pill">${escapeHtml(module.status)}</span></div>
-        <p class="module-summary">${description} Màn hình này là khung ban đầu để phát triển nghiệp vụ và kết nối dữ liệu.</p>
+        <div class="panel-heading"><div><p class="eyebrow">KHUNG PHÂN HỆ</p><h2>Thông tin quản lý</h2></div><span class="status-pill ${isClasses ? 'is-online' : ''}">${escapeHtml(module.status)}</span></div>
+        <p class="module-summary">${description}</p>
+        ${isClasses ? `
+          <div style="margin: 1rem 0; padding: 1.25rem; background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px;">
+            <strong style="color: #1e40af; font-size: 1rem; display: block; margin-bottom: 0.35rem;">🚀 Phân hệ Lớp học đã sẵn sàng hoạt động (DNKN-176 / DNKN-204 / DNKN-208)</strong>
+            <p style="color: #1e3a8a; font-size: 0.85rem; margin-bottom: 0.85rem;">Hỗ trợ: Kiểm tra mã lớp duy nhất, mở lớp từ chương trình đào tạo, tự động sao chép môn học, và theo dõi trạng thái vòng đời.</p>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <a href="/classes.html" style="display: inline-block; background: #2563eb; color: #fff; font-weight: 700; font-size: 0.88rem; text-decoration: none; padding: 0.6rem 1.2rem; border-radius: 6px; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+                👉 Tạo mới & Danh sách lớp (DNKN-204)
+              </a>
+              <a href="/class-detail.html" style="display: inline-block; background: #0284c7; color: #fff; font-weight: 700; font-size: 0.88rem; text-decoration: none; padding: 0.6rem 1.2rem; border-radius: 6px;">
+                🔍 Chi tiết & Vòng đời lớp học (DNKN-208)
+              </a>
+            </div>
+          </div>
+        ` : ''}
+        ${isPeople ? `
+          <div style="margin: 1rem 0; padding: 1.25rem; background: #ecfdf5; border: 1.5px solid #a7f3d0; border-radius: 10px;">
+            <strong style="color: #065f46; font-size: 1rem; display: block; margin-bottom: 0.35rem;">👤 Phân hệ Quản lý Hồ sơ Học viên (DNKN-175)</strong>
+            <p style="color: #047857; font-size: 0.85rem; margin-bottom: 0.85rem;">Tra cứu thông tin học viên, xem chi tiết và cập nhật hồ sơ.</p>
+            <a href="/students.html" style="display: inline-block; background: #059669; color: #fff; font-weight: 700; font-size: 0.88rem; text-decoration: none; padding: 0.6rem 1.2rem; border-radius: 6px;">
+              👉 Mở màn hình Hồ sơ Học viên
+            </a>
+          </div>
+        ` : ''}
         <ul class="module-fields">${fields.map(field => `<li>${field}</li>`).join('')}</ul>
       </section>
       <section class="panel">
         <div class="panel-heading"><div><p class="eyebrow">DỮ LIỆU</p><h2>Danh sách ${name.toLowerCase()}</h2></div></div>
-        <div class="empty-state">Chưa có dữ liệu. Cần kết nối cơ sở dữ liệu và xây dựng API cho phân hệ này.</div>
+        <div class="empty-state">
+          ${isClasses ? `Dữ liệu lớp học đã được kết nối với cơ sở dữ liệu. Nhấn nút <strong>"Mở màn hình Tạo mới & Quản lý Lớp học"</strong> ở trên để thao tác trực tiếp.` : 'Chưa có dữ liệu. Cần kết nối cơ sở dữ liệu và xây dựng API cho phân hệ này.'}
+        </div>
       </section>
     </div>
-    <footer class="page-footer"><span>EduManager · Khung phân hệ</span><span>Dữ liệu chưa được lưu</span></footer>`;
+    <footer class="page-footer"><span>EduManager · Khung phân hệ</span><span>Trạng thái: ${escapeHtml(module.status)}</span></footer>`;
 }
 
 function activateModule(module) {

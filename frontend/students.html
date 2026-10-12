@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DNKN-175 - Quản lý học viên</title>
+    <link rel="stylesheet" href="/css/students.css">
+    <script src="/js/students.js" defer></script>
+</head>
+
+<body>
+    <main class="container">
+        <h1>Quản lý hồ sơ học viên</h1>
+        <p>DNKN-175 - Hệ thống quản lý đào tạo</p>
+
+        <section class="card">
+            <h2>Danh sách học viên</h2>
+
+            <input id="search" type="search" placeholder="Tìm theo mã, tên hoặc số điện thoại">
+
+            <button id="searchBtn">Tìm kiếm</button>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã học viên</th>
+                        <th>Họ và tên</th>
+                        <th>Số điện thoại</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="studentList"></tbody>
+            </table>
+        </section>
+
+        <section class="card" id="detailSection" hidden>
+            <h2>Chi tiết hồ sơ học viên</h2>
+
+            <form id="studentForm">
+                <label>Họ và tên</label>
+                <input id="fullName" required>
+
+                <label>Số điện thoại</label>
+                <input id="phone" required>
+
+                <label>Trình độ đầu vào</label>
+                <input id="entryLevel">
+
+                <label>Ghi chú</label>
+                <textarea id="notes"></textarea>
+
+                <button type="submit">Lưu thay đổi</button>
+            </form>
+
+            <h3>Lớp đang học</h3>
+            <ul id="currentClasses"></ul>
+
+            <h3>Lịch sử các lớp đã học</h3>
+            <ul id="classHistory"></ul>
+        </section>
+
+        <p id="message" role="status"></p>
+    </main>
+</body>
+
+</html>

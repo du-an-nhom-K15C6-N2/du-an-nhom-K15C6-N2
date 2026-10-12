@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chi tiết và Theo dõi Trạng thái Lớp học - EduManager (DNKN-208)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/class-detail.css">
+  <script src="/js/class-detail.js" defer></script>
+</head>
+<body>
+  <!-- Header điều hướng -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-area">
+        <a href="/" class="brand-link" title="Về trang chủ">
+          <div class="brand-badge">ĐT</div>
+          <div>
+            <div class="brand-title">EduManager</div>
+            <div class="brand-sub">HỆ THỐNG QUẢN LÝ ĐÀO TẠO</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="nav-links">
+        <a href="/" class="nav-item">Tổng quan</a>
+        <a href="/students.html" class="nav-item">Hồ sơ học viên (DNKN-175)</a>
+        <a href="/classes.html" class="nav-item">Quản lý lớp học (DNKN-176 / DNKN-204)</a>
+        <a href="/class-detail.html" class="nav-item is-active">Chi tiết & Vòng đời (DNKN-208)</a>
+      </nav>
+
+      <div class="user-pill">
+        <span class="user-dot"></span>
+        <span>Quản trị viên</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-container">
+    <!-- Toolbar & Breadcrumb -->
+    <div class="detail-toolbar">
+      <nav class="breadcrumb-nav" aria-label="Đường dẫn điều hướng">
+        <a href="/">Trang chủ</a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="/classes.html">Danh sách lớp học</a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current" id="breadcrumbClassTitle">Đang tải chi tiết lớp...</span>
+      </nav>
+
+      <div class="class-switcher-box">
+        <label for="classSwitcherSelect" class="class-switcher-label">Chuyển nhanh lớp:</label>
+        <select id="classSwitcherSelect" class="class-switcher-select">
+          <option value="">-- Đang nạp danh sách lớp --</option>
+        </select>
+        <a href="/classes.html" class="btn-secondary" style="font-size: 0.8rem; padding: 0.35rem 0.7rem; text-decoration: none;">+ Mở lớp mới</a>
+      </div>
+    </div>
+
+    <!-- Alert Banner -->
+    <div id="alertBox" class="alert-box" role="alert" hidden>
+      <span class="alert-icon" id="alertIcon">⚠️</span>
+      <div class="alert-content">
+        <strong id="alertTitle">Thông báo</strong>
+        <p id="alertMessage">Nội dung thông báo</p>
+      </div>
+      <button type="button" class="alert-close" id="alertCloseBtn" aria-label="Đóng thông báo">✕</button>
+    </div>
+
+    <!-- Hero Banner thông tin chính -->
+    <section class="hero-detail-card" id="heroCard">
+      <div class="hero-header-top">
+        <div>
+          <div class="hero-badges-row">
+            <span class="hero-tag">CHI TIẾT LỚP HỌC & VÒNG ĐỜI · DNKN-208</span>
+            <span class="hero-code-badge" id="heroClassCode">MÃ LỚP</span>
+            <span class="hero-tag" id="heroStudyModeTag">🏫 Trực tiếp</span>
+          </div>
+          <h1 class="hero-title" id="heroClassName">Đang tải thông tin lớp học...</h1>
+          <p class="hero-desc" id="heroProgramDesc">Chương trình đào tạo: Đang tải...</p>
+        </div>
+
+        <div class="hero-status-pill planning" id="heroStatusPill">
+          <span class="pulse-dot"></span>
+          <span id="heroStatusText">Chuẩn bị</span>
+        </div>
+      </div>
+
+      <div class="hero-quick-meta">
+        <div class="meta-item">
+          <span>📅 Khai giảng:</span>
+          <strong id="quickStartDate">—</strong>
+        </div>
+        <div class="meta-item">
+          <span>👥 Sĩ số:</span>
+          <strong id="quickMaxStudents">—</strong>
+        </div>
+        <div class="meta-item">
+          <span>👨‍🏫 Giảng viên:</span>
+          <strong id="quickTeacherName">—</strong>
+        </div>
+        <div class="meta-item">
+          <span>📍 Phòng học:</span>
+          <strong id="quickRoom">—</strong>
+        </div>
+        <div class="meta-item">
+          <span>📚 Môn học đã sao chép:</span>
+          <strong id="quickSubjectCount">0 môn</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- TIẾN TRÌNH THEO DÕI VÒNG ĐỜI (LIFECYCLE STEPPER) -->
+    <section class="lifecycle-card">
+      <div class="stepper-header">
+        <div>
+          <h2>Tiến trình vòng đời lớp học (Lifecycle Tracker)</h2>
+          <p>Trực quan hóa vòng đời lớp học: Chuẩn bị ➔ Đang học ➔ Kết thúc (hoặc Huỷ)</p>
+        </div>
+        <div>
+          <span id="lifecycleCurrentStateLabel" class="hero-tag" style="background: #e2e8f0; color: #1e293b; font-size: 0.8rem;">
+            Trạng thái hiện tại: Chuẩn bị
+          </span>
+        </div>
+      </div>
+
+      <div class="stepper-container">
+        <div class="stepper-line-bg"></div>
+        <div class="stepper-line-fill" id="stepperLineFill"></div>
+
+        <!-- Bước 1: Chuẩn bị -->
+        <div class="step-node" id="stepNodePlanning">
+          <div class="step-circle" id="stepCirclePlanning">1</div>
+          <div class="step-title">Chuẩn bị</div>
+          <div class="step-desc">Tạo lớp & sao chép môn học từ chương trình</div>
+        </div>
+
+        <!-- Bước 2: Đang học -->
+        <div class="step-node" id="stepNodeInProgress">
+          <div class="step-circle" id="stepCircleInProgress">2</div>
+          <div class="step-title">Đang học</div>
+          <div class="step-desc">Khóa học đang diễn ra & giảng dạy</div>
+        </div>
+
+        <!-- Bước 3: Kết thúc -->
+        <div class="step-node" id="stepNodeCompleted">
+          <div class="step-circle" id="stepCircleCompleted">3</div>
+          <div class="step-title">Kết thúc</div>
+          <div class="step-desc">Hoàn tất khóa học & nghiệm thu</div>
+        </div>
+
+        <!-- Nhánh đặc biệt: Huỷ -->
+        <div class="step-node" id="stepNodeCancelled" style="opacity: 0.4;">
+          <div class="step-circle" id="stepCircleCancelled">✕</div>
+          <div class="step-title">Huỷ bỏ</div>
+          <div class="step-desc">Lớp học bị huỷ trước/trong khóa</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- THANH THAO TÁC CHUYỂN TRẠNG THÁI THEO VÒNG ĐỜI -->
+    <section class="lifecycle-actions-card">
+      <div class="action-card-header">
+        <div>
+          <h3>Thao tác chuyển trạng thái vòng đời (DNKN-207 / DNKN-208)</h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.2rem;">
+            Chỉ cho phép các thao tác chuyển trạng thái hợp lệ theo ma trận quy tắc hệ thống.
+          </p>
+        </div>
+        <div id="statusActionsArea" class="action-buttons-wrap">
+          <!-- Render các nút chuyển trạng thái phù hợp động theo allowedTransitions -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Layout 2 cột: Cột trái Thông tin lớp, Cột phải Danh sách môn học sao chép -->
+    <div class="detail-grid-layout">
+      <!-- Cột trái: Thông tin chi tiết lớp học -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-icon">📌</div>
+          <div>
+            <h2>Thông tin lớp học</h2>
+            <p>Chi tiết các thông số tổ chức đào tạo</p>
+          </div>
+        </div>
+
+        <table class="info-table">
+          <tbody>
+            <tr>
+              <th>Mã lớp học:</th>
+              <td><span class="hero-code-badge" id="infoClassCode" style="font-size: 0.8rem;">—</span></td>
+            </tr>
+            <tr>
+              <th>Tên lớp học:</th>
+              <td id="infoClassName">—</td>
+            </tr>
+            <tr>
+              <th>Chương trình gốc:</th>
+              <td><strong id="infoProgramName" style="color: var(--primary);">—</strong></td>
+            </tr>
+            <tr>
+              <th>Mã chương trình:</th>
+              <td id="infoProgramCode">—</td>
+            </tr>
+            <tr>
+              <th>Ngày khai giảng:</th>
+              <td id="infoStartDate">—</td>
+            </tr>
+            <tr>
+              <th>Hình thức đào tạo:</th>
+              <td id="infoStudyMode">—</td>
+            </tr>
+            <tr>
+              <th>Sĩ số tối đa:</th>
+              <td><span id="infoMaxStudents">—</span> học viên</td>
+            </tr>
+            <tr>
+              <th>Giảng viên phụ trách:</th>
+              <td id="infoTeacherName">—</td>
+            </tr>
+            <tr>
+              <th>Phòng học:</th>
+              <td id="infoRoom">—</td>
+            </tr>
+            <tr>
+              <th>Lịch học dự kiến:</th>
+              <td id="infoSchedule">—</td>
+            </tr>
+            <tr>
+              <th>Thời gian tạo:</th>
+              <td id="infoCreatedAt" style="font-size: 0.8rem; color: var(--text-muted);">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Cột phải: Danh sách môn học đã sao chép từ chương trình -->
+      <section class="card">
+        <div class="card-header space-between">
+          <div style="display: flex; align-items: center; gap: 0.85rem;">
+            <div class="card-icon">📚</div>
+            <div>
+              <h2>Môn học sao chép từ chương trình đào tạo</h2>
+              <p>Danh sách môn học được tự động liên kết khi mở lớp (DNKN-205 / DNKN-208)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="curriculum-summary-chip">
+          <span class="stat-chip">Tổng số môn: <strong id="totalSubjectCount">0</strong></span>
+          <span class="stat-chip">Tổng số tín chỉ: <strong id="totalCreditCount">0</strong> tín chỉ</span>
+          <span class="stat-chip">Tổng thời lượng: <strong id="totalSessionCount">0</strong> buổi học</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th>Mã môn</th>
+                <th>Tên môn học</th>
+                <th>Tín chỉ</th>
+                <th>Thời lượng</th>
+                <th>Nguồn gốc</th>
+              </tr>
+            </thead>
+            <tbody id="copiedSubjectsTableBody">
+              <tr>
+                <td colspan="6" class="text-center" style="padding: 2rem; color: var(--text-muted);">
+                  Đang tải danh sách môn học...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bảng tra cứu ma trận quy tắc vòng đời DNKN-207 -->
+    <section class="rules-matrix-card">
+      <h4>📖 Bảng quy tắc chuyển trạng thái vòng đời lớp học (State Machine Matrix):</h4>
+      <div class="table-responsive">
+        <table class="rules-table">
+          <thead>
+            <tr>
+              <th>Trạng thái bắt đầu</th>
+              <th>Trạng thái được phép chuyển đến</th>
+              <th>Trạng thái bị CHẶN</th>
+              <th>Mô tả nghiệp vụ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>🟡 Chuẩn bị (planning)</strong></td>
+              <td><span style="color: #065f46; font-weight: 700;">🟢 Đang học</span>, <span style="color: #991b1b; font-weight: 700;">🔴 Huỷ</span></td>
+              <td><span style="color: #dc2626;">✕ Kết thúc</span></td>
+              <td>Lớp vừa mở từ chương trình, chuẩn bị tuyển sinh và xếp phòng. Không được nhảy cóc sang Kết thúc khi chưa bắt đầu học.</td>
+            </tr>
+            <tr>
+              <td><strong>🟢 Đang học (in_progress)</strong></td>
+              <td><span style="color: #1e40af; font-weight: 700;">🔵 Kết thúc</span>, <span style="color: #991b1b; font-weight: 700;">🔴 Huỷ</span></td>
+              <td><span style="color: #dc2626;">✕ Chuẩn bị</span></td>
+              <td>Khóa học đang diễn ra. Khi hoàn tất toàn bộ môn học thì chuyển sang Kết thúc, hoặc Huỷ nếu có sự cố.</td>
+            </tr>
+            <tr>
+              <td><strong>🔵 Kết thúc (completed)</strong></td>
+              <td><em>(Không có) - Đã đóng</em></td>
+              <td>Tất cả các trạng thái khác</td>
+              <td>Lớp học đã hoàn tất và kết thúc. Đây là trạng thái cuối cùng (Terminal State), không thể đổi tiếp.</td>
+            </tr>
+            <tr>
+              <td><strong>🔴 Huỷ (cancelled)</strong></td>
+              <td><em>(Không có) - Đã đóng</em></td>
+              <td>Tất cả các trạng thái khác</td>
+              <td>Lớp học đã bị huỷ. Đây là trạng thái cuối cùng (Terminal State), không thể hoàn tác.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal xác nhận chuyển trạng thái -->
+  <dialog id="transitionConfirmModal" class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Xác nhận chuyển trạng thái lớp học</h3>
+        <button type="button" class="modal-close-btn" id="modalCloseBtn">✕</button>
+      </div>
+      <form id="transitionConfirmForm">
+        <div class="modal-body">
+          <p style="font-size: 0.9rem; margin-bottom: 1rem; color: #334155;">
+            Bạn đang yêu cầu chuyển đổi vòng đời của lớp <strong id="modalTargetClassName">—</strong>:
+          </p>
+
+          <div class="modal-transition-display">
+            <span class="transition-tag" id="modalFromTag">Từ</span>
+            <span style="font-size: 1.25rem; font-weight: 800; color: #64748b;">➔</span>
+            <span class="transition-tag" id="modalToTag">Sang</span>
+          </div>
+
+          <div class="modal-form-group">
+            <label for="transitionReasonInput">Lý do chuyển trạng thái (tùy chọn):</label>
+            <textarea
+              id="transitionReasonInput"
+              placeholder="Ví dụ: Đã đủ sĩ số và khai giảng đúng hạn, hoàn thành toàn bộ môn học, hoặc lý do huỷ..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="modalCancelBtn">Huỷ bỏ</button>
+          <button type="submit" class="btn-primary" id="modalSubmitBtn">Xác nhận chuyển</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <span>EduManager · Phân hệ Tổ chức Đào tạo</span>
+      <span>DNKN-208: Màn hình chi tiết & Theo dõi trạng thái lớp học</span>
+    </div>
+  </footer>
+</body>
+</html>

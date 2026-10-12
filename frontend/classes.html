@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo mới Lớp học từ Chương trình Đào tạo - EduManager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/classes.css">
+  <script src="/js/classes.js" defer></script>
+</head>
+<body>
+  <!-- Thanh điều hướng trên cùng -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-area">
+        <a href="/" class="brand-link" title="Về trang chủ">
+          <div class="brand-badge">ĐT</div>
+          <div>
+            <div class="brand-title">EduManager</div>
+            <div class="brand-sub">HỆ THỐNG QUẢN LÝ ĐÀO TẠO</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="nav-links">
+        <a href="/" class="nav-item">Tổng quan</a>
+        <a href="/students.html" class="nav-item">Hồ sơ học viên (DNKN-175)</a>
+        <a href="/classes.html" class="nav-item is-active">Quản lý lớp học (DNKN-176 / DNKN-204)</a>
+        <a href="/class-detail.html" class="nav-item">Chi tiết & Vòng đời (DNKN-208)</a>
+      </nav>
+
+      <div class="user-pill">
+        <span class="user-dot"></span>
+        <span>Quản trị viên</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-container">
+    <!-- Tiêu đề trang -->
+    <section class="hero-banner">
+      <div class="hero-text">
+        <div class="tag-chip">PHÂN HỆ TỔ CHỨC ĐÀO TẠO · DNKN-204</div>
+        <h1>Tạo mới Lớp học từ Chương trình Đào tạo</h1>
+        <p>Thiết lập thông tin lớp học, kiểm tra ràng buộc mã lớp duy nhất và tự động sao chép danh sách môn học từ chương trình đào tạo.</p>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-box">
+          <span class="stat-number" id="totalClassesCount">3</span>
+          <span class="stat-label">Lớp học hiện có</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-number" id="totalProgramsCount">4</span>
+          <span class="stat-label">Chương trình đào tạo</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hộp thông báo phản hồi (Alert Banner) -->
+    <div id="alertBox" class="alert-box" role="alert" hidden>
+      <span class="alert-icon" id="alertIcon">⚠️</span>
+      <div class="alert-content">
+        <strong id="alertTitle">Thông báo</strong>
+        <p id="alertMessage">Nội dung thông báo</p>
+      </div>
+      <button type="button" class="alert-close" id="alertCloseBtn" aria-label="Đóng thông báo">✕</button>
+    </div>
+
+    <!-- Khối kết quả sau khi tạo lớp học thành công (hiển thị danh sách môn học sao chép) -->
+    <section id="createdSuccessSection" class="created-result-card" hidden>
+      <div class="result-header">
+        <div class="result-badge">✓ TẠO THÀNH CÔNG</div>
+        <h2 id="resultClassName">Lớp học mới</h2>
+        <div class="result-meta">
+          <span>Mã lớp: <strong id="resultClassCode">—</strong></span>
+          <span>Chương trình: <strong id="resultProgramName">—</strong></span>
+          <span>Khai giảng: <strong id="resultStartDate">—</strong></span>
+          <span>Hình thức: <strong id="resultStudyMode">—</strong></span>
+          <span>Sĩ số tối đa: <strong id="resultMaxStudents">—</strong></span>
+        </div>
+      </div>
+
+      <div class="copied-subjects-box">
+        <div class="box-title">
+          <span class="icon">📚</span>
+          <div>
+            <h3>Danh sách môn học được sao chép từ chương trình đào tạo</h3>
+            <p>Các môn học này đã được hệ thống tự động gán vào lớp học vừa tạo.</p>
+          </div>
+          <span class="subject-count-badge" id="resultSubjectCount">0 môn học</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Mã môn</th>
+                <th>Tên môn học</th>
+                <th>Số tín chỉ</th>
+                <th>Thời lượng (buổi)</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody id="resultSubjectsTableBody">
+              <!-- Render tự động các môn học được sao chép -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <a id="resultDetailBtn" href="/class-detail.html" class="btn btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+            🔍 Mở màn hình Chi tiết & Theo dõi trạng thái lớp học này (DNKN-208)
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Layout chính 2 cột: Cột trái Form tạo lớp, Cột phải Xem trước chương trình -->
+    <div class="grid-form-layout">
+      <!-- Cột trái: Form nhập thông tin tạo mới lớp học -->
+      <section class="card form-card">
+        <div class="card-header">
+          <div class="card-icon">✎</div>
+          <div>
+            <h2>Thông tin lớp học cần tạo</h2>
+            <p>Vui lòng điền đầy đủ các thông tin bắt buộc (*)</p>
+          </div>
+        </div>
+
+        <form id="createClassForm" novalidate>
+          <!-- 1. Mã lớp học -->
+          <div class="form-group">
+            <label for="classCode" class="required-label">
+              Mã lớp học
+              <small>(Phải là duy nhất, không trùng lặp)</small>
+            </label>
+            <div class="input-with-action">
+              <input
+                type="text"
+                id="classCode"
+                name="classCode"
+                placeholder="Ví dụ: K15-WEB01, ENG-A2, AI-K10..."
+                required
+                autocomplete="off"
+              >
+              <span id="codeCheckStatus" class="input-feedback-icon" title="Kiểm tra mã lớp"></span>
+            </div>
+            <div id="codeFeedbackMessage" class="feedback-msg"></div>
+          </div>
+
+          <!-- 2. Chọn chương trình đào tạo -->
+          <div class="form-group">
+            <label for="programSelect" class="required-label">
+              Chương trình đào tạo
+              <small>(Hệ thống sẽ sao chép danh sách môn học từ chương trình này)</small>
+            </label>
+            <select id="programSelect" name="programId" required>
+              <option value="">-- Chọn chương trình đào tạo --</option>
+              <!-- Các options sẽ được load động từ API -->
+            </select>
+          </div>
+
+          <!-- 3. Tên lớp học -->
+          <div class="form-group">
+            <label for="className" class="required-label">Tên lớp học</label>
+            <input
+              type="text"
+              id="className"
+              name="className"
+              placeholder="Ví dụ: Lớp Kỹ thuật Web Fullstack K15 - Ca tối"
+              required
+            >
+          </div>
+
+          <!-- 4. Hàng: Ngày khai giảng & Sĩ số tối đa -->
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="startDate" class="required-label">Ngày khai giảng dự kiến</label>
+              <input
+                type="date"
+                id="startDate"
+                name="startDate"
+                required
+              >
+            </div>
+
+            <div class="form-group col-half">
+              <label for="maxStudents" class="required-label">Sĩ số tối đa (người)</label>
+              <input
+                type="number"
+                id="maxStudents"
+                name="maxStudents"
+                min="5"
+                max="150"
+                value="30"
+                required
+              >
+            </div>
+          </div>
+
+          <!-- 5. Hình thức học -->
+          <div class="form-group">
+            <label class="required-label">Hình thức học</label>
+            <div class="study-mode-cards">
+              <label class="mode-card">
+                <input type="radio" name="studyMode" value="Offline" checked>
+                <div class="mode-content">
+                  <span class="mode-icon">🏫</span>
+                  <strong>Trực tiếp (Offline)</strong>
+                  <small>Tại phòng học trung tâm</small>
+                </div>
+              </label>
+
+              <label class="mode-card">
+                <input type="radio" name="studyMode" value="Online">
+                <div class="mode-content">
+                  <span class="mode-icon">💻</span>
+                  <strong>Trực tuyến (Online)</strong>
+                  <small>Học từ xa qua Zoom/Meet</small>
+                </div>
+              </label>
+
+              <label class="mode-card">
+                <input type="radio" name="studyMode" value="Hybrid">
+                <div class="mode-content">
+                  <span class="mode-icon">🌐</span>
+                  <strong>Kết hợp (Hybrid)</strong>
+                  <small>Linh hoạt Online & Offline</small>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- 6. Giảng viên phụ trách & Phòng học -->
+          <div class="form-row">
+            <div class="form-group col-half">
+              <label for="teacherName">Giảng viên phụ trách (tùy chọn)</label>
+              <input
+                type="text"
+                id="teacherName"
+                name="teacherName"
+                placeholder="Ví dụ: ThS. Nguyễn Văn A"
+              >
+            </div>
+
+            <div class="form-group col-half">
+              <label for="room">Phòng học (tùy chọn)</label>
+              <input
+                type="text"
+                id="room"
+                name="room"
+                placeholder="Ví dụ: Lab 01, P.302"
+              >
+            </div>
+          </div>
+
+          <!-- Nút bấm submit -->
+          <div class="form-actions">
+            <button type="reset" class="btn btn-secondary" id="resetBtn">Đặt lại form</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span class="btn-spinner" id="btnSpinner" hidden></span>
+              <span class="btn-text">Tạo lớp học từ chương trình</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Cột phải: Xem trước danh sách môn học của chương trình đào tạo -->
+      <section class="card preview-card">
+        <div class="card-header">
+          <div class="card-icon">📋</div>
+          <div>
+            <h2>Môn học trong chương trình đào tạo</h2>
+            <p>Xem trước danh sách môn học sẽ được sao chép khi tạo lớp</p>
+          </div>
+        </div>
+
+        <div id="programPreviewEmpty" class="empty-preview-box">
+          <span class="empty-icon">👈</span>
+          <p><strong>Vui lòng chọn một chương trình đào tạo</strong> ở form bên cạnh để xem trước danh sách môn học sẽ được sao chép tự động.</p>
+        </div>
+
+        <div id="programPreviewContent" class="program-preview-details" hidden>
+          <div class="program-summary-bar">
+            <div>
+              <span class="badge" id="previewProgramCode">MÃ CT</span>
+              <h3 id="previewProgramName">Tên chương trình</h3>
+              <p id="previewProgramDesc">Mô tả chương trình đào tạo</p>
+            </div>
+            <div class="program-meta-chips">
+              <span class="chip">Thời gian: <strong id="previewProgramDuration">0 tháng</strong></span>
+              <span class="chip">Tổng tín chỉ: <strong id="previewProgramCredits">0</strong></span>
+            </div>
+          </div>
+
+          <h4 class="preview-subtitle">Danh mục các môn học sẽ được sao chép:</h4>
+          <ul id="previewSubjectList" class="preview-subject-list">
+            <!-- Render danh sách môn học xem trước -->
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <!-- Danh sách các lớp học hiện có trong hệ thống (DNKN-206) -->
+    <section class="card existing-classes-card">
+      <div class="card-header space-between">
+        <div class="header-left">
+          <div class="card-icon">🗂️</div>
+          <div>
+            <h2>Danh sách & Tra cứu lớp học có phân trang (DNKN-206)</h2>
+            <p>Tra cứu theo mã lớp, chương trình, trạng thái, thời gian khai giảng và phân trang dữ liệu</p>
+          </div>
+        </div>
+        <button type="button" id="refreshClassesBtn" class="btn btn-secondary btn-sm" title="Làm mới danh sách">
+          🔄 Tải lại dữ liệu
+        </button>
+      </div>
+
+      <!-- Thanh bộ lọc tra cứu đa tiêu chí (Filter Bar) -->
+      <div class="filters-panel">
+        <div class="filter-grid">
+          <div class="filter-item">
+            <label for="filterSearch">Từ khóa chung</label>
+            <input type="search" id="filterSearch" placeholder="Mã, tên lớp, giảng viên...">
+          </div>
+
+          <div class="filter-item">
+            <label for="filterClassCode">Mã lớp</label>
+            <input type="text" id="filterClassCode" placeholder="Ví dụ: ENG, WEB...">
+          </div>
+
+          <div class="filter-item">
+            <label for="filterProgram">Chương trình</label>
+            <select id="filterProgram">
+              <option value="">-- Tất cả chương trình --</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="filterStatus">Trạng thái</label>
+            <select id="filterStatus">
+              <option value="">-- Tất cả trạng thái --</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="upcoming">Sắp khai giảng</option>
+              <option value="completed">Đã kết thúc</option>
+            </select>
+          </div>
+
+          <div class="filter-item">
+            <label for="filterStartDate">Khai giảng từ ngày</label>
+            <input type="date" id="filterStartDate">
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button type="button" id="applyFiltersBtn" class="btn btn-primary btn-sm">🔍 Áp dụng bộ lọc</button>
+          <button type="button" id="resetFiltersBtn" class="btn btn-secondary btn-sm">↺ Đặt lại bộ lọc</button>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="data-table" id="classesTable">
+          <thead>
+            <tr>
+              <th>Mã lớp</th>
+              <th>Tên lớp học</th>
+              <th>Chương trình đào tạo</th>
+              <th>Ngày khai giảng</th>
+              <th>Hình thức</th>
+              <th>Sĩ số</th>
+              <th>Môn học</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="classesTableBody">
+            <tr>
+              <td colspan="8" class="text-center">Đang tải danh sách lớp học...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Thanh điều khiển phân trang (Pagination Bar) -->
+      <div class="pagination-footer">
+        <div class="pagination-info">
+          Hiển thị <strong id="paginationCurrentRange">0-0</strong> trên tổng số <strong id="paginationTotal">0</strong> lớp học
+        </div>
+
+        <div class="pagination-controls">
+          <label for="paginationLimitSelect" class="limit-label">Hiển thị:</label>
+          <select id="paginationLimitSelect" class="limit-select">
+            <option value="5">5 lớp/trang</option>
+            <option value="10" selected>10 lớp/trang</option>
+            <option value="20">20 lớp/trang</option>
+          </select>
+
+          <button type="button" id="prevPageBtn" class="btn btn-secondary btn-sm" disabled>◀ Trước</button>
+          <span class="page-indicator">Trang <strong id="currentPageIndicator">1</strong> / <span id="totalPagesIndicator">1</span></span>
+          <button type="button" id="nextPageBtn" class="btn btn-secondary btn-sm" disabled>Sau ▶</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal xem chi tiết môn học của lớp -->
+  <dialog id="subjectsModal" class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <span class="modal-tag">CHI TIẾT LỚP HỌC</span>
+          <h3 id="modalClassName">Tên lớp học</h3>
+          <p id="modalClassSub">Mã lớp: —</p>
+        </div>
+        <button type="button" class="modal-close-btn" id="modalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <h4>Danh sách môn học thuộc lớp:</h4>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Mã môn</th>
+                <th>Tên môn học</th>
+                <th>Tín chỉ</th>
+                <th>Số buổi</th>
+              </tr>
+            </thead>
+            <tbody id="modalSubjectsBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="modalOkBtn">Đóng</button>
+      </div>
+    </div>
+  </dialog>
+
+  <footer class="app-footer">
+    <div class="footer-container">
+      <span>EduManager · Hệ thống Quản lý Đào tạo</span>
+      <span>DNKN-176 (Kiểm tra mã lớp duy nhất) & DNKN-204 (Tạo lớp học từ chương trình đào tạo)</span>
+    </div>
+  </footer>
+</body>
+</html>
