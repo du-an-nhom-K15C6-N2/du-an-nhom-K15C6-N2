@@ -1,0 +1,24 @@
+.app-shell {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+}
+
+.app-header {
+  margin-bottom: 1.5rem;
+}
+
+.app-kicker {
+  margin: 0 0 0.5rem;
+  color: #4f46e5;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.app-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+}
