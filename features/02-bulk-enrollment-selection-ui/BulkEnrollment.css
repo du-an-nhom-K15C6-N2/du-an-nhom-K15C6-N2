@@ -1,0 +1,124 @@
+.bulk-enrollment {
+  width: min(100%, 48rem);
+  color: #202124;
+  font-family: system-ui, sans-serif;
+}
+
+.bulk-enrollment h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+}
+
+.bulk-enrollment__class-field {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
+}
+
+.bulk-enrollment select {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #767676;
+  border-radius: 0.35rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.bulk-enrollment__students {
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid #d4d7dc;
+  border-radius: 0.4rem;
+}
+
+.bulk-enrollment__students legend {
+  padding: 0 0.35rem;
+  font-weight: 600;
+}
+
+.bulk-enrollment__students ul {
+  max-height: 20rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.bulk-enrollment__students li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid #eceef0;
+}
+
+.bulk-enrollment__student {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.bulk-enrollment__student input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #175cd3;
+}
+
+.bulk-enrollment__select-all {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.bulk-enrollment__student-info {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.bulk-enrollment__email {
+  color: #5f6368;
+  font-size: 0.875rem;
+}
+
+.bulk-enrollment__result {
+  font-size: 0.875rem;
+}
+
+.bulk-enrollment__result--success {
+  color: #137333;
+}
+
+.bulk-enrollment__result--error,
+.bulk-enrollment__error {
+  color: #b3261e;
+}
+
+.bulk-enrollment__error {
+  margin: 0 0 1rem;
+}
+
+.bulk-enrollment__empty {
+  margin: 0.25rem 0;
+  color: #5f6368;
+}
+
+.bulk-enrollment button {
+  min-height: 2.75rem;
+  padding: 0.6rem 1rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: #175cd3;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bulk-enrollment button:disabled {
+  background: #aeb8c7;
+  cursor: not-allowed;
+}
