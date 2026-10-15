@@ -1,0 +1,35 @@
+[
+  {
+    "id": "tp_cntt_01",
+    "code": "PROG-IT-01",
+    "name": "Kỹ thuật Phần mềm Chuyên sâu",
+    "description": "Chương trình đào tạo kỹ sư phần mềm từ cơ bản đến nâng cao, bao gồm Web, Mobile và An toàn thông tin.",
+    "duration": 120,
+    "standard_tuition": 15000000,
+    "status": "ACTIVE",
+    "created_at": "2026-01-10T08:00:00.000Z",
+    "updated_at": "2026-01-10T08:00:00.000Z"
+  },
+  {
+    "id": "tp_data_02",
+    "code": "PROG-DATA-02",
+    "name": "Khoa học Dữ liệu & AI",
+    "description": "Đào tạo phân tích dữ liệu lớn, trực quan hóa và ứng dụng Machine Learning trong doanh nghiệp.",
+    "duration": 90,
+    "standard_tuition": 18500000,
+    "status": "ACTIVE",
+    "created_at": "2026-02-15T09:30:00.000Z",
+    "updated_at": "2026-02-15T09:30:00.000Z"
+  },
+  {
+    "id": "tp_uiux_04",
+    "code": "PROG-UIUX-04",
+    "name": "Thiết kế Trải nghiệm Người dùng UI/UX",
+    "description": "Nghiên cứu hành vi người dùng, wireframing, thiết kế Design System và Prototype với Figma.",
+    "duration": 60,
+    "standard_tuition": 11000000,
+    "status": "ACTIVE",
+    "created_at": "2026-03-15T11:00:00.000Z",
+    "updated_at": "2026-03-15T11:00:00.000Z"
+  }
+]

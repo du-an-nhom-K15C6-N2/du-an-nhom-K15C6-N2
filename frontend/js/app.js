@@ -65,7 +65,7 @@ function activateModule(module) {
   navigation.querySelectorAll('[data-module-id]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.moduleId === module.id);
   });
-  renderModule(module);
+  if (module.id === "programs" && window.renderTrainingProgramsView) { window.renderTrainingProgramsView(module); } else { renderModule(module); }
   sidebar.classList.remove('is-open');
 }
 
