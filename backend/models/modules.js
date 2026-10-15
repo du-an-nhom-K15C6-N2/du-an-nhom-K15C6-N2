@@ -1,5 +1,5 @@
 module.exports = [
-  { id: 'programs', name: 'Chương trình đào tạo', group: 'Đào tạo', status: 'Đang xây dựng' },
+  { id: 'programs', name: 'Chương trình đào tạo', group: 'Đào tạo', status: 'Sẵn sàng' },
   { id: 'courses', name: 'Học phần', group: 'Đào tạo', status: 'Đang xây dựng' },
   { id: 'terms', name: 'Học kỳ', group: 'Tổ chức', status: 'Đang xây dựng' },
   { id: 'classes', name: 'Lớp học', group: 'Tổ chức', status: 'Đang xây dựng' },
