@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNKN-86: Xem & Cập nhật Hồ sơ cá nhân</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="components/UserProfilePanel.css">
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(30, 41, 59, 0.5);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #6366f1;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at top, #1e1b4b 0%, #0b0f19 65%);
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+    .demo-navbar {
+      background: rgba(15, 23, 42, 0.8);
+      border-bottom: 1px solid var(--border-color);
+      backdrop-filter: blur(12px);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .demo-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .demo-badge-ticket {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+    }
+    .demo-account-switcher {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .demo-account-switcher span {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-right: 0.25rem;
+    }
+    .btn-account-pill {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn-account-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn-account-pill.is-active {
+      background: #4f46e5;
+      color: #fff;
+      border-color: #6366f1;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+    }
+    .demo-container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+    .demo-intro-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .demo-intro-card .icon { font-size: 1.75rem; }
+    .demo-intro-card h1 {
+      font-size: 1.25rem;
+      margin: 0 0 0.4rem 0;
+      color: #ffffff;
+    }
+    .demo-intro-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .demo-criteria-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .demo-criteria-tag {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #a5b4fc;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+    }
+    #profile-container {
+      min-height: 400px;
+    }
+  </style>
+</head>
+<body>
+  <header class="demo-navbar">
+    <div class="demo-brand">
+      <span class="demo-badge-ticket">DNKN-86</span>
+      <strong>EduClass Manager · Quản lý hồ sơ cá nhân</strong>
+    </div>
+
+    <div class="demo-account-switcher">
+      <span>Đổi vai trò:</span>
+      <button type="button" class="btn-account-pill is-active" data-account="student">🎓 Học sinh</button>
+      <button type="button" class="btn-account-pill" data-account="teacher">👨‍🏫 Giảng viên</button>
+      <button type="button" class="btn-account-pill" data-account="admin">🛡️ Quản trị viên</button>
+    </div>
+  </header>
+
+  <main class="demo-container">
+    <section class="demo-intro-card">
+      <span class="icon">📋</span>
+      <div>
+        <h1>Module Hồ Sơ Cá Nhân (Feature Task DNKN-86)</h1>
+        <p>Đáp ứng đầy đủ 8 tiêu chí: Xem hồ sơ, Form cập nhật, Khóa chỉ đọc email &amp; vai trò, Xác thực định dạng SĐT Việt Nam (FE/BE) và Bộ kiểm thử 15 test cases.</p>
+        <div class="demo-criteria-list">
+          <span class="demo-criteria-tag">✓ [FE] Màn hình xem hồ sơ</span>
+          <span class="demo-criteria-tag">✓ [FE] Form cập nhật hồ sơ</span>
+          <span class="demo-criteria-tag">✓ [FE] Kiểm tra SĐT Việt Nam</span>
+          <span class="demo-criteria-tag">✓ [BE] API lấy thông tin (GET /api/profile)</span>
+          <span class="demo-criteria-tag">✓ [BE] API cập nhật (PUT /api/profile)</span>
+          <span class="demo-criteria-tag">✓ [BE] Chặn sửa Email &amp; Vai trò</span>
+          <span class="demo-criteria-tag">✓ [BE] Chuẩn hóa SĐT di động 10 số</span>
+          <span class="demo-criteria-tag">✓ [QA] 15 Test cases đạt 100%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mount Point cho component UserProfilePanel -->
+    <div id="profile-container"></div>
+  </main>
+
+  <script type="module" src="preview.js"></script>
+</body>
+</html>

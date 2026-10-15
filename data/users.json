@@ -1,0 +1,50 @@
+[
+  {
+    "id": "usr_student01",
+    "name": "Nguyễn Văn An",
+    "email": "an.nguyen@edu.vn",
+    "phone": "0912345678",
+    "role": "student",
+    "roles": [
+      "student"
+    ],
+    "roleLabel": "Học sinh / Sinh viên",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dateOfBirth": "2005-08-15",
+    "address": "123 Đường Cầu Giấy, Quận Cầu Giấy, Hà Nội",
+    "passwordHash": "scrypt$675127bf9a1d1a4f19ded8a22acf4cad$d267c370279c82bfdd5e1640b02067fb2c925bdd1c281d20338e9cf5b3f5926e32a943d14f2b3da08943ceb45b1d88e834f49b70a54858290b3e1cab7a5da260"
+  },
+  {
+    "id": "usr_teacher01",
+    "name": "ThS. Trần Thị Mai",
+    "email": "mai.tran@edu.vn",
+    "phone": "0987654321",
+    "role": "teacher",
+    "roles": [
+      "teacher"
+    ],
+    "roleLabel": "Giảng viên",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dateOfBirth": "1988-10-20",
+    "address": "456 Đường Nguyễn Trãi, Quận Thanh Xuân, Hà Nội",
+    "passwordHash": "scrypt$675127bf9a1d1a4f19ded8a22acf4cad$d267c370279c82bfdd5e1640b02067fb2c925bdd1c281d20338e9cf5b3f5926e32a943d14f2b3da08943ceb45b1d88e834f49b70a54858290b3e1cab7a5da260"
+  },
+  {
+    "id": "usr_admin01",
+    "name": "Lê Huy Hoàng",
+    "email": "hoang@edu.vn",
+    "phone": "0901234567",
+    "role": "admin",
+    "roles": [
+      "admin"
+    ],
+    "roleLabel": "Quản trị viên",
+    "status": "active",
+    "statusLabel": "Đang hoạt động",
+    "dateOfBirth": "1985-05-01",
+    "address": "789 Đường Giải Phóng, Quận Hoàng Mai, Hà Nội",
+    "passwordHash": "scrypt$675127bf9a1d1a4f19ded8a22acf4cad$d267c370279c82bfdd5e1640b02067fb2c925bdd1c281d20338e9cf5b3f5926e32a943d14f2b3da08943ceb45b1d88e834f49b70a54858290b3e1cab7a5da260"
+  }
+]

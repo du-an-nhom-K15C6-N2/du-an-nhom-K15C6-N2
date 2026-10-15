@@ -1,0 +1,18 @@
+{
+  "name": "dnkn-86-user-profile",
+  "version": "1.0.0",
+  "description": "Module Quản lý và Cập nhật Hồ sơ cá nhân (DNKN-86) - Phân quyền và Xác thực định dạng SĐT Việt Nam",
+  "main": "preview-server.js",
+  "scripts": {
+    "start": "node preview-server.js",
+    "test": "node --test tests/profile.test.js"
+  },
+  "keywords": [
+    "profile",
+    "user-profile",
+    "vietnam-phone-validation",
+    "dnkn-86"
+  ],
+  "author": "Antigravity Pair Programming",
+  "license": "ISC"
+}
