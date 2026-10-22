@@ -13,6 +13,16 @@ const escapeHtml = value =>
         "'": '&#39;'
     })[char]);
 
+function fixClassName(className, classCode) {
+    const names = {
+        'K15-CNTT01': 'Lập trình Web',
+        'K15-CNTT02': 'Cơ sở dữ liệu'
+    };
+
+    return names[classCode] || className || 'Chưa có';
+}
+
+
 export function renderStudentProfilePanel(container) {
     let students = [];
     let selectedStudent = null;
@@ -114,7 +124,7 @@ export function renderStudentProfilePanel(container) {
           </p>
 
           <p><strong>Tên lớp:</strong>
-            ${escapeHtml(cls.name || 'Chưa có')}
+            ${escapeHtml(fixClassName(cls.name, cls.code))}
           </p>
 
           <p><strong>Thời gian:</strong>
@@ -146,7 +156,7 @@ export function renderStudentProfilePanel(container) {
           </p>
 
           <p><strong>Tên lớp:</strong>
-            ${escapeHtml(cls?.name || 'Chưa có thông tin')}
+            ${escapeHtml(fixClassName(cls?.name, cls?.code))}
           </p>
 
           <p><strong>Ngày ghi danh:</strong>
@@ -230,56 +240,14 @@ export function renderStudentProfilePanel(container) {
         }
     }
 
-    // DNKN-175: Xử lý chỉnh sửa hồ sơ học viên
+
+    // DNKN-175: Mở form chỉnh sửa hồ sơ học viên
     details.addEventListener('click', (event) => {
         const editButton = event.target.closest('#btn-edit-student');
 
         if (!editButton || !selectedStudent) return;
 
         const student = selectedStudent.student;
-        // DNKN-175: Hiển thị điểm danh
-        const attendanceHtml = attendance.length
-            ? attendance.map(item => `
-      <div class="student-class-card">
-        <p><strong>Lớp:</strong>
-          ${escapeHtml(item.className || 'Chưa có')}
-        </p>
-        <p><strong>Ngày điểm danh:</strong>
-          ${escapeHtml(item.attendanceDate || 'Chưa có')}
-        </p>
-        <p><strong>Trạng thái:</strong>
-          ${escapeHtml({
-                present: 'Có mặt',
-                absent: 'Vắng mặt',
-                late: 'Đi muộn',
-                excused: 'Vắng có phép'
-            }[item.status] || item.status || 'Chưa có')}
-        </p>
-      </div>
-    `).join('')
-            : '<p>Chưa có dữ liệu điểm danh.</p>';
-
-        // DNKN-175: Hiển thị kết quả học tập
-        const gradesHtml = grades.length
-            ? grades.map(item => `
-      <div class="student-class-card">
-        <p><strong>Lớp:</strong>
-          ${escapeHtml(item.className || 'Chưa có')}
-        </p>
-        <p><strong>Môn học:</strong>
-          ${escapeHtml(item.subject || 'Chưa có')}
-        </p>
-        <p><strong>Học kỳ:</strong>
-          ${escapeHtml(item.term || 'Chưa có')}
-        </p>
-        <p><strong>Điểm:</strong>
-          ${escapeHtml(item.score ?? 'Chưa có')}
-          /
-          ${escapeHtml(item.maxScore ?? 10)}
-        </p>
-      </div>
-    `).join('')
-            : '<p>Chưa có dữ liệu điểm số.</p>';
 
         details.innerHTML = `
     <h3>Chỉnh sửa hồ sơ học viên</h3>
