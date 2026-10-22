@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f6f2" />
+    <title>Danh sách lead | Northstar CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Điều hướng chính">
+        <a class="brand" href="#" aria-label="Northstar CRM">
+          <span class="brand-mark" aria-hidden="true">N</span>
+          <span class="brand-name">northstar<span>CRM</span></span>
+        </a>
+        <p class="workspace-label">WORKSPACE</p>
+        <nav class="main-nav">
+          <a class="nav-item" href="#"><span aria-hidden="true">◫</span>Tổng quan</a>
+          <a class="nav-item active" href="#" aria-current="page"><span aria-hidden="true">▤</span>Danh sách lead</a>
+          <a class="nav-item" href="#"><span aria-hidden="true">♧</span>Tư vấn viên</a>
+          <a class="nav-item" href="#"><span aria-hidden="true">◷</span>Lịch sử phân công</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="system-status"><i></i><span><strong id="session-status">Đang kiểm tra phiên</strong><small id="session-detail">Phạm vi dữ liệu theo vai trò</small></span></div>
+          <div class="profile">
+            <span class="avatar" id="profile-avatar">?</span>
+            <span><strong id="profile-name">Người dùng</strong><small id="profile-role">Chưa xác định vai trò</small></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Workspace</span><span>/</span><strong>Danh sách lead</strong></div>
+          <span class="today-label" id="today-label"></span>
+        </header>
+
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow"><i></i>QUẢN LÝ KHÁCH HÀNG TIỀM NĂNG</p>
+            <h1>Danh sách lead</h1>
+            <p class="page-description" id="scope-description">Dữ liệu được giới hạn theo quyền truy cập của bạn.</p>
+          </div>
+          <button class="button button-dark" id="reload-button" type="button"><span aria-hidden="true">↻</span>Làm mới dữ liệu</button>
+        </section>
+
+        <section class="list-section" aria-labelledby="list-title">
+          <div class="list-heading">
+            <div>
+              <h2 id="list-title">Lead <span class="result-count" id="result-count">—</span></h2>
+              <p id="list-description">Tìm kiếm và lọc danh sách được phân quyền.</p>
+            </div>
+            <div class="list-actions">
+              <label class="search-box"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Tìm tên, email, số điện thoại" aria-label="Tìm kiếm lead" /></label>
+              <label class="filter-box"><span class="sr-only">Lọc theo trạng thái</span><select id="status-filter"><option value="">Tất cả trạng thái</option><option value="new">Mới</option><option value="contacted">Đã liên hệ</option><option value="qualified">Tiềm năng</option><option value="converted">Đã chuyển đổi</option><option value="lost">Không phù hợp</option></select></label>
+              <label class="filter-box manager-filter" id="consultant-filter-wrap" hidden><span class="sr-only">Lọc theo tư vấn viên</span><select id="consultant-filter"><option value="">Tất cả tư vấn viên</option></select></label>
+            </div>
+          </div>
+
+          <div class="table-wrap" aria-busy="false" id="table-wrap">
+            <table>
+              <thead><tr><th>KHÁCH HÀNG</th><th>SỐ ĐIỆN THOẠI</th><th>TRẠNG THÁI</th><th id="assignment-heading">NGƯỜI PHỤ TRÁCH</th><th>NGÀY TẠO</th></tr></thead>
+              <tbody id="lead-rows"><tr><td colspan="5"><div class="table-state"><span class="spinner" aria-hidden="true"></span>Đang tải danh sách lead...</div></td></tr></tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <span id="table-summary" aria-live="polite">Đang tải dữ liệu</span>
+            <div class="pagination" aria-label="Phân trang">
+              <button class="page-button" id="previous-page" type="button" aria-label="Trang trước" disabled>←</button>
+              <span id="page-indicator">Trang 1 / 1</span>
+              <button class="page-button" id="next-page" type="button" aria-label="Trang sau" disabled>→</button>
+            </div>
+          </div>
+          <div class="error-banner" id="error-banner" role="alert" hidden></div>
+        </section>
+        <footer class="page-footer"><span>Northstar CRM <span>·</span> Sales operations</span><span>Dữ liệu khách hàng được bảo mật</span></footer>
+      </main>
+    </div>
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f6f2" />
+    <title>Chi tiết lead | Northstar CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Điều hướng chính">
+        <a class="brand" href="#" aria-label="Northstar CRM">
+          <span class="brand-mark" aria-hidden="true">N</span>
+          <span class="brand-name">northstar<span>CRM</span></span>
+        </a>
+        <p class="workspace-label">WORKSPACE</p>
+        <nav class="main-nav">
+          <a class="nav-item" href="#"><span aria-hidden="true">◫</span>Tổng quan</a>
+          <a class="nav-item active" href="#" aria-current="page"><span aria-hidden="true">▤</span>Danh sách lead</a>
+          <a class="nav-item" href="#"><span aria-hidden="true">♧</span>Tư vấn viên</a>
+          <a class="nav-item" href="#"><span aria-hidden="true">◷</span>Lịch sử phân công</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="system-status"><i></i><span><strong>Không gian làm việc</strong><small>Sales operations</small></span></div>
+          <div class="profile">
+            <span class="avatar">MA</span>
+            <span><strong>Nguyễn Minh Anh</strong><small>Quản trị viên</small></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><a href="#">Danh sách lead</a><span>/</span><strong>Chi tiết lead</strong></div>
+          <span class="today-label" id="today-label"></span>
+        </header>
+
+        <div class="back-link"><a href="#"><span aria-hidden="true">←</span> Quay lại danh sách lead</a></div>
+
+        <section class="page-heading" aria-labelledby="page-title">
+          <div>
+            <p class="eyebrow"><i></i>HỒ SƠ KHÁCH HÀNG TIỀM NĂNG</p>
+            <h1 id="page-title">Chi tiết lead</h1>
+            <p class="page-description">Theo dõi thông tin và các lần phân công tư vấn viên.</p>
+          </div>
+          <div class="lead-reference">
+            <span class="lead-reference-icon" aria-hidden="true">♙</span>
+            <span><small>MÃ LEAD</small><strong id="lead-id">—</strong></span>
+          </div>
+        </section>
+
+        <section class="history-card" id="transfer-history" aria-labelledby="history-title">
+          <div class="history-heading">
+            <div class="history-title-group">
+              <span class="history-title-icon" aria-hidden="true">↗</span>
+              <div>
+                <div class="history-title-line">
+                  <h2 id="history-title">Lịch sử chuyển giao</h2>
+                  <span class="history-count-badge" id="history-count-badge" hidden></span>
+                </div>
+                <p>Ghi nhận các lần phân công và thay đổi tư vấn viên phụ trách.</p>
+              </div>
+            </div>
+            <button class="button button-light" id="reload-button" type="button" aria-label="Tải lại lịch sử chuyển giao">
+              <span aria-hidden="true">↻</span><span>Làm mới</span>
+            </button>
+          </div>
+
+          <div class="history-content" id="history-content" aria-live="polite" aria-busy="true">
+            <div class="history-state loading-state" id="loading-state">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Đang tải lịch sử chuyển giao...</span>
+            </div>
+            <div class="history-state empty-state" id="empty-state" hidden>
+              <span class="state-illustration" aria-hidden="true"><span>↗</span></span>
+              <h3>Chưa có lịch sử chuyển giao</h3>
+              <p>Các lần phân công hoặc thay đổi tư vấn viên sẽ được hiển thị tại đây.</p>
+            </div>
+            <div class="history-state error-state" id="error-state" role="alert" hidden>
+              <span class="error-icon" aria-hidden="true">!</span>
+              <h3>Không thể tải lịch sử</h3>
+              <p id="error-message">Đã xảy ra lỗi khi kết nối đến máy chủ.</p>
+              <button class="button button-light retry-button" id="retry-button" type="button">Thử lại</button>
+            </div>
+            <ol class="timeline" id="timeline" aria-label="Các lần chuyển giao lead" hidden></ol>
+          </div>
+
+          <div class="history-footer" id="history-footer" hidden>
+            <span><i></i>Lịch sử được sắp xếp từ mới nhất</span>
+            <span id="history-count"></span>
+          </div>
+        </section>
+        <footer class="page-footer"><span>Northstar CRM <span>·</span> Sales operations</span><span>Dữ liệu khách hàng được bảo mật</span></footer>
+      </main>
+    </div>
+  </body>
+</html>
