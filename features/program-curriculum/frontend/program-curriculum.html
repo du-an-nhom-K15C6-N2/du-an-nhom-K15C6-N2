@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lộ trình chương trình đào tạo</title>
+  <link rel="stylesheet" href="/features/program-curriculum/frontend/program-curriculum.css">
+</head>
+<body>
+  <main class="curriculum">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">QUẢN LÝ ĐÀO TẠO</p>
+        <h1>Lộ trình chương trình</h1>
+        <p class="intro">Gắn môn học, sắp xếp thứ tự và khai báo các môn tiên quyết.</p>
+        <a href="/">Quay lại hệ thống</a>
+      </div>
+      <form id="program-form" class="program-form">
+        <label for="program-id">Mã chương trình</label>
+        <div class="program-form__controls">
+          <input id="program-id" name="programId" required maxlength="120" placeholder="Ví dụ: CNTT-2026">
+          <button class="button button--primary" type="submit">Tải chương trình</button>
+        </div>
+      </form>
+    </header>
+
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+
+    <section class="panel" aria-labelledby="curriculum-heading">
+      <div class="panel__heading">
+        <div>
+          <h2 id="curriculum-heading">Môn học theo lộ trình</h2>
+          <p id="list-summary" class="muted">Nhập mã chương trình để bắt đầu.</p>
+        </div>
+        <form id="add-course-form" class="add-course-form" hidden>
+          <label class="visually-hidden" for="available-courses">Chọn môn học để gắn</label>
+          <select id="available-courses" name="courseId" required>
+            <option value="">Chọn môn học</option>
+          </select>
+          <button class="button button--primary" type="submit">+ Gắn môn học</button>
+        </form>
+      </div>
+
+      <ol id="course-list" class="course-list" aria-label="Thứ tự môn học trong chương trình"></ol>
+      <div id="empty-state" class="empty-state">Chưa có môn học trong chương trình này.</div>
+    </section>
+  </main>
+  <script src="/features/program-curriculum/frontend/program-curriculum.js" defer></script>
+</body>
+</html>
