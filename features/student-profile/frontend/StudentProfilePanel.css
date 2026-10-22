@@ -1,0 +1,204 @@
+.student-profile-panel {
+    padding: 24px;
+    color: #25324b;
+}
+
+.student-profile-panel h2 {
+    font-size: 26px;
+    margin-bottom: 8px;
+}
+
+.student-profile-panel>p {
+    color: #667085;
+    margin-bottom: 24px;
+}
+
+#student-search {
+    width: 100%;
+    padding: 13px 16px;
+    border: 1px solid #d9dfed;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    background: white;
+}
+
+#student-list {
+    background: white;
+    border: 1px solid #e6eaf2;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 24px;
+}
+
+.student-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid #edf0f5;
+}
+
+.student-item:last-child {
+    border-bottom: none;
+}
+
+.student-item strong {
+    font-size: 14px;
+    min-width: 160px;
+}
+
+.student-item span {
+    color: #667085;
+    font-size: 13px;
+    flex: 1;
+    overflow-wrap: anywhere;
+}
+
+.student-item button {
+    background: #5954e8;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.student-item button:hover {
+    background: #4540c9;
+}
+
+#student-details {
+    background: white;
+    border: 1px solid #e6eaf2;
+    border-radius: 12px;
+    padding: 24px;
+}
+
+#student-details:empty {
+    display: none;
+}
+
+#student-details h3 {
+    font-size: 19px;
+    margin: 20px 0 12px;
+    color: #3438a8;
+}
+
+#student-details h3:first-child {
+    margin-top: 0;
+}
+
+#student-details p {
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+    .student-profile-panel {
+        padding: 12px;
+    }
+
+    .student-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #student-details {
+        padding: 16px;
+    }
+}
+
+/* DNKN-175: Form chỉnh sửa hồ sơ */
+
+#student-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+}
+
+#student-edit-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #344054;
+    margin-bottom: -6px;
+}
+
+#student-edit-form input,
+#student-edit-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+}
+
+#student-edit-form input:focus,
+#student-edit-form textarea:focus {
+    outline: none;
+    border-color: #5954e8;
+    box-shadow: 0 0 0 3px rgba(89, 84, 232, 0.12);
+}
+
+#student-edit-form input:disabled {
+    background: #f2f4f7;
+    color: #667085;
+}
+
+.student-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.student-edit-actions button {
+    padding: 11px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#btn-cancel-student {
+    background: white;
+    color: #344054;
+    border: 1px solid #d0d5dd;
+}
+
+#btn-save-student {
+    background: #5954e8;
+    color: white;
+    border: none;
+}
+
+#btn-save-student:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#student-edit-feedback {
+    color: #b42318;
+    font-size: 14px;
+}
+
+/* DNKN-175: Thông tin lớp học */
+.student-class-card {
+    margin: 12px 0;
+    padding: 14px;
+    border: 1px solid #d9e2ec;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.student-class-card p {
+    margin: 6px 0;
+    line-height: 1.5;
+}
