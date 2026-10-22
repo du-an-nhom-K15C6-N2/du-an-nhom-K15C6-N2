@@ -1,0 +1,92 @@
+[
+  {
+    "id": "lead-001",
+    "name": "Nguyễn Văn An",
+    "phone": "0901234567",
+    "email": "an.nguyen@example.com",
+    "source": "Website",
+    "course": "Lập trình Web Fullstack",
+    "programOfInterest": "Lập trình Web Fullstack",
+    "status": "Chốt",
+    "note": "Đã tư vấn lộ trình 6 tháng, đã đóng học phí đợt 1",
+    "createdAt": "2026-10-20T08:30:00.000Z",
+    "updatedAt": "2026-10-21T09:15:00.000Z",
+    "statusHistory": [
+      {
+        "id": 1,
+        "leadId": "lead-001",
+        "fromStatus": "Đang tư vấn",
+        "toStatus": "Chốt",
+        "reason": "Khách hàng đồng ý đăng ký khóa học",
+        "changedAt": "2026-10-21T09:15:00.000Z",
+        "changedBy": "Tư vấn viên Nguyễn Tuyết"
+      }
+    ]
+  },
+  {
+    "id": "lead-002",
+    "name": "Trần Thị Bích",
+    "phone": "0912345678",
+    "email": "",
+    "source": "Facebook",
+    "course": "Tiếng Anh Giao Tiếp Quốc Tế",
+    "programOfInterest": "Tiếng Anh Giao Tiếp Quốc Tế",
+    "status": "Chốt",
+    "note": "Khách hẹn bổ sung email khi làm thủ tục nhập học",
+    "createdAt": "2026-10-21T10:00:00.000Z",
+    "updatedAt": "2026-10-22T14:20:00.000Z",
+    "statusHistory": [
+      {
+        "id": 1,
+        "leadId": "lead-002",
+        "fromStatus": "Mới",
+        "toStatus": "Chốt",
+        "reason": "Chốt nhanh qua hotline",
+        "changedAt": "2026-10-22T14:20:00.000Z",
+        "changedBy": "Tư vấn viên Lê Hoàng"
+      }
+    ]
+  },
+  {
+    "id": "lead-003",
+    "name": "Lê Hoàng Nam",
+    "phone": "0987654321",
+    "email": "nam.le@example.com",
+    "source": "Hotline",
+    "course": "Data Science & Machine Learning",
+    "programOfInterest": "Data Science & Machine Learning",
+    "status": "Đang tư vấn",
+    "note": "Khách hàng đang cân nhắc lịch học buổi tối",
+    "createdAt": "2026-10-22T08:00:00.000Z",
+    "updatedAt": "2026-10-22T08:00:00.000Z",
+    "statusHistory": []
+  },
+  {
+    "id": "lead-004",
+    "name": "Phạm Minh Tuấn",
+    "phone": "0977112233",
+    "email": "tuan.pm@example.com",
+    "source": "Giới thiệu",
+    "course": "Lập trình Mobile Flutter",
+    "programOfInterest": "Lập trình Mobile Flutter",
+    "status": "Đã nhập học",
+    "isLocked": true,
+    "studentCode": "HV20260001",
+    "studentId": "stu_demo_01",
+    "enrolledAt": "2026-10-18T10:00:00.000Z",
+    "note": "Đã hoàn tất thủ tục nhập học và khóa chỉnh sửa",
+    "createdAt": "2026-10-15T09:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:00.000Z",
+    "statusHistory": [
+      {
+        "id": 1,
+        "leadId": "lead-004",
+        "fromStatus": "Chốt",
+        "toStatus": "Đã nhập học",
+        "reason": "Chuyển đổi thành hồ sơ học viên (HV20260001)",
+        "changedAt": "2026-10-18T10:00:00.000Z",
+        "changedBy": "Tư vấn tuyển sinh"
+      }
+    ]
+  }
+]

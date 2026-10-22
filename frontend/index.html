@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <meta name="description" content="Khung hệ thống quản lý đào tạo">
+    <title>Quản lý đào tạo</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Điều hướng chính">
+        <a class="brand" href="/" aria-label="Trang chủ quản lý đào tạo">
+          <span class="brand-mark">ĐT</span>
+          <span class="brand-copy"><strong>EduManager</strong><small>QUẢN LÝ ĐÀO TẠO</small></span>
+        </a>
+
+        <p class="sidebar-label">TỔNG QUAN</p>
+        <nav id="module-navigation" class="module-navigation" aria-label="Các phân hệ">
+          <button class="nav-link is-active" type="button" data-module-id="dashboard">
+            <span aria-hidden="true">⌂</span> Tổng quan
+          </button>
+          <p class="sidebar-label">ĐANG TẢI PHÂN HỆ...</p>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="avatar">AD</span>
+          <span><strong>Quản trị viên</strong><small>Quản lý hệ thống</small></span>
+          <span class="online-dot" aria-label="Trực tuyến"></span>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <button id="sidebar-toggle" class="icon-button mobile-menu" type="button" aria-label="Mở menu">☰</button>
+          <div class="breadcrumb"><span>Không gian làm việc</span><span aria-hidden="true">/</span><strong id="page-breadcrumb">Tổng quan</strong></div>
+          <div class="topbar-actions">
+            <div class="user-role-control" title="Chuyển đổi vai trò để thử nghiệm phân quyền ghi đè (DNKN-257)">
+              <label for="current-role-select" class="role-control-label">Vai trò:</label>
+              <select id="current-role-select" class="role-select">
+                <option value="training_manager" selected>Quản lý đào tạo (Có quyền ghi đè)</option>
+                <option value="lecturer">Giảng viên (Không có quyền ghi đè)</option>
+                <option value="admin">Quản trị viên (Toàn quyền)</option>
+              </select>
+            </div>
+            <span class="today" id="today-label"></span>
+            <button class="icon-button notification-button" type="button" aria-label="Thông báo">♧<i></i></button>
+          </div>
+        </header>
+
+        <section id="page-content" class="page-content" aria-live="polite">
+          <div class="page-heading">
+            <div><p class="eyebrow">TRUNG TÂM ĐIỀU HÀNH</p><h1>Tổng quan</h1><p class="page-subtitle">Chào mừng bạn đến với hệ thống quản lý đào tạo.</p></div>
+            <span class="date-chip" id="date-chip"></span>
+          </div>
+
+          <div class="stats-grid" aria-label="Thống kê tổng quan">
+            <article class="stat-card">
+              <span class="stat-icon blue">▤</span><span class="stat-label">Chương trình đào tạo</span>
+              <strong class="stat-value">—</strong><span class="stat-note">Chưa có dữ liệu</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon violet">▦</span><span class="stat-label">Lớp học đang hoạt động</span>
+              <strong class="stat-value">—</strong><span class="stat-note">Chưa có dữ liệu</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon green">♙</span><span class="stat-label">Người học</span>
+              <strong class="stat-value">—</strong><span class="stat-note">Chưa có dữ liệu</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon orange">◷</span><span class="stat-label">Học kỳ hiện tại</span>
+              <strong class="stat-value stat-text">Chưa thiết lập</strong><span class="stat-note">Cần cấu hình học kỳ</span>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel welcome-panel">
+              <div class="panel-heading"><div><p class="eyebrow">BẮT ĐẦU</p><h2>Không gian quản lý đào tạo</h2></div><span class="welcome-symbol" aria-hidden="true">✳</span></div>
+              <p class="panel-description">Chọn một phân hệ trong menu để xem khung chức năng. Các màn hình hiện chưa kết nối dữ liệu nghiệp vụ.</p>
+              <div class="setup-list">
+                <div><span class="setup-check">1</span><span><strong>Thiết lập chương trình và học phần</strong><small>Khai báo cấu trúc đào tạo và danh mục học phần.</small></span></div>
+                <div><span class="setup-check">2</span><span><strong>Tổ chức học kỳ và lớp học</strong><small>Chuẩn bị lớp, lịch học và phân công giảng dạy.</small></span></div>
+                <div><span class="setup-check">3</span><span><strong>Theo dõi quá trình học tập</strong><small>Quản lý điểm danh, kết quả và báo cáo đào tạo.</small></span></div>
+              </div>
+            </section>
+            <section class="panel status-panel">
+              <div class="panel-heading"><div><p class="eyebrow">TRẠNG THÁI</p><h2>Tình trạng hệ thống</h2></div><span id="api-status" class="status-pill is-loading">Đang kết nối</span></div>
+              <div class="status-row"><span>Giao diện</span><strong><i class="status-dot"></i> Sẵn sàng</strong></div>
+              <div class="status-row"><span>API backend</span><strong id="api-status-detail">Đang kiểm tra...</strong></div>
+              <div class="status-row"><span>Cơ sở dữ liệu</span><strong><i class="status-dot is-pending"></i> Chưa cấu hình</strong></div>
+              <p class="notice-box">Đây là bản khung ban đầu. Chưa có tài khoản đăng nhập hoặc dữ liệu thật.</p>
+            </section>
+          </div>
+
+          <footer class="page-footer"><span>EduManager <span id="year-label"></span></span><span>Khung xương hệ thống · Phiên bản 1.0</span></footer>
+        </section>
+      </main>
+    </div>
+
+    <!-- DNKN-240 / DNKN-256 / DNKN-257: Dialog Thêm/Sửa Lịch học và Cảnh báo xung đột -->
+    <dialog id="schedule-dialog" class="app-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-content">
+        <header class="dialog-header">
+          <h3 id="dialog-title">Thêm lịch học mới</h3>
+          <button type="button" class="dialog-close" id="schedule-dialog-close" aria-label="Đóng">✕</button>
+        </header>
+
+        <form id="schedule-form" class="dialog-body">
+          <input type="hidden" id="sched-id" name="id">
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="sched-class" class="form-label">Lớp học<span class="req">*</span></label>
+              <select id="sched-class" name="classId" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="sched-subject" class="form-label">Học phần / Môn học<span class="req">*</span></label>
+              <select id="sched-subject" name="subjectId" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="sched-lecturer" class="form-label">Giảng viên<span class="req">*</span></label>
+              <select id="sched-lecturer" name="lecturerId" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="sched-room" class="form-label">Phòng học<span class="req">*</span></label>
+              <select id="sched-room" name="roomId" class="form-control" required></select>
+            </div>
+
+            <div class="form-group">
+              <label for="sched-date" class="form-label">Ngày học<span class="req">*</span></label>
+              <input type="date" id="sched-date" name="date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="sched-shift" class="form-label">Ca học</label>
+              <select id="sched-shift" name="shift" class="form-control">
+                <option value="Ca 1">Ca 1 (07:00 - 09:15)</option>
+                <option value="Ca 2">Ca 2 (09:30 - 11:45)</option>
+                <option value="Ca 3">Ca 3 (13:00 - 15:15)</option>
+                <option value="Ca 4">Ca 4 (15:30 - 17:45)</option>
+                <option value="Ca 5">Ca 5 (18:00 - 20:15)</option>
+                <option value="custom">Tùy chỉnh thời gian</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sched-start-time" class="form-label">Giờ bắt đầu<span class="req">*</span></label>
+              <input type="time" id="sched-start-time" name="startTime" class="form-control" required value="07:00">
+            </div>
+
+            <div class="form-group">
+              <label for="sched-end-time" class="form-label">Giờ kết thúc<span class="req">*</span></label>
+              <input type="time" id="sched-end-time" name="endTime" class="form-control" required value="09:15">
+            </div>
+
+            <div class="form-group full-width">
+              <label for="sched-note" class="form-label">Ghi chú buổi học</label>
+              <textarea id="sched-note" name="note" class="form-control" rows="2" placeholder="Ví dụ: Buổi 1 Lý thuyết hoặc Thực hành..."></textarea>
+            </div>
+          </div>
+
+          <!-- DNKN-256: Khung hiển thị cảnh báo xung đột (4 trạng thái) -->
+          <div id="conflict-panel" class="conflict-panel-wrap"></div>
+        </form>
+
+        <footer class="dialog-footer">
+          <button type="button" class="btn btn-secondary" id="schedule-dialog-cancel">Hủy</button>
+          <button type="submit" form="schedule-form" class="btn btn-primary" id="schedule-save-btn">Lưu lịch học</button>
+        </footer>
+      </div>
+    </dialog>
+
+    <!-- Dialog xem Lịch sử ghi đè (Audit Logs) -->
+    <dialog id="audit-dialog" class="app-dialog" aria-labelledby="audit-title">
+      <div class="dialog-content">
+        <header class="dialog-header">
+          <h3 id="audit-title">Lịch sử xác nhận ghi đè trùng lịch (Audit Logs)</h3>
+          <button type="button" class="dialog-close" id="audit-dialog-close" aria-label="Đóng">✕</button>
+        </header>
+        <div class="dialog-body">
+          <div id="audit-table-wrap" class="schedule-table-wrap">
+            <div class="empty-state">Đang tải lịch sử ghi đè...</div>
+          </div>
+        </div>
+        <footer class="dialog-footer">
+          <button type="button" class="btn btn-secondary" id="audit-dialog-done">Đóng</button>
+        </footer>
+      </div>
+    </dialog>
+  </body>
+</html>

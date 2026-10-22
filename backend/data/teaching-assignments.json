@@ -1,0 +1,78 @@
+{
+  "assignments": [
+    {
+      "id": "asg_001",
+      "classId": "cls_001",
+      "courseId": "course_web101",
+      "primaryTeacherId": "usr_002",
+      "assistantIds": [
+        "usr_013"
+      ],
+      "term": "Học kỳ 1 - 2026",
+      "academicYear": "2026-2027",
+      "status": "active",
+      "note": "Phân công chính khóa cho lớp CNTT01",
+      "assignedAt": "2026-10-10T08:00:00.000Z",
+      "assignedBy": "usr_86c4ea113bb01669",
+      "assignedByName": "Lê Huy Hoàng",
+      "updatedAt": "2026-10-10T08:00:00.000Z",
+      "updatedBy": "usr_86c4ea113bb01669",
+      "updatedByName": "Lê Huy Hoàng"
+    },
+    {
+      "id": "asg_002",
+      "classId": "cls_002",
+      "courseId": "course_db201",
+      "primaryTeacherId": "usr_008",
+      "assistantIds": [
+        "usr_018"
+      ],
+      "term": "Học kỳ 1 - 2026",
+      "academicYear": "2026-2027",
+      "status": "active",
+      "note": "Phân công môn Cơ sở dữ liệu",
+      "assignedAt": "2026-10-10T08:30:00.000Z",
+      "assignedBy": "usr_86c4ea113bb01669",
+      "assignedByName": "Lê Huy Hoàng",
+      "updatedAt": "2026-10-10T08:30:00.000Z",
+      "updatedBy": "usr_86c4ea113bb01669",
+      "updatedByName": "Lê Huy Hoàng"
+    }
+  ],
+  "history": [
+    {
+      "id": "asgh_001",
+      "assignmentId": "asg_001",
+      "classId": "cls_001",
+      "courseId": "course_web101",
+      "action": "CREATE",
+      "previousPrimaryTeacherId": null,
+      "newPrimaryTeacherId": "usr_002",
+      "previousAssistantIds": [],
+      "newAssistantIds": [
+        "usr_013"
+      ],
+      "performedAt": "2026-10-10T08:00:00.000Z",
+      "performedBy": "usr_86c4ea113bb01669",
+      "performedByName": "Lê Huy Hoàng",
+      "note": "Khởi tạo phân công"
+    },
+    {
+      "id": "asgh_002",
+      "assignmentId": "asg_002",
+      "classId": "cls_002",
+      "courseId": "course_db201",
+      "action": "CREATE",
+      "previousPrimaryTeacherId": null,
+      "newPrimaryTeacherId": "usr_008",
+      "previousAssistantIds": [],
+      "newAssistantIds": [
+        "usr_018"
+      ],
+      "performedAt": "2026-10-10T08:30:00.000Z",
+      "performedBy": "usr_86c4ea113bb01669",
+      "performedByName": "Lê Huy Hoàng",
+      "note": "Khởi tạo phân công"
+    }
+  ]
+}

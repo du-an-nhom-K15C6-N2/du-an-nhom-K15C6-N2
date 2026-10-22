@@ -1,0 +1,21 @@
+[
+  {
+    "id": "stu_demo_01",
+    "studentCode": "HV20260001",
+    "leadId": "lead-004",
+    "fullName": "Phạm Minh Tuấn",
+    "name": "Phạm Minh Tuấn",
+    "phone": "0977112233",
+    "phoneNumber": "0977112233",
+    "email": "tuan.pm@example.com",
+    "course": "Lập trình Mobile Flutter",
+    "program": "Lập trình Mobile Flutter",
+    "userId": "usr_stu_tuan",
+    "status": "enrolled",
+    "statusLabel": "Đang học",
+    "note": "Học viên chuyển từ Lead chốt ngày 18/10/2026",
+    "createdBy": "Tư vấn tuyển sinh",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:00.000Z"
+  }
+]

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f6f2" />
+    <title>Phân công lead hàng loạt | Northstar CRM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./config.js" defer></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Điều hướng chính">
+        <a class="brand" href="#" aria-label="Northstar CRM">
+          <span class="brand-mark" aria-hidden="true">N</span>
+          <span class="brand-name">northstar<span>CRM</span></span>
+        </a>
+        <p class="workspace-label">WORKSPACE</p>
+        <nav class="main-nav">
+          <a class="nav-item" href="#"><span aria-hidden="true">◫</span>Tổng quan</a>
+          <a class="nav-item active" href="#" aria-current="page"><span aria-hidden="true">▤</span>Danh sách lead</a>
+          <a class="nav-item" href="#"><span aria-hidden="true">♧</span>Tư vấn viên</a>
+          <a class="nav-item" href="#"><span aria-hidden="true">◷</span>Lịch sử phân công</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="system-status"><i></i><span><strong>Hệ thống hoạt động</strong><small>Dữ liệu được đồng bộ</small></span></div>
+          <div class="profile">
+            <span class="avatar avatar-admin">MA</span>
+            <span><strong>Nguyễn Minh Anh</strong><small>Quản trị viên</small></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Workspace</span><span>/</span><strong>Danh sách lead</strong></div>
+          <span class="today-label" id="today-label"></span>
+        </header>
+
+        <section class="page-heading">
+          <div>
+            <p class="eyebrow"><i></i>QUẢN LÝ KHÁCH HÀNG TIỀM NĂNG</p>
+            <h1>Danh sách lead</h1>
+            <p class="page-description">Theo dõi và phân bổ khách hàng tiềm năng cho đội ngũ tư vấn.</p>
+          </div>
+          <button class="button button-dark" id="reload-button" type="button"><span aria-hidden="true">↻</span>Làm mới dữ liệu</button>
+        </section>
+
+        <section class="metrics" aria-label="Tổng quan lead">
+          <article class="metric metric-total"><span>Tổng lead</span><strong id="metric-total">—</strong><small>trong danh sách</small></article>
+          <article class="metric"><span>Chưa phân công</span><strong id="metric-unassigned">—</strong><small>cần xử lý</small></article>
+          <article class="metric"><span>Đã phân công</span><strong id="metric-assigned">—</strong><small>đang theo dõi</small></article>
+          <article class="metric"><span>Cập nhật lần cuối</span><strong class="metric-time" id="last-updated">Đang tải</strong><small>theo giờ địa phương</small></article>
+        </section>
+
+        <section class="list-section" aria-labelledby="list-title">
+          <div class="list-heading">
+            <div><h2 id="list-title">Tất cả lead <span class="result-count" id="result-count">—</span></h2><p>Chọn một hoặc nhiều lead để phân công cùng lúc</p></div>
+            <div class="list-actions">
+              <label class="search-box"><span aria-hidden="true">⌕</span><input id="search-input" type="search" placeholder="Tìm tên, email, số điện thoại" aria-label="Tìm kiếm lead" /></label>
+              <label class="filter-box"><span class="sr-only">Lọc theo trạng thái</span><select id="status-filter"><option value="all">Tất cả trạng thái</option><option value="unassigned">Chưa phân công</option><option value="assigned">Đã phân công</option></select></label>
+            </div>
+          </div>
+
+          <div class="selection-bar" id="selection-bar" hidden>
+            <p><span class="selection-check" aria-hidden="true">✓</span><strong id="selected-count">0 lead</strong><span>đã chọn</span></p>
+            <div><button class="text-button" id="clear-selection" type="button">Bỏ chọn</button><button class="button button-accent" id="open-assignment" type="button"><span aria-hidden="true">⇥</span>Phân công lead</button></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th class="check-column"><input id="select-all" type="checkbox" aria-label="Chọn tất cả lead đang hiển thị" /></th><th>KHÁCH HÀNG</th><th>LIÊN HỆ</th><th>NGUỒN</th><th>NGÀY TẠO</th><th>TƯ VẤN VIÊN</th><th>TRẠNG THÁI</th></tr></thead>
+              <tbody id="lead-rows"><tr><td colspan="7"><div class="table-state"><span class="spinner" aria-hidden="true"></span>Đang tải danh sách lead...</div></td></tr></tbody>
+            </table>
+          </div>
+          <div class="table-footer"><span id="table-summary">Đang tải dữ liệu</span><span id="api-indicator"><i></i>Đang kết nối</span></div>
+        </section>
+        <footer class="page-footer"><span>Northstar CRM <span>·</span> Sales operations</span><span>Dữ liệu khách hàng được bảo mật</span></footer>
+      </main>
+    </div>
+
+    <dialog class="assignment-dialog" id="assignment-dialog" aria-labelledby="dialog-title">
+      <form id="assignment-form">
+        <div class="dialog-topline"><span class="dialog-icon" aria-hidden="true">⇥</span><button class="dialog-close" id="close-dialog" type="button" aria-label="Đóng">×</button></div>
+        <div class="dialog-heading"><p class="eyebrow"><i></i>PHÂN BỔ CÔNG VIỆC</p><h2 id="dialog-title">Phân công lead</h2><p>Chọn tư vấn viên phụ trách các khách hàng đã chọn.</p></div>
+        <div class="dialog-selection"><span class="selection-check" aria-hidden="true">✓</span><span><strong id="dialog-lead-count">0 lead</strong><small>được phân công trong lần này</small></span></div>
+        <label class="field-label" for="consultant-select">Tư vấn viên <span>*</span></label>
+        <select class="consultant-select" id="consultant-select" required disabled><option value="">Đang tải danh sách tư vấn viên...</option></select>
+        <label class="field-label note-label" for="assignment-note">Ghi chú <small>Tùy chọn</small></label>
+        <textarea id="assignment-note" rows="3" maxlength="500" placeholder="Ví dụ: Ưu tiên liên hệ trong hôm nay"></textarea>
+        <div class="character-count"><span id="note-count">0</span>/500</div>
+        <div class="dialog-error" id="dialog-error" role="alert" hidden></div>
+        <div class="dialog-actions"><button class="button button-light" id="cancel-dialog" type="button">Hủy</button><button class="button button-accent" id="confirm-assignment" type="submit" disabled><span class="confirm-label">Xác nhận phân công</span></button></div>
+      </form>
+    </dialog>
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="false"></div>
+  </body>
+</html>
