@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8fc">
+    <title>Quản lý Lead | Tuyển sinh</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script defer src="./app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Điều hướng chính">
+        <a class="brand" href="#" aria-label="EduLead trang chủ">
+          <span class="brand-mark">e</span>
+          <span>edu<span class="brand-light">lead</span></span>
+        </a>
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="main-nav">
+          <a href="#" class="nav-item"><span class="nav-icon">▦</span> Tổng quan</a>
+          <a href="#" class="nav-item active" aria-current="page"><span class="nav-icon">♧</span> Quản lý Lead <span class="nav-count">12</span></a>
+          <a href="#" class="nav-item"><span class="nav-icon">▤</span> Chiến dịch</a>
+          <a href="#" class="nav-item"><span class="nav-icon">◷</span> Lịch tư vấn</a>
+          <a href="#" class="nav-item"><span class="nav-icon">▧</span> Báo cáo</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="help-card">
+            <span class="help-icon">✦</span>
+            <strong>Cần hỗ trợ?</strong>
+            <span>Liên hệ quản trị viên để được trợ giúp.</span>
+            <a href="mailto:support@edulead.vn">Gửi yêu cầu <span aria-hidden="true">↗</span></a>
+          </div>
+          <button class="profile-button" type="button">
+            <span class="avatar">ML</span>
+            <span class="profile-copy"><strong>Minh Le</strong><small>Tư vấn tuyển sinh</small></span>
+            <span class="profile-menu">···</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumbs"><span>Workspace</span><span class="crumb-slash">/</span><strong>Quản lý Lead</strong></div>
+          <div class="topbar-actions">
+            <button class="icon-button notification-button" type="button" aria-label="Thông báo">♧<i></i></button>
+            <label class="api-token-field">
+              <span id="api-auth-status">Chưa đăng nhập</span>
+              <input id="api-token" type="password" autocomplete="off" placeholder="Bearer token" aria-label="API bearer token">
+            </label>
+            <button class="button button-secondary" id="api-auth-button" type="button">Đăng nhập API</button>
+            <span class="topbar-divider"></span>
+            <span class="topbar-date" id="today-label"></span>
+          </div>
+        </header>
+
+        <section class="page-content">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-dot"></span> TUYỂN SINH</div>
+              <h1>Quản lý Lead <span class="heading-sparkle">✳</span></h1>
+              <p class="page-description">Theo dõi và chăm sóc các khách hàng tiềm năng của bạn.</p>
+            </div>
+            <button class="button button-primary" id="create-lead-button" type="button">
+              <span class="button-plus">＋</span> Tạo Lead mới
+            </button>
+          </div>
+
+          <section class="stats-grid" aria-label="Tổng quan Lead">
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Tổng Lead</span><span class="stat-icon stat-icon-purple">♧</span></div>
+              <div class="stat-value" id="stat-total">0</div>
+              <div class="stat-foot"><span class="stat-neutral">Tất cả khách hàng tiềm năng</span></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Lead mới</span><span class="stat-icon stat-icon-blue">✦</span></div>
+              <div class="stat-value" id="stat-new">0</div>
+              <div class="stat-foot"><span class="stat-neutral">Đang chờ tư vấn</span></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Đang tư vấn</span><span class="stat-icon stat-icon-orange">◷</span></div>
+              <div class="stat-value" id="stat-consulting">0</div>
+              <div class="stat-foot"><span class="stat-neutral">Đang trong quy trình</span></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Đã chuyển đổi</span><span class="stat-icon stat-icon-green">✓</span></div>
+              <div class="stat-value" id="stat-converted">0</div>
+              <div class="stat-foot"><span class="stat-neutral">Đã trở thành học viên</span></div>
+            </article>
+          </section>
+
+          <section class="leads-panel" aria-labelledby="lead-list-title">
+            <div class="panel-heading">
+              <div>
+                <h2 id="lead-list-title">Danh sách Lead</h2>
+                <p>Quản lý thông tin và trạng thái khách hàng tiềm năng.</p>
+              </div>
+              <button class="button button-secondary export-button" id="export-button" type="button"><span>⇩</span> Xuất danh sách</button>
+            </div>
+            <div class="toolbar">
+              <label class="search-box">
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input id="search-input" type="search" placeholder="Tìm theo tên, số điện thoại, email..." autocomplete="off" aria-label="Tìm kiếm Lead">
+                <kbd>⌘ K</kbd>
+              </label>
+              <div class="filter-group">
+                <label class="select-wrap">
+                  <span class="sr-only">Lọc theo trạng thái</span>
+                  <select id="status-filter">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Mới">Mới</option>
+                    <option value="Đang tư vấn">Đang tư vấn</option>
+                    <option value="Đã chuyển đổi">Đã chuyển đổi</option>
+                    <option value="Không tiềm năng">Không tiềm năng</option>
+                  </select>
+                </label>
+                <label class="select-wrap source-filter">
+                  <span class="sr-only">Lọc theo nguồn</span>
+                  <select id="source-filter">
+                    <option value="">Tất cả nguồn</option>
+                    <option value="Facebook">Facebook</option>
+                    <option value="Website">Website</option>
+                    <option value="Sự kiện">Sự kiện</option>
+                    <option value="Giới thiệu">Giới thiệu</option>
+                    <option value="Hotline">Hotline</option>
+                  </select>
+                </label>
+                <button class="filter-button" id="clear-filters-button" type="button" aria-label="Xóa bộ lọc">↺</button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="check-column"><input id="select-all" type="checkbox" aria-label="Chọn tất cả Lead"></th>
+                    <th>KHÁCH HÀNG <span class="sort-mark">↕</span></th>
+                    <th>THÔNG TIN LIÊN HỆ</th>
+                    <th>NGUỒN</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>NGÀY TẠO <span class="sort-mark">↓</span></th>
+                    <th class="actions-column"></th>
+                  </tr>
+                </thead>
+                <tbody id="lead-table-body"></tbody>
+              </table>
+              <div class="empty-state" id="empty-state" hidden>
+                <span class="empty-icon">⌕</span>
+                <strong>Chưa tìm thấy Lead phù hợp</strong>
+                <span>Thử thay đổi từ khóa hoặc bộ lọc của bạn.</span>
+                <button type="button" class="text-button" id="empty-clear-button">Xóa bộ lọc</button>
+              </div>
+            </div>
+            <div class="table-footer">
+              <span id="pagination-summary">Hiển thị 0 Lead</span>
+              <div class="pagination" aria-label="Phân trang">
+                <button id="previous-page" type="button" aria-label="Trang trước">‹</button>
+                <span id="page-indicator">1 / 1</span>
+                <button id="next-page" type="button" aria-label="Trang sau">›</button>
+                <label class="page-size-label"><span class="sr-only">Số dòng mỗi trang</span>
+                  <select id="page-size"><option value="5">5 / trang</option><option value="10">10 / trang</option><option value="20">20 / trang</option></select>
+                </label>
+              </div>
+            </div>
+          </section>
+          <footer class="page-footer"><span>© 2024 EduLead CRM</span><span>Được thiết kế cho đội ngũ tuyển sinh <span class="footer-heart">♥</span></span></footer>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="lead-modal-backdrop" hidden>
+      <section class="lead-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-heading">
+          <div>
+            <span class="modal-eyebrow">THÔNG TIN KHÁCH HÀNG</span>
+            <h2 id="modal-title">Tạo Lead mới</h2>
+            <p>Điền thông tin để thêm khách hàng tiềm năng vào hệ thống.</p>
+          </div>
+          <button class="modal-close" id="close-modal-button" type="button" aria-label="Đóng">×</button>
+        </div>
+        <form id="lead-form" novalidate>
+          <div class="form-grid">
+            <label class="form-field full-field">
+              <span>Họ và tên <b>*</b></span>
+              <input name="name" type="text" placeholder="Ví dụ: Nguyễn Minh Anh" maxlength="120" autocomplete="name" required>
+              <small class="field-error" data-error-for="name"></small>
+            </label>
+            <label class="form-field">
+              <span>Số điện thoại <b>*</b></span>
+              <input name="phone" type="tel" placeholder="0912 345 678" maxlength="20" autocomplete="tel" required>
+              <small class="field-error" data-error-for="phone"></small>
+            </label>
+            <label class="form-field">
+              <span>Email</span>
+              <input name="email" type="email" placeholder="email@example.com" maxlength="254" autocomplete="email">
+              <small class="field-error" data-error-for="email"></small>
+            </label>
+            <label class="form-field">
+              <span>Nguồn Lead <b>*</b></span>
+              <select name="source" required>
+                <option value="">Chọn nguồn Lead</option>
+                <option>Facebook</option><option>Website</option><option>Sự kiện</option><option>Giới thiệu</option><option>Hotline</option><option>Khác</option>
+              </select>
+              <small class="field-error" data-error-for="source"></small>
+            </label>
+            <label class="form-field full-field">
+              <span>Chương trình quan tâm <b>*</b></span>
+              <input name="programOfInterest" type="text" placeholder="Ví dụ: Tiếng Anh giao tiếp" maxlength="200" required>
+              <small class="field-error" data-error-for="programOfInterest"></small>
+            </label>
+            <label class="form-field">
+              <span>Trạng thái</span>
+              <select name="status">
+                <option>Mới</option><option>Đang tư vấn</option><option>Đã chuyển đổi</option><option>Không tiềm năng</option>
+              </select>
+              <small class="field-error" data-error-for="status"></small>
+            </label>
+            <label class="form-field full-field">
+              <span>Ghi chú</span>
+              <textarea name="note" rows="3" placeholder="Thêm thông tin cần lưu ý về khách hàng..." maxlength="1000"></textarea>
+              <small class="field-error" data-error-for="note"></small>
+            </label>
+          </div>
+          <div class="form-api-error" id="form-api-error" role="alert" hidden></div>
+          <div class="modal-footer">
+            <span class="required-hint"><b>*</b> Trường bắt buộc</span>
+            <div class="modal-actions">
+              <button class="button button-secondary" id="cancel-modal-button" type="button">Hủy</button>
+              <button class="button button-primary" id="save-lead-button" type="submit"><span class="save-label">Lưu Lead</span><span class="save-spinner" hidden></span></button>
+            </div>
+          </div>
+        </form>
+      </section>
+    </div>
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
