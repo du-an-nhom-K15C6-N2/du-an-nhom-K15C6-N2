@@ -16,6 +16,11 @@ app.use((req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Hệ thống Quản lý Đào tạo đang chạy tại http://localhost:${port}`);
-});
+let server = null;
+if (require.main === module) {
+  server = app.listen(port, () => {
+    console.log(`Hệ thống Quản lý Đào tạo đang chạy tại http://localhost:${port}`);
+  });
+}
+
+module.exports = { app, server };

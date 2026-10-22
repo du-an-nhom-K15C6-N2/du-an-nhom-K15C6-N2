@@ -91,6 +91,93 @@ h2 { margin-bottom: 0; font-size: 15px; letter-spacing: -.35px; }
 .empty-state { padding: 32px 15px; color: #929cac; font-size: 11px; text-align: center; }
 .page-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 22px; padding: 15px 0; color: #a3acb8; font-size: 9px; }
 
+/* DNKN-240: Quản lý Lịch học & DNKN-256 Cảnh báo xung đột */
+.user-role-control { display: flex; align-items: center; gap: 8px; background: #f8fafc; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); }
+.role-control-label { font-size: 10px; font-weight: 600; color: #64748b; }
+.role-select { font-size: 11px; padding: 4px 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #fff; color: #1e293b; font-weight: 600; cursor: pointer; outline: none; }
+.role-select:focus { border-color: var(--blue); }
+
+.action-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.toolbar-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search-input, .filter-select { font-size: 11px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #334155; outline: none; }
+.search-input:focus, .filter-select:focus { border-color: var(--blue); }
+.toolbar-actions { display: flex; gap: 8px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 600; padding: 7px 14px; border-radius: 7px; border: 1px solid transparent; cursor: pointer; transition: all .15s ease; text-decoration: none; }
+.btn-primary { background: #4669e8; color: #fff; border-color: #4669e8; }
+.btn-primary:hover:not(:disabled) { background: #3556d1; }
+.btn-primary:disabled { background: #a5b4fc; cursor: not-allowed; opacity: .7; }
+.btn-secondary { background: #fff; color: #475569; border-color: #cbd5e1; }
+.btn-secondary:hover:not(:disabled) { background: #f1f5f9; }
+.btn-danger { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
+.btn-danger:hover:not(:disabled) { background: #fecaca; }
+.btn-override { background: #f59e0b; color: #fff; border-color: #d97706; }
+.btn-override:hover:not(:disabled) { background: #d97706; }
+.btn-override:disabled { background: #fde68a; color: #92400e; cursor: not-allowed; }
+
+.schedule-table-wrap { overflow-x: auto; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.03); }
+.data-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; }
+.data-table th { background: #f8fafc; color: #475569; font-weight: 700; padding: 12px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.data-table td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #1e293b; vertical-align: middle; }
+.data-table tr:hover td { background: #f8fafc; }
+
+.badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+.badge-active { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.badge-override { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.badge-cancelled { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+.badge-shift { background: #ede9fe; color: #6d28d9; border: 1px solid #ddd6fe; }
+
+/* DNKN-256: Cảnh báo xung đột (4 trạng thái) */
+.conflict-box { margin: 16px 0; border-radius: 8px; padding: 14px; border: 1px solid transparent; transition: all .2s; }
+.conflict-box.is-checking { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.conflict-box.is-conflict { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.conflict-box.is-clean { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.conflict-box.is-error { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+
+.conflict-header { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 12px; margin-bottom: 6px; }
+.conflict-desc { font-size: 11px; margin: 0 0 10px; line-height: 1.5; }
+.conflict-items { display: grid; gap: 8px; margin-top: 10px; }
+.conflict-item-card { background: #fff; border: 1px solid #fed7aa; border-radius: 6px; padding: 10px 12px; display: grid; gap: 4px; font-size: 11px; box-shadow: 0 1px 2px rgba(0,0,0,.03); }
+.conflict-item-card.is-lecturer { border-left: 4px solid #8b5cf6; }
+.conflict-item-card.is-room { border-left: 4px solid #f97316; }
+.conflict-item-title { display: flex; align-items: center; justify-content: space-between; font-weight: 700; color: #1e293b; }
+.conflict-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+.conflict-badge.lecturer { background: #ede9fe; color: #6d28d9; }
+.conflict-badge.room { background: #ffedd5; color: #c2410c; }
+.conflict-item-details { display: flex; flex-wrap: wrap; gap: 12px; color: #475569; font-size: 10px; margin-top: 4px; }
+.conflict-item-details span strong { color: #0f172a; }
+
+/* DNKN-257: Khung xác nhận ghi đè */
+.override-container { margin-top: 14px; padding: 12px; background: #fff; border-radius: 7px; border: 1px dashed #f59e0b; }
+.override-header { font-size: 11px; font-weight: 700; color: #b45309; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.override-checkbox-label { display: flex; align-items: flex-start; gap: 8px; font-size: 11px; font-weight: 600; color: #1e293b; cursor: pointer; margin-bottom: 8px; }
+.override-textarea { width: 100%; min-height: 60px; font-family: inherit; font-size: 11px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; resize: vertical; }
+.override-textarea:focus { border-color: #f59e0b; }
+.override-forbidden-notice { font-size: 11px; color: #dc2626; background: #fee2e2; padding: 8px 10px; border-radius: 6px; font-weight: 600; }
+
+/* Dialog Styles */
+.app-dialog { border: 0; padding: 0; border-radius: 12px; box-shadow: 0 20px 40px rgba(15, 23, 42, .2); max-width: 680px; width: 90vw; outline: none; }
+.app-dialog::backdrop { background: rgba(15, 23, 42, .45); backdrop-filter: blur(4px); }
+.dialog-content { display: flex; flex-direction: column; background: #fff; border-radius: 12px; overflow: hidden; }
+.dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); background: #f8fafc; }
+.dialog-header h3 { margin: 0; font-size: 14px; font-weight: 700; color: #0f172a; }
+.dialog-close { background: transparent; border: 0; font-size: 16px; cursor: pointer; color: #64748b; padding: 4px 8px; border-radius: 4px; }
+.dialog-close:hover { background: #e2e8f0; color: #0f172a; }
+.dialog-body { padding: 20px; max-height: 75vh; overflow-y: auto; }
+.dialog-footer { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); background: #f8fafc; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full-width { grid-column: 1 / -1; }
+.form-label { font-size: 11px; font-weight: 600; color: #334155; }
+.form-label span.req { color: #dc2626; margin-left: 2px; }
+.form-control { font-size: 11px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; background: #fff; font-family: inherit; }
+.form-control:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(70, 105, 232, .1); }
+
+/* Spin animation */
+@keyframes spin { 100% { transform: rotate(360deg); } }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,0,0,.15); border-top-color: currentColor; border-radius: 50%; animation: spin .8s linear infinite; }
+
 @media (max-width: 1000px) {
   .sidebar { width: 220px; }
   .main-area { margin-left: 220px; }
