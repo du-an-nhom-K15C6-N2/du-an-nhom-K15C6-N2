@@ -1,0 +1,278 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #172b4d;
+  background: #f2f6fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(ellipse at 8% 18%, rgba(91, 163, 255, .16), transparent 32rem),
+    linear-gradient(135deg, #f4f8ff, #eaf1fa);
+}
+
+.page {
+  width: min(1080px, calc(100% - 40px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 64px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
+  align-items: center;
+  gap: clamp(40px, 8vw, 112px);
+}
+
+.brand {
+  color: #2563a8;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-decoration: none;
+}
+
+.eyebrow {
+  margin: 52px 0 12px;
+  color: #397bc1;
+  font-size: .76rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  max-width: 550px;
+  margin-bottom: 18px;
+  font-size: clamp(2.25rem, 5vw, 3.7rem);
+  letter-spacing: -.045em;
+  line-height: 1.1;
+}
+
+.intro__copy {
+  max-width: 470px;
+  color: #52657c;
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+
+.benefits {
+  display: grid;
+  gap: 14px;
+  margin: 34px 0 0;
+  padding: 0;
+  color: #314a65;
+  list-style: none;
+}
+
+.benefits li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.benefits li::before {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dceeff;
+  color: #2674ba;
+  content: "✓";
+  font-size: .8rem;
+  font-weight: 800;
+}
+
+.form-card {
+  padding: 34px;
+  border: 1px solid rgba(202, 216, 233, .75);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(33, 67, 104, .12);
+}
+
+.form-card > .eyebrow {
+  margin: 0 0 8px;
+}
+
+.form-card h2 {
+  margin-bottom: 8px;
+  font-size: 1.55rem;
+}
+
+.form-card__copy,
+.optional {
+  color: #73839a;
+  font-size: .88rem;
+}
+
+.form-card__copy {
+  margin-bottom: 24px;
+}
+
+form > label:not(.consent),
+.website-field label {
+  display: block;
+  margin: 16px 0 7px;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+form > label span[aria-hidden="true"] {
+  color: #cc4b50;
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+textarea {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid #d7e0ea;
+  border-radius: 9px;
+  outline: none;
+  background: #fbfcfe;
+  color: #172b4d;
+  font: inherit;
+  transition: border-color .15s, box-shadow .15s;
+}
+
+input[type="text"]:focus,
+input[type="tel"]:focus,
+input[type="email"]:focus,
+textarea:focus {
+  border-color: #3986cb;
+  box-shadow: 0 0 0 3px rgba(57, 134, 203, .14);
+}
+
+textarea {
+  resize: vertical;
+}
+
+.field-error {
+  display: block;
+  min-height: 0;
+  color: #b4232b;
+  font-size: .8rem;
+}
+
+.field-error:not(:empty) {
+  margin-top: 5px;
+}
+
+.website-field {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0 8px;
+  color: #52657c;
+  font-size: .85rem;
+  line-height: 1.5;
+}
+
+.consent input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  accent-color: #2674ba;
+}
+
+.form-message {
+  min-height: 20px;
+  margin: 9px 0;
+  color: #b4232b;
+  font-size: .88rem;
+}
+
+.submit-button {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 10px;
+  background: #176bb3;
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  transition: background .15s, transform .15s;
+}
+
+.submit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #105994;
+}
+
+.submit-button:disabled {
+  cursor: wait;
+  opacity: .68;
+}
+
+.thank-you {
+  padding: 20px 0 8px;
+  text-align: center;
+}
+
+.thank-you__icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: #e0f5e9;
+  color: #17834b;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.thank-you p {
+  margin-bottom: 0;
+  color: #52657c;
+  line-height: 1.7;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .page {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 34px;
+    padding: 36px 0;
+  }
+
+  .eyebrow {
+    margin-top: 34px;
+  }
+
+  .benefits {
+    margin-top: 24px;
+  }
+
+  .form-card {
+    padding: 26px 22px;
+  }
+}
