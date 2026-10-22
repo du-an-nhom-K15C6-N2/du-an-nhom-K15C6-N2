@@ -1,0 +1,14 @@
+{
+  "name": "he-thong-quan-ly-dao-tao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Khung xương hệ thống quản lý đào tạo",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
