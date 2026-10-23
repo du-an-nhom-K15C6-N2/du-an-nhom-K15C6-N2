@@ -10,6 +10,7 @@ const ALL_NAV_ITEMS = [
   { id: 'attendance', label: 'Điểm danh', icon: '📝', roles: ['ADMIN', 'TEACHER', 'ASSISTANT'] },
   { id: 'class-management', label: 'Bàn giao lớp', icon: '🔄', roles: ['ADMIN', 'TEACHER'] },
   { id: 'dashboard', label: 'Bảng điều khiển', icon: '📊', roles: ['ADMIN', 'TEACHER', 'ASSISTANT', 'STUDENT', 'MANAGER', 'USER'] },
+  { id: 'user-profile', label: 'Hồ sơ cá nhân', icon: '👤', roles: ['ADMIN', 'TEACHER', 'ASSISTANT', 'STUDENT', 'MANAGER', 'TRAINING_STAFF', 'ACCOUNTANT', 'DEPARTMENT_HEAD', 'USER'] },
   { id: 'course-catalog', label: 'Danh mục môn học', icon: '📚', roles: ['ADMIN', 'MANAGER'] },
   { id: 'teaching-assignment', label: 'Phân công giảng dạy', icon: '👨‍🏫', roles: ['ADMIN', 'MANAGER'] },
   { id: 'enrollment-management', label: 'Ghi danh học viên', icon: '🎓', roles: ['ADMIN', 'MANAGER', 'TRAINING_STAFF'] },
@@ -26,7 +27,6 @@ const ALL_NAV_ITEMS = [
       { id: 'lead-management', label: 'Quản lý Lead', roles: ['ADMIN', 'MANAGER', 'TRAINING_STAFF'] }
     ]
   },
-  { id: 'user-profile', label: 'Hồ sơ cá nhân', icon: '👤', roles: ['ADMIN', 'TEACHER', 'ASSISTANT', 'STUDENT', 'MANAGER', 'TRAINING_STAFF', 'ACCOUNTANT', 'DEPARTMENT_HEAD', 'USER'] },
   { id: 'profile-security', label: 'Đổi mật khẩu & Bảo mật', icon: '🔐', roles: ['ADMIN', 'TEACHER', 'ASSISTANT', 'STUDENT', 'MANAGER', 'USER'] }
 ];
 

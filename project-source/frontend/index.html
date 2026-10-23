@@ -53,6 +53,9 @@
         <button type="button" class="nav-tab-btn" id="tab-nav-courses" onclick="window.location.assign('/courses')">
           📚 Danh mục môn học
         </button>
+        <button type="button" class="nav-tab-btn" id="tab-nav-profile" onclick="app.showUserProfileModal()">
+          👤 Hồ sơ cá nhân
+        </button>
       </nav>
 
       <div class="header-actions">
@@ -64,7 +67,7 @@
 
         <!-- Authenticated User Profile Dropdown (Dynamic) -->
         <div class="user-menu-wrapper" id="user-menu-wrapper" style="display: none;">
-          <div class="user-profile-badge" id="user-profile-badge">
+          <div class="user-profile-badge" id="user-profile-badge" onclick="app.showUserProfileModal()" style="cursor: pointer;" title="Nhấp để xem hồ sơ cá nhân">
             <div class="user-avatar" id="nav-user-avatar">AD</div>
             <div class="user-info-text">
               <span class="user-fullname" id="nav-user-name">Quản Trị Viên</span>

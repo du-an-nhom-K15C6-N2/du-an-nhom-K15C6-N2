@@ -7,8 +7,7 @@
  * [FE] Kiểm tra và hiển thị lỗi định dạng số điện thoại Việt Nam trước khi gửi lên máy chủ
  */
 
-// CSS loaded via <link rel="stylesheet"> in index.html for native browser support
-
+import './UserProfilePanel.css';
 import { authState } from '../core/authState.js';
 import { getAuthSession, saveAuthSession, STORAGE_KEYS } from '../core/storage.js';
 import { getProfileApi, updateProfileApi, formatDisplayDate } from '../core/profileService.js';
@@ -51,8 +50,14 @@ export function renderUserProfilePanel(container) {
       const token = session.token || authState.getState().token;
       const profile = await getProfileApi(token);
       currentUserData = profile;
-      // Đồng bộ thông tin mới vào authState nếu có thay đổi
-      authState.setState({ user: profile });
+      if (profile) {
+        const rememberMe = Boolean(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
+        saveAuthSession({ token, user: profile, rememberMe });
+        if (authState.state) {
+          authState.state.user = profile;
+        }
+      }
+
     } catch (error) {
       feedback = {
         type: 'error',
@@ -427,7 +432,9 @@ export function renderUserProfilePanel(container) {
           // Cập nhật lại session lưu trữ và authState
           const rememberMe = Boolean(localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN));
           saveAuthSession({ token, user: updatedProfile, rememberMe });
-          authState.setState({ user: updatedProfile });
+          if (authState.state) {
+            authState.state.user = updatedProfile;
+          }
 
           // Cập nhật hiển thị trên navbar nếu có
           const navUserName = document.querySelector('.user-name');

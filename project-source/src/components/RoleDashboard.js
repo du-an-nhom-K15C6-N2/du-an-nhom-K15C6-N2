@@ -20,6 +20,7 @@ import { renderUserProfilePanel } from './UserProfilePanel.js';
 
 export function renderRoleDashboard(container) {
   let attendanceRecords = [];
+  let activeViewId = null;
 
   function getLocalToday() {
     const today = new Date();
@@ -97,6 +98,8 @@ export function renderRoleDashboard(container) {
     const user = state.user || session.user;
     const displayName = user?.fullName || user?.name || (user?.email ? user.email.split('@')[0] : 'Người dùng');
     const role = (state.role || session.role || 'USER').toUpperCase();
+    const defaultNavId = role === 'ADMIN' ? 'user-management' : 'dashboard';
+    const currentNavId = activeViewId || defaultNavId;
     const targetNav = state.navigationTarget || { path: '/portal/home', title: 'Không gian làm việc' };
 
     if (!user) {
@@ -241,7 +244,7 @@ export function renderRoleDashboard(container) {
             </div>
             <button type="button" class="sidebar-action" id="btn-sidebar-password"><span>⚿</span> Đổi mật khẩu</button>
             <button type="button" class="sidebar-action is-logout" id="btn-logout"><span>⇥</span> Đăng xuất</button>
-            <div class="sidebar-user">
+            <div class="sidebar-user" style="cursor: pointer;" title="Xem hồ sơ cá nhân">
               <span class="sidebar-user-avatar">${escapeHtml(displayName.split(/\s+/).slice(-2).map(part => part[0]).join('').toUpperCase())}</span>
               <span><strong>${escapeHtml(displayName)}</strong><small>${escapeHtml(role)}</small></span>
               <span class="sidebar-user-shield">◇</span>
@@ -255,7 +258,7 @@ export function renderRoleDashboard(container) {
           </div>
 
           <div class="dash-nav-right">
-            <div class="user-pill glass-panel">
+            <div class="user-pill glass-panel" style="cursor: pointer;" title="Xem hồ sơ cá nhân">
               <img src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(user.fullName)}" class="user-avatar" />
               <div class="user-meta">
                 <span class="user-name">${escapeHtml(user?.fullName || user?.name || (user?.email ? user.email.split('@')[0] : 'Quản trị viên'))}</span>
@@ -277,7 +280,7 @@ export function renderRoleDashboard(container) {
 
         <!-- Nội dung chính minh chứng hoàn thành Subtask DNKN-3 -->
         <main class="dash-main-content">
-          <section class="dashboard-content-view" data-dashboard-view="dashboard" ${role === 'ADMIN' ? 'hidden' : ''}>
+          <section class="dashboard-content-view" data-dashboard-view="dashboard" ${currentNavId === 'dashboard' ? '' : 'hidden'}>
             <header class="dashboard-section-heading">
               <span class="dashboard-section-eyebrow">KHÔNG GIAN LÀM VIỆC</span>
               <h2>Bảng điều khiển</h2>
@@ -383,7 +386,7 @@ export function renderRoleDashboard(container) {
           </section>
 
           ${canManageUsers ? `
-            <section class="dashboard-content-view user-management-view" data-dashboard-view="user-management" ${role === 'ADMIN' ? '' : 'hidden'} aria-labelledby="users-title">
+            <section class="dashboard-content-view user-management-view" data-dashboard-view="user-management" ${currentNavId === 'user-management' ? '' : 'hidden'} aria-labelledby="users-title">
               <header class="dashboard-section-heading">
                 <span class="dashboard-section-eyebrow">QUẢN TRỊ HỆ THỐNG · PHÂN QUYỀN NHÂN SỰ</span>
                 <h2 id="users-title">Quản lý tài khoản người dùng</h2>
@@ -490,7 +493,7 @@ export function renderRoleDashboard(container) {
             </section>
           ` : ''}
 
-          <section class="dashboard-content-view user-profile-view" data-dashboard-view="user-profile" hidden aria-labelledby="user-profile-title">
+          <section class="dashboard-content-view user-profile-view" data-dashboard-view="user-profile" ${currentNavId === 'user-profile' ? '' : 'hidden'} aria-labelledby="user-profile-title">
             <header class="dashboard-section-heading">
               <span class="dashboard-section-eyebrow">THÔNG TIN CÁ NHÂN &amp; LIÊN LẠC</span>
               <h2 id="user-profile-title">Hồ sơ cá nhân</h2>
@@ -518,6 +521,20 @@ export function renderRoleDashboard(container) {
       const navEl = createRoleNavigation(role);
       const navMount = container.querySelector('#role-nav-mount');
       navMount?.append(navEl);
+
+      if (activeViewId) {
+        navEl.querySelectorAll('.role-nav-link').forEach(btn => {
+          btn.classList.toggle('is-active', btn.dataset.navId === activeViewId);
+        });
+      }
+      if (currentNavId === 'user-profile') {
+        const profileMount = container.querySelector('#user-profile-mount');
+        if (profileMount && !profileMount.dataset.initialized) {
+          renderUserProfilePanel(profileMount);
+          profileMount.dataset.initialized = 'true';
+        }
+      }
+
       const importDisclosure = container.querySelector('.bulk-import-disclosure');
       importDisclosure?.addEventListener('toggle', () => {
         const importMount = container.querySelector('#bulk-import-mount');
@@ -541,8 +558,12 @@ export function renderRoleDashboard(container) {
         const navId = btn.dataset.navId;
 
         if (['dashboard', 'attendance', 'user-management', 'class-management', 'enrollment-management', 'teaching-assignment', 'user-profile'].includes(navId)) {
+          activeViewId = navId;
           container.querySelectorAll('[data-dashboard-view]').forEach((view) => {
             view.hidden = view.dataset.dashboardView !== navId;
+          });
+          navEl.querySelectorAll('.role-nav-link').forEach(b => {
+            b.classList.toggle('is-active', b.dataset.navId === navId);
           });
           const titles = {
             dashboard: 'Bảng điều khiển',
