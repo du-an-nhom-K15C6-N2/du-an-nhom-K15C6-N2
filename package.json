@@ -1,0 +1,19 @@
+{
+  "name": "dnkn-14-role-navigation",
+  "version": "1.0.0",
+  "description": "Menu điều hướng theo quyền và tối ưu màn hình 360px (DNKN-14)",
+  "main": "preview-server.js",
+  "scripts": {
+    "start": "node preview-server.js",
+    "test": "node --test tests/navigation.test.js tests/rolePermissions.test.js"
+  },
+  "keywords": [
+    "navigation",
+    "role-based-access-control",
+    "rbac",
+    "responsive-360px",
+    "dnkn-14"
+  ],
+  "author": "Antigravity Pair Programming",
+  "license": "ISC"
+}

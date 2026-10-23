@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DNKN-14: Menu điều hướng động theo quyền & Tối ưu 360px</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    :root {
+      --bg-dark: #0b0f19;
+      --card-bg: rgba(30, 41, 59, 0.6);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 10% 20%, #171c2f 0%, #0b0f19 90%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Control Toolbar */
+    .preview-toolbar {
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid var(--border-subtle);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 0.75rem 1.25rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .toolbar-left, .toolbar-center, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .badge-ticket {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .toolbar-title {
+      font-weight: 600;
+      font-size: 0.92rem;
+      color: #e2e8f0;
+    }
+
+    .toolbar-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .btn-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 0.4rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .btn-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-pill.is-active {
+      background: #6366f1;
+      color: #fff;
+      border-color: #818cf8;
+      box-shadow: 0 0 12px rgba(99, 102, 241, 0.45);
+    }
+
+    .btn-action-test {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+    }
+
+    .btn-action-test:hover {
+      background: rgba(239, 68, 68, 0.3);
+      color: #fff;
+      border-color: rgba(239, 68, 68, 0.6);
+    }
+
+    .btn-action-api {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    .btn-action-api:hover {
+      background: rgba(16, 185, 129, 0.3);
+      color: #fff;
+      border-color: rgba(16, 185, 129, 0.6);
+    }
+
+    /* Viewport Simulator Frame */
+    .viewport-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem;
+      overflow-y: auto;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .viewport-container {
+      width: 100%;
+      max-width: 1360px;
+      transition: width 0.3s ease, max-width 0.3s ease;
+      position: relative;
+    }
+
+    /* Simulation modes */
+    .viewport-container.mode-tablet {
+      max-width: 768px;
+      border: 2px solid rgba(99, 102, 241, 0.4);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .viewport-container.mode-mobile-360 {
+      max-width: 360px;
+      border: 2px solid rgba(99, 102, 241, 0.5);
+      border-radius: 24px;
+      overflow-x: hidden;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    .viewport-spec-indicator {
+      display: none;
+      background: rgba(30, 41, 59, 0.95);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: #38bdf8;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .viewport-container.mode-mobile-360 .viewport-spec-indicator {
+      display: block;
+    }
+
+    /* Modal for API response viewer */
+    .api-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .api-modal.is-open {
+      display: flex;
+    }
+
+    .api-modal-card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      width: min(100%, 750px);
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .api-modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .api-modal-header h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #6ee7b7;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .btn-close-modal:hover { color: #fff; }
+
+    .api-modal-body {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      background: #0b0f19;
+    }
+
+    .api-modal-body pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Subtask Checklist Box */
+    .task-checklist-panel {
+      margin-top: 1.5rem;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    .task-checklist-panel h4 {
+      margin: 0 0 0.75rem 0;
+      color: #a5b4fc;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .task-checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      border-left: 3px solid #10b981;
+    }
+
+    .task-item strong {
+      color: #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Preview Toolbar -->
+  <header class="preview-toolbar">
+    <div class="toolbar-left">
+      <span class="badge-ticket">DNKN-14</span>
+      <span class="toolbar-title">Menu Điều Hướng Theo Quyền &amp; Tối Ưu 360px</span>
+    </div>
+
+    <div class="toolbar-center">
+      <span class="toolbar-label">Chuyển Vai Trò:</span>
+      <button type="button" class="btn-pill is-active" data-role="ADMIN" data-email="admin@edu.vn">🛡️ Admin</button>
+      <button type="button" class="btn-pill" data-role="TEACHER" data-email="teacher@edu.vn">👨‍🏫 Giảng Viên</button>
+      <button type="button" class="btn-pill" data-role="STUDENT" data-email="student@edu.vn">🎓 Học Sinh</button>
+      <button type="button" class="btn-pill" data-role="ASSISTANT" data-email="thao.le@edu.vn">👥 Trợ Giảng</button>
+      <button type="button" class="btn-pill" data-role="MANAGER" data-email="hoang@edu.vn">💼 Quản Lý</button>
+    </div>
+
+    <div class="toolbar-right">
+      <span class="toolbar-label">Màn Hình:</span>
+      <button type="button" class="btn-pill is-active" data-viewport="desktop">🖥️ Desktop</button>
+      <button type="button" class="btn-pill" data-viewport="tablet">📱 Tablet 768px</button>
+      <button type="button" class="btn-pill" data-viewport="mobile-360">📱 Mobile 360px</button>
+      <button type="button" class="btn-pill btn-action-test" id="btn-trigger-forbidden" title="Thử truy cập chức năng bị chặn">🚫 Thử Lỗi 403</button>
+      <button type="button" class="btn-pill btn-action-api" id="btn-view-api" title="Xem JSON API trả về">📊 API JSON</button>
+    </div>
+  </header>
+
+  <!-- Viewport Stage Container -->
+  <main class="viewport-stage">
+    <div id="viewport-container" class="viewport-container">
+      <div class="viewport-spec-indicator">
+        📐 Chế độ Mobile 360px: Chiều rộng viewport tối đa 360px | Nút bấm tối thiểu 44px | Menu cuộn ngang mượt mà
+      </div>
+
+      <!-- App Mount Container -->
+      <div id="app">
+        <!-- Rendered dynamically by preview.js -->
+      </div>
+    </div>
+
+    <!-- Subtasks Reference Panel -->
+    <div class="viewport-container" style="margin-top: 1.5rem;">
+      <section class="task-checklist-panel">
+        <h4>✅ Danh Sách 6 Subtasks &amp; Tiêu Chí Đã Hoàn Thành (DNKN-14)</h4>
+        <div class="task-checklist-grid">
+          <div class="task-item">
+            <span>🔹</span>
+            <div>
+              <strong>[FE] Xử lý trạng thái không có quyền (403):</strong>
+              Hiển thị AppErrorScreen 403 Forbidden kèm tên chức năng, vai trò và nút quay lại an toàn.
+            </div>
+          </div>
+          <div class="task-item">
+            <span>🔹</span>
+            <div>
+              <strong>[FE] Hiển thị tên &amp; vai trò đăng nhập:</strong>
+              Header (.user-pill) và Sidebar (.sidebar-user) hiển thị Họ tên, Avatar, Email và Role Badge.
+            </div>
+          </div>
+          <div class="task-item">
+            <span>🔹</span>
+            <div>
+              <strong>[FE] Xây dựng menu động theo quyền:</strong>
+              Lọc danh sách menu theo vai trò người dùng (Admin thấy 13+ mục, Học sinh chỉ thấy lớp học/nhiệm vụ).
+            </div>
+          </div>
+          <div class="task-item">
+            <span>🔹</span>
+            <div>
+              <strong>[FE] Tối ưu điều hướng cho màn hình 360px:</strong>
+              Layout 1 cột, menu cuộn ngang touch mượt mà, vùng chạm tối thiểu 44px, không tràn viền.
+            </div>
+          </div>
+          <div class="task-item">
+            <span>🔹</span>
+            <div>
+              <strong>[BE] Cung cấp API quyền &amp; vai trò:</strong>
+              Endpoint GET /api/auth/permissions và GET /api/auth/me trả về role, permissions và navigation.
+            </div>
+          </div>
+          <div class="task-item">
+            <span>🔹</span>
+            <div>
+              <strong>[QA] Bộ kiểm thử tự động toàn diện:</strong>
+              Suite kiểm thử navigation.test.js &amp; rolePermissions.test.js xác minh 100% trường hợp.
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- API Modal Viewer -->
+  <div class="api-modal" id="api-modal">
+    <div class="api-modal-card">
+      <div class="api-modal-header">
+        <h3>⚡ Dữ Liệu API /api/auth/permissions &amp; /api/auth/me</h3>
+        <button type="button" class="btn-close-modal" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="api-modal-body">
+        <pre id="api-json-content">Đang tải dữ liệu từ máy chủ...</pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="preview.js"></script>
+</body>
+</html>
