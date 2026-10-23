@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <meta name="description" content="Khung hệ thống quản lý đào tạo">
+    <title>Quản lý đào tạo</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <script src="/js/app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Điều hướng chính">
+        <a class="brand" href="/" aria-label="Trang chủ quản lý đào tạo">
+          <span class="brand-mark">ĐT</span>
+          <span class="brand-copy"><strong>EduManager</strong><small>QUẢN LÝ ĐÀO TẠO</small></span>
+        </a>
+
+        <p class="sidebar-label">TỔNG QUAN</p>
+        <nav id="module-navigation" class="module-navigation" aria-label="Các phân hệ">
+          <button class="nav-link is-active" type="button" data-module-id="dashboard">
+            <span aria-hidden="true">⌂</span> Tổng quan
+          </button>
+          <p class="sidebar-label">ĐANG TẢI PHÂN HỆ...</p>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="avatar">AD</span>
+          <span><strong>Quản trị viên</strong><small>Quản lý hệ thống</small></span>
+          <span class="online-dot" aria-label="Trực tuyến"></span>
+        </div>
+      </aside>
+
+      <main class="main-area">
+        <header class="topbar">
+          <button id="sidebar-toggle" class="icon-button mobile-menu" type="button" aria-label="Mở menu">☰</button>
+          <div class="breadcrumb"><span>Không gian làm việc</span><span aria-hidden="true">/</span><strong id="page-breadcrumb">Tổng quan</strong></div>
+          <div class="topbar-actions">
+            <span class="today" id="today-label"></span>
+            <button class="icon-button notification-button" type="button" aria-label="Thông báo">♧<i></i></button>
+          </div>
+        </header>
+
+        <section id="page-content" class="page-content" aria-live="polite">
+          <div class="page-heading">
+            <div><p class="eyebrow">TRUNG TÂM ĐIỀU HÀNH</p><h1>Tổng quan</h1><p class="page-subtitle">Chào mừng bạn đến với hệ thống quản lý đào tạo.</p></div>
+            <span class="date-chip" id="date-chip"></span>
+          </div>
+
+          <div class="stats-grid" aria-label="Thống kê tổng quan">
+            <article class="stat-card">
+              <span class="stat-icon blue">▤</span><span class="stat-label">Chương trình đào tạo</span>
+              <strong class="stat-value">—</strong><span class="stat-note">Chưa có dữ liệu</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon violet">▦</span><span class="stat-label">Lớp học đang hoạt động</span>
+              <strong class="stat-value">—</strong><span class="stat-note">Chưa có dữ liệu</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon green">♙</span><span class="stat-label">Người học</span>
+              <strong class="stat-value">—</strong><span class="stat-note">Chưa có dữ liệu</span>
+            </article>
+            <article class="stat-card">
+              <span class="stat-icon orange">◷</span><span class="stat-label">Học kỳ hiện tại</span>
+              <strong class="stat-value stat-text">Chưa thiết lập</strong><span class="stat-note">Cần cấu hình học kỳ</span>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel welcome-panel">
+              <div class="panel-heading"><div><p class="eyebrow">BẮT ĐẦU</p><h2>Không gian quản lý đào tạo</h2></div><span class="welcome-symbol" aria-hidden="true">✳</span></div>
+              <p class="panel-description">Chọn một phân hệ trong menu để xem khung chức năng. Các màn hình hiện chưa kết nối dữ liệu nghiệp vụ.</p>
+              <div class="setup-list">
+                <div><span class="setup-check">1</span><span><strong>Thiết lập chương trình và học phần</strong><small>Khai báo cấu trúc đào tạo và danh mục học phần.</small></span></div>
+                <div><span class="setup-check">2</span><span><strong>Tổ chức học kỳ và lớp học</strong><small>Chuẩn bị lớp, lịch học và phân công giảng dạy.</small></span></div>
+                <div><span class="setup-check">3</span><span><strong>Theo dõi quá trình học tập</strong><small>Quản lý điểm danh, kết quả và báo cáo đào tạo.</small></span></div>
+              </div>
+            </section>
+            <section class="panel status-panel">
+              <div class="panel-heading"><div><p class="eyebrow">TRẠNG THÁI</p><h2>Tình trạng hệ thống</h2></div><span id="api-status" class="status-pill is-loading">Đang kết nối</span></div>
+              <div class="status-row"><span>Giao diện</span><strong><i class="status-dot"></i> Sẵn sàng</strong></div>
+              <div class="status-row"><span>API backend</span><strong id="api-status-detail">Đang kiểm tra...</strong></div>
+              <div class="status-row"><span>Cơ sở dữ liệu</span><strong><i class="status-dot is-pending"></i> Chưa cấu hình</strong></div>
+              <p class="notice-box">Đây là bản khung ban đầu. Chưa có tài khoản đăng nhập hoặc dữ liệu thật.</p>
+            </section>
+          </div>
+
+          <footer class="page-footer"><span>EduManager <span id="year-label"></span></span><span>Khung xương hệ thống · Phiên bản 1.0</span></footer>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
