@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quản lý buổi học theo môn</title>
+  <link rel="stylesheet" href="/features/course-sessions/frontend/course-sessions.css">
+</head>
+<body>
+  <main class="page">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">QUẢN LÝ ĐÀO TẠO</p>
+        <h1>Buổi học theo môn</h1>
+        <p class="intro">Khai báo chủ đề và mục tiêu cho từng buổi để giảng viên chủ động chuẩn bị bài dạy.</p>
+        <a href="/">Quay lại hệ thống</a>
+      </div>
+      <form id="course-form" class="course-picker">
+        <label for="course-id">Môn học</label>
+        <div class="course-picker__controls">
+          <select id="course-id" name="courseId" required>
+            <option value="">Đang tải danh mục môn học...</option>
+          </select>
+          <button class="button button--primary" type="submit">Tải buổi học</button>
+        </div>
+      </form>
+    </header>
+
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+
+    <section id="workspace" class="workspace" hidden>
+      <div class="panel panel--summary">
+        <div>
+          <p class="eyebrow">MÔN ĐANG QUẢN LÝ</p>
+          <h2 id="course-name"></h2>
+          <p id="course-summary" class="muted"></p>
+        </div>
+        <form id="clone-form" class="clone-form">
+          <label for="source-course">Nhân bản buổi học từ môn khác</label>
+          <div class="inline-controls">
+            <select id="source-course" name="sourceCourseId" required>
+              <option value="">Chọn môn nguồn</option>
+            </select>
+            <button class="button button--secondary" type="submit">Nhân bản danh sách</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="columns">
+        <section class="panel" aria-labelledby="session-list-heading">
+          <div class="panel__heading">
+            <div>
+              <h2 id="session-list-heading">Danh sách buổi học</h2>
+              <p id="session-count" class="muted"></p>
+            </div>
+          </div>
+          <ol id="session-list" class="session-list" aria-label="Buổi học được sắp xếp theo số thứ tự"></ol>
+          <p id="empty-state" class="empty-state" hidden>Chưa khai báo buổi học nào cho môn này.</p>
+        </section>
+
+        <section class="panel form-panel" aria-labelledby="editor-heading">
+          <h2 id="editor-heading">Thêm buổi học</h2>
+          <form id="session-form" class="session-form">
+            <label for="session-number">Số thứ tự</label>
+            <input id="session-number" name="number" type="number" min="1" required>
+
+            <label for="session-topic">Chủ đề</label>
+            <input id="session-topic" name="topic" type="text" maxlength="200" required>
+
+            <label for="session-objectives">Mục tiêu</label>
+            <textarea id="session-objectives" name="objectives" rows="5" maxlength="2000" required></textarea>
+
+            <div class="form-actions">
+              <button id="save-session" class="button button--primary" type="submit">Thêm buổi học</button>
+              <button id="cancel-edit" class="button button--secondary" type="button" hidden>Huỷ sửa</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script src="/features/course-sessions/frontend/course-sessions.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+.enrollment-panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.enrollment-panel__form,
+.enrollment-panel__history {
+  display: grid;
+  gap: 1rem;
+}
+
+.enrollment-panel__field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.enrollment-panel__capacity,
+.enrollment-panel__student-info small,
+.enrollment-panel__history li small {
+  color: var(--text-muted, #64748b);
+}
+
+.enrollment-panel__capacity.is-warning {
+  color: #a16207;
+}
+
+.enrollment-panel__capacity.is-full {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.enrollment-panel__students {
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid var(--border-color, #d4d7dc);
+  border-radius: 0.75rem;
+}
+
+.enrollment-panel__students legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+}
+
+.enrollment-panel__select-all,
+.enrollment-panel__student {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+}
+
+.enrollment-panel__select-all {
+  margin: 0.25rem 0 0.75rem;
+  font-weight: 700;
+}
+
+.enrollment-panel__students input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--primary-color, #175cd3);
+}
+
+.enrollment-panel__students ul,
+.enrollment-panel__history ul,
+.enrollment-panel__result-group ul {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 22rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.enrollment-panel__students li,
+.enrollment-panel__history li,
+.enrollment-panel__result-group li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.enrollment-panel__student-info {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.enrollment-panel__empty {
+  color: var(--text-muted, #64748b);
+}
+
+.enrollment-panel__feedback.is-error,
+.enrollment-panel__history-error,
+.enrollment-panel__result-message.is-error {
+  color: #b42318;
+}
+
+.enrollment-panel__feedback.is-success,
+.enrollment-panel__result-message.is-success {
+  color: #137333;
+}
+
+.enrollment-panel__summary {
+  padding: 1rem;
+  border: 1px solid #b8c8e8;
+  border-radius: 0.75rem;
+  background: #f3f7ff;
+}
+
+.enrollment-panel__result-group {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color, #d4d7dc);
+  border-radius: 0.75rem;
+}
+
+.enrollment-panel__result-group h3,
+.enrollment-panel__history h3 {
+  margin: 0 0 0.5rem;
+}
+
+.enrollment-panel__history {
+  padding: 1rem;
+  border: 1px solid var(--border-color, #d4d7dc);
+  border-radius: 0.75rem;
+}
+
+.enrollment-panel__history li {
+  display: grid;
+  justify-content: stretch;
+}
+
+.enrollment-panel__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

@@ -1,14 +1,25 @@
 {
-  "name": "he-thong-quan-ly-dao-tao",
+  "name": "ttcs-classroom-auth",
   "version": "1.0.0",
-  "private": true,
-  "description": "Khung xương hệ thống quản lý đào tạo",
+  "description": "Hệ thống quản lý lớp học - Module xác thực và phân quyền vai trò",
   "main": "backend/server.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "dev": "node --watch backend/server.js"
+    "start": "npm run build && node backend/server.js",
+    "server": "node backend/server.js",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.14",
+    "sharp": "^0.35.5",
+    "xlsx": "^0.18.5"
   }
 }

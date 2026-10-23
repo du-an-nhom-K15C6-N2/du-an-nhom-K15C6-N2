@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nhập người dùng hàng loạt từ Excel | TTCS</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/import-users.css" />
+</head>
+<body>
+  <div id="app-root">
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-inner">
+        <a href="/" class="brand-link">
+          <span class="brand-icon">🎓</span>
+          <span class="brand-name">TTCS Classroom</span>
+        </a>
+        <nav class="header-nav">
+          <a href="/" class="nav-link">← Quay lại Quản lý người dùng</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="import-page">
+      <div class="page-container">
+
+        <!-- ===== TIÊU ĐỀ ===== -->
+        <div class="page-heading">
+          <h1 class="page-title">
+            <span class="title-icon">📥</span>
+            Nhập người dùng hàng loạt từ Excel
+          </h1>
+          <p class="page-subtitle">
+            Tải xuống tệp mẫu, điền danh sách người dùng, sau đó tải lên để xem trước và xác nhận nhập.
+          </p>
+        </div>
+
+        <!-- ===== BƯỚC 1: TẢI FILE MẪU ===== -->
+        <section class="import-step" id="step-download">
+          <div class="step-header">
+            <span class="step-number">1</span>
+            <h2 class="step-title">Tải tệp Excel mẫu</h2>
+          </div>
+          <div class="step-body">
+            <p class="step-desc">
+              Tải tệp mẫu, điền thông tin người dùng theo đúng định dạng các cột, sau đó quay lại đây để tải lên.
+            </p>
+            <button id="btn-download-template" class="btn btn-secondary btn-icon">
+              <span>⬇️</span> Tải tệp mẫu (.xlsx)
+            </button>
+            <div class="template-note">
+              <strong>Các cột bắt buộc:</strong> Họ và Tên, Email, Vai trò &nbsp;|&nbsp;
+              <strong>Không bắt buộc:</strong> Số điện thoại &nbsp;|&nbsp;
+              <strong>Vai trò hợp lệ:</strong>
+              <code>admin, teacher, assistant, student, manager, accountant, department_head, training_staff</code>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== BƯỚC 2: TẢI FILE LÊN & XEM TRƯỚC ===== -->
+        <section class="import-step" id="step-upload">
+          <div class="step-header">
+            <span class="step-number">2</span>
+            <h2 class="step-title">Tải tệp lên & xem trước</h2>
+          </div>
+          <div class="step-body">
+            <!-- Drop zone -->
+            <div
+              id="drop-zone"
+              class="drop-zone"
+              role="button"
+              tabindex="0"
+              aria-label="Kéo thả tệp Excel vào đây hoặc nhấn để chọn tệp"
+            >
+              <div class="drop-zone-icon">📂</div>
+              <p class="drop-zone-text">Kéo &amp; thả tệp Excel vào đây<br>hoặc</p>
+              <label for="file-input" class="btn btn-primary btn-sm">Chọn tệp từ máy tính</label>
+              <input
+                type="file"
+                id="file-input"
+                accept=".xlsx,.xls"
+                class="visually-hidden"
+                aria-label="Chọn tệp Excel"
+              />
+              <p class="drop-zone-hint">Chỉ chấp nhận .xlsx hoặc .xls, tối đa 5 MB</p>
+            </div>
+
+            <!-- Tệp đã chọn -->
+            <div id="file-info" class="file-info hidden">
+              <span class="file-icon">📄</span>
+              <span id="file-name-display"></span>
+              <span id="file-size-display" class="file-size"></span>
+              <button id="btn-clear-file" class="btn btn-ghost btn-xs" aria-label="Xóa tệp đã chọn">✕</button>
+            </div>
+
+            <!-- Thông báo lỗi upload -->
+            <div id="upload-error" class="alert alert-error hidden" role="alert"></div>
+
+            <!-- Nút xem trước -->
+            <div class="step-actions">
+              <button id="btn-preview" class="btn btn-primary btn-icon" disabled>
+                <span>🔍</span> Xem trước dữ liệu
+              </button>
+              <span id="preview-spinner" class="spinner hidden" aria-label="Đang xử lý..."></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== BƯỚC 3: KẾT QUẢ XEM TRƯỚC ===== -->
+        <section class="import-step hidden" id="step-preview">
+          <div class="step-header">
+            <span class="step-number">3</span>
+            <h2 class="step-title">Kết quả xem trước</h2>
+          </div>
+          <div class="step-body">
+            <!-- Tóm tắt số liệu -->
+            <div class="preview-summary" id="preview-summary">
+              <div class="summary-card summary-total">
+                <div class="summary-num" id="summary-total">0</div>
+                <div class="summary-label">Tổng dòng dữ liệu</div>
+              </div>
+              <div class="summary-card summary-valid">
+                <div class="summary-num" id="summary-valid">0</div>
+                <div class="summary-label">Dòng hợp lệ</div>
+              </div>
+              <div class="summary-card summary-invalid">
+                <div class="summary-num" id="summary-invalid">0</div>
+                <div class="summary-label">Dòng lỗi (sẽ bỏ qua)</div>
+              </div>
+            </div>
+
+            <!-- Tab lọc dòng -->
+            <div class="tab-bar" role="tablist">
+              <button
+                class="tab-btn tab-active"
+                role="tab"
+                aria-selected="true"
+                data-tab="valid"
+                id="tab-valid"
+              >✅ Hợp lệ (<span id="tab-valid-count">0</span>)</button>
+              <button
+                class="tab-btn"
+                role="tab"
+                aria-selected="false"
+                data-tab="invalid"
+                id="tab-invalid"
+              >❌ Lỗi (<span id="tab-invalid-count">0</span>)</button>
+            </div>
+
+            <!-- Bảng dữ liệu xem trước -->
+            <div class="table-wrapper" id="preview-table-wrapper">
+              <table class="data-table" id="preview-table" role="grid">
+                <thead>
+                  <tr>
+                    <th>Dòng</th>
+                    <th>Họ và Tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="preview-tbody"></tbody>
+              </table>
+              <div id="preview-empty" class="empty-state hidden">Không có dữ liệu để hiển thị.</div>
+            </div>
+
+            <!-- Cảnh báo nếu có lỗi -->
+            <div id="preview-warning" class="alert alert-warning hidden" role="alert">
+              ⚠️ Có <strong id="warn-invalid-count">0</strong> dòng lỗi sẽ bị bỏ qua.
+              Chỉ <strong id="warn-valid-count">0</strong> dòng hợp lệ sẽ được nhập vào hệ thống.
+            </div>
+
+            <!-- Nút hành động -->
+            <div class="step-actions">
+              <button id="btn-cancel-preview" class="btn btn-ghost">← Tải lại tệp khác</button>
+              <button id="btn-confirm-import" class="btn btn-success btn-icon" disabled>
+                <span>✅</span> Xác nhận nhập <span id="btn-confirm-count">0</span> tài khoản
+              </button>
+              <span id="import-spinner" class="spinner hidden" aria-label="Đang nhập dữ liệu..."></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== BƯỚC 4: BÁO CÁO TỔNG KẾT ===== -->
+        <section class="import-step hidden" id="step-report">
+          <div class="step-header">
+            <span class="step-number">4</span>
+            <h2 class="step-title">Báo cáo tổng kết</h2>
+          </div>
+          <div class="step-body">
+            <!-- Tóm tắt kết quả -->
+            <div class="report-banner" id="report-banner">
+              <div class="report-icon" id="report-icon">✅</div>
+              <div class="report-message" id="report-message"></div>
+            </div>
+
+            <div class="preview-summary" id="report-summary">
+              <div class="summary-card summary-total">
+                <div class="summary-num" id="report-total">0</div>
+                <div class="summary-label">Tổng dòng gửi</div>
+              </div>
+              <div class="summary-card summary-valid">
+                <div class="summary-num" id="report-success">0</div>
+                <div class="summary-label">Tạo thành công</div>
+              </div>
+              <div class="summary-card summary-invalid">
+                <div class="summary-num" id="report-failed">0</div>
+                <div class="summary-label">Bị bỏ qua / Lỗi</div>
+              </div>
+            </div>
+
+            <!-- Danh sách lỗi (nếu có) -->
+            <div id="report-error-section" class="hidden">
+              <h3 class="section-subtitle">Danh sách dòng bị bỏ qua</h3>
+              <div class="table-wrapper">
+                <table class="data-table" id="report-error-table">
+                  <thead>
+                    <tr>
+                      <th>Dòng</th>
+                      <th>Họ và Tên</th>
+                      <th>Email</th>
+                      <th>Lý do lỗi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="report-error-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Nút hành động -->
+            <div class="step-actions">
+              <button id="btn-import-again" class="btn btn-secondary btn-icon">
+                <span>🔄</span> Nhập thêm tệp khác
+              </button>
+              <a href="/" class="btn btn-primary btn-icon">
+                <span>👥</span> Xem danh sách người dùng
+              </a>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /page-container -->
+    </main>
+
+    <!-- TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+  </div><!-- /app-root -->
+
+  <script src="/js/import-users.js"></script>
+</body>
+</html>
