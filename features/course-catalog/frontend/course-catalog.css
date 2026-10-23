@@ -1,0 +1,331 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  color: #172033;
+  background: #f3f6fb;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.catalog {
+  width: min(1200px, calc(100% - 40px));
+  margin: 48px auto;
+}
+
+.catalog__header,
+.panel__heading,
+.course-form__heading,
+.course-form__actions,
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.catalog__header {
+  margin-bottom: 28px;
+}
+
+.catalog__eyebrow {
+  margin: 0 0 8px;
+  color: #3156a6;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+}
+
+h2 {
+  margin-bottom: 6px;
+  font-size: 1.2rem;
+}
+
+.catalog__intro,
+.muted,
+small {
+  color: #637087;
+}
+
+.catalog__intro,
+.muted {
+  margin-bottom: 0;
+}
+
+.panel {
+  padding: 24px;
+  border: 1px solid #e0e6f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgb(28 49 84 / 6%);
+}
+
+.panel__heading {
+  margin-bottom: 20px;
+}
+
+.search {
+  display: flex;
+  gap: 8px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cad3e1;
+  border-radius: 7px;
+  background: #fff;
+  color: #172033;
+}
+
+input:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 3px solid #9ab7ff;
+  outline-offset: 2px;
+}
+
+.search input {
+  width: min(280px, 44vw);
+}
+
+.button {
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button--primary {
+  background: #3156a6;
+  color: #fff;
+}
+
+.button--primary:hover:not(:disabled) {
+  background: #24488f;
+}
+
+.button--secondary {
+  border-color: #cad3e1;
+  background: #fff;
+  color: #28364d;
+}
+
+.button--secondary:hover:not(:disabled) {
+  background: #f3f6fb;
+}
+
+.button--danger {
+  color: #a22d38;
+}
+
+.notice {
+  min-height: 24px;
+  color: #3156a6;
+}
+
+.notice:empty,
+.form-error:empty {
+  display: none;
+}
+
+.notice--error,
+.form-error {
+  color: #a22d38;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 13px 12px;
+  border-bottom: 1px solid #e8ecf3;
+  vertical-align: top;
+}
+
+th {
+  color: #637087;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+td:first-child {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.course-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.course-actions .button {
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.pagination {
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+dialog {
+  width: min(680px, calc(100% - 28px));
+  max-height: calc(100% - 28px);
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 20px 70px rgb(15 25 45 / 25%);
+}
+
+dialog::backdrop {
+  background: rgb(18 29 48 / 52%);
+}
+
+.course-form {
+  padding: 26px;
+}
+
+.course-form__heading {
+  margin-bottom: 24px;
+}
+
+.course-form__heading h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.icon-button {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: #f0f3f8;
+  color: #26344b;
+  font-size: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.form-grid label > span {
+  color: #a22d38;
+}
+
+.form-grid__wide {
+  grid-column: 1 / -1;
+}
+
+.form-grid small {
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.course-form__actions {
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+@media (max-width: 700px) {
+  .catalog {
+    width: min(100% - 24px, 1200px);
+    margin: 24px auto;
+  }
+
+  .panel {
+    padding: 16px;
+  }
+
+  .catalog__header,
+  .panel__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .search .button {
+    white-space: normal;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid__wide {
+    grid-column: auto;
+  }
+
+  .course-form {
+    padding: 20px;
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "course-foundation",
+    "code": "CS101",
+    "name": "Nhập môn công nghệ thông tin",
+    "sessionCount": 4
+  },
+  {
+    "id": "course-web",
+    "code": "CS201",
+    "name": "Phát triển ứng dụng web",
+    "sessionCount": 6
+  },
+  {
+    "id": "course-database",
+    "code": "CS202",
+    "name": "Cơ sở dữ liệu",
+    "sessionCount": 3
+  }
+]

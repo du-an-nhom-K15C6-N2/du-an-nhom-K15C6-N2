@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ Thống Điểm Danh - Demo Quản Lý Phiên (EP-01)</title>
+    <style>
+        :root {
+            --bg: #f4f7ff;
+            --panel: #ffffff;
+            --panel-soft: #eef4ff;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-soft: #dbeafe;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #dfe7f5;
+            --warning-bg: #fff7d6;
+            --warning-text: #92400e;
+            --warning-border: #fcd34d;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --danger-border: #fca5a5;
+            --success: #10b981;
+            --shadow: rgba(15, 23, 42, 0.08);
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body {
+            background: linear-gradient(135deg, #f8fbff 0%, #edf5ff 100%);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(90deg, #0f172a 0%, #111827 100%);
+            color: white;
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        }
+
+        .navbar h2 {
+            font-size: 18px;
+            letter-spacing: 0.02em;
+        }
+
+        .user-panel {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+        }
+
+        .btn-main-app {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-main-app:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.18);
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 760px;
+            margin: 42px auto;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.7);
+            border-radius: 22px;
+            box-shadow: 0 18px 40px var(--shadow);
+            overflow: hidden;
+        }
+
+        /* Banner phiên đăng nhập */
+        .session-status-bar {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--warning-border);
+        }
+
+        .session-status-bar.danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border-bottom-color: var(--danger-border);
+        }
+
+        .btn-renew {
+            background: white;
+            border: 1px solid var(--warning-border);
+            padding: 7px 12px;
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--warning-text);
+            transition: all 0.2s ease;
+        }
+
+        .btn-renew:hover {
+            background: #fffdf7;
+            transform: translateY(-1px);
+        }
+
+        .content {
+            padding: 32px 30px 28px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 22px;
+            color: var(--text);
+            letter-spacing: -0.03em;
+        }
+
+        .form-group { margin-bottom: 22px; }
+
+        label {
+            display: block;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            background: #fbfdff;
+            color: var(--text);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: rgba(37, 99, 235, 0.7);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+        }
+
+        textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-top: 28px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+
+        .draft-notice {
+            font-size: 13px;
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 12px 22px rgba(37, 99, 235, 0.22);
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.03);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 640px) {
+            .navbar {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .container {
+                margin: 22px 14px;
+            }
+
+            .session-status-bar,
+            .action-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn-submit {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h2>🎓 Quản Lý Điểm Danh - Quản Lý Phiên (EP-01)</h2>
+        <div class="user-panel">
+            <span>Xin chào, <strong id="sessionUserName">Người dùng</strong></span>
+            <a href="index.html" class="btn-main-app">Hệ Thống Chính</a>
+            <button class="btn-logout" onclick="dangXuatAnToan()">Đăng xuất</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Thanh trạng thái phiên đăng nhập (Đáp ứng tiêu chí EP-01) -->
+        <div id="statusBar" class="session-status-bar">
+            <span id="statusText">⏳ Phiên đăng nhập còn hiệu lực: <strong>30s</strong></span>
+            <button class="btn-renew" onclick="giaHanPhien()">Gia hạn phiên</button>
+        </div>
+
+        <div class="content">
+            <div class="title">Biểu Mẫu Điểm Danh Lớp Học</div>
+
+            <div class="form-group">
+                <label for="monHoc">Lớp học</label>
+                <select id="monHoc" required>
+                    <option>Phân tích thiết kế hệ thống K23</option>
+                    <option>Lập trình hướng đối tượng</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="studentEmail">Email học sinh</label>
+                <input type="email" id="studentEmail" autocomplete="email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="attendanceDate">Ngày điểm danh</label>
+                <input type="date" id="attendanceDate" required>
+            </div>
+
+            <div class="form-group">
+                <label for="attendanceStatus">Trạng thái</label>
+                <select id="attendanceStatus" required>
+                    <option value="present">Có mặt</option>
+                    <option value="late">Đi muộn</option>
+                    <option value="absent">Vắng mặt</option>
+                    <option value="excused">Có phép</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="noiDungNhap">Ghi chú / dữ liệu nhập dở</label>
+                <textarea id="noiDungNhap" maxlength="500" placeholder="Nhập ghi chú điểm danh..."></textarea>
+            </div>
+
+            <div class="action-row">
+                <span id="draftStatus" class="draft-notice">💾 Dữ liệu đã được lưu bản nháp an toàn</span>
+                <button id="attendanceSubmit" class="btn-submit" onclick="diemDanhThanhCong()">Gửi Điểm Danh</button>
+            </div>
+            <p id="attendanceFeedback" role="status" aria-live="polite"></p>
+        </div>
+    </div>
+
+<script>
+    function getSessionValue(key) {
+        return localStorage.getItem(key) || sessionStorage.getItem(key);
+    }
+
+    function setSessionValue(key, value) {
+        const storage = localStorage.getItem("rememberSession") === "true" ? localStorage : sessionStorage;
+        storage.setItem(key, value);
+    }
+
+    function clearSessionValues() {
+        ["isLoggedIn", "sessionToken", "sessionExpiresAt", "sessionUser", "rememberSession"]
+            .forEach(key => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+    }
+
+    function getRemainingMs() {
+        return Math.max(0, Number(getSessionValue("sessionExpiresAt") || 0) - Date.now());
+    }
+
+    function formatRemainingTime(ms) {
+        const totalSeconds = Math.ceil(ms / 1000);
+        return `${String(Math.floor(totalSeconds / 60)).padStart(2, "0")}:${String(totalSeconds % 60).padStart(2, "0")}`;
+    }
+
+    function expireSession(message = "Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.") {
+        localStorage.setItem("logout_reason", "timeout");
+        clearSessionValues();
+        alert(`${message} Bản nháp của bạn vẫn được lưu để khôi phục sau khi đăng nhập.`);
+        window.location.href = "login.html";
+    }
+
+    const sessionToken = getSessionValue("sessionToken");
+    if (getSessionValue("isLoggedIn") !== "true" || !sessionToken) {
+        window.location.href = "login.html";
+    }
+
+    const statusBar = document.getElementById("statusBar");
+    const statusText = document.getElementById("statusText");
+    const noiDungNhap = document.getElementById("noiDungNhap");
+    const monHoc = document.getElementById("monHoc");
+    const studentEmail = document.getElementById("studentEmail");
+    const attendanceDate = document.getElementById("attendanceDate");
+    const attendanceStatus = document.getElementById("attendanceStatus");
+    const draftStatus = document.getElementById("draftStatus");
+    const attendanceFeedback = document.getElementById("attendanceFeedback");
+    const attendanceSubmit = document.getElementById("attendanceSubmit");
+    const apiHeaders = { "Authorization": `Bearer ${sessionToken}` };
+    let handlingExpiredSession = false;
+    let lastRenewalAt = 0;
+    try {
+        const user = JSON.parse(getSessionValue("sessionUser") || "null");
+        if (user) {
+            document.getElementById("sessionUserName").textContent = `${user.name} (${user.roleLabel})`;
+        }
+    } catch (error) {
+        console.warn("Không thể đọc thông tin tài khoản phiên:", error);
+    }
+
+    async function sessionRequest(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: { ...apiHeaders, ...(options.headers || {}) }
+        });
+        const result = await response.json();
+        if (response.status === 401 && result.code === "SESSION_EXPIRED") {
+            handlingExpiredSession = true;
+            expireSession(result.message);
+            throw new Error(result.message);
+        }
+        if (!response.ok) throw new Error(result.message || "Yêu cầu không thành công.");
+        return result;
+    }
+
+    window.onload = async function() {
+        const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+            .toISOString().slice(0, 10);
+        attendanceDate.value = today;
+        try {
+            const savedDraft = JSON.parse(localStorage.getItem("diem_danh_form_draft") || "null");
+            if (savedDraft) {
+                monHoc.value = savedDraft.className || monHoc.value;
+                studentEmail.value = savedDraft.studentEmail || "";
+                attendanceDate.value = savedDraft.attendanceDate || today;
+                attendanceStatus.value = savedDraft.status || "present";
+                noiDungNhap.value = savedDraft.note || "";
+            } else {
+                const oldDraft = localStorage.getItem("diem_danh_draft");
+                if (oldDraft) noiDungNhap.value = oldDraft;
+                const oldCourse = localStorage.getItem("diem_danh_mon_hoc");
+                if (oldCourse) monHoc.value = oldCourse;
+            }
+        } catch (error) {
+            console.warn("Không thể khôi phục bản nháp điểm danh:", error);
+        }
+
+        try {
+            const session = await sessionRequest("/api/session");
+            setSessionValue("sessionExpiresAt", String(session.expiresAt));
+        } catch (error) {
+            if (!handlingExpiredSession) expireSession();
+        }
+    };
+
+    async function refreshSessionActivity(force = false) {
+        if (handlingExpiredSession || (!force && Date.now() - lastRenewalAt < 10000)) return;
+        lastRenewalAt = Date.now();
+        try {
+            const session = await sessionRequest("/api/session/renew", { method: "POST" });
+            setSessionValue("sessionExpiresAt", String(session.expiresAt));
+        } catch (error) {
+            if (!handlingExpiredSession) expireSession();
+        }
+    }
+
+    document.addEventListener("mousemove", refreshSessionActivity, { passive: true });
+    document.addEventListener("keydown", refreshSessionActivity);
+    document.addEventListener("click", refreshSessionActivity);
+    document.addEventListener("scroll", refreshSessionActivity, { passive: true });
+
+    function saveAttendanceDraft() {
+        localStorage.setItem("diem_danh_form_draft", JSON.stringify({
+            className: monHoc.value,
+            studentEmail: studentEmail.value,
+            attendanceDate: attendanceDate.value,
+            status: attendanceStatus.value,
+            note: noiDungNhap.value
+        }));
+        draftStatus.innerText = "💾 Đang lưu tự động...";
+        setTimeout(() => {
+            draftStatus.innerText = "💾 Dữ liệu đã được lưu bản nháp an toàn";
+        }, 500);
+    }
+
+    [monHoc, studentEmail, attendanceDate, attendanceStatus, noiDungNhap]
+        .forEach(field => field.addEventListener("input", saveAttendanceDraft));
+    [monHoc, studentEmail, attendanceDate, attendanceStatus]
+        .forEach(field => field.addEventListener("change", saveAttendanceDraft));
+
+    const sessionTimer = setInterval(() => {
+        const remainingMs = getRemainingMs();
+        if (remainingMs <= 0) {
+            clearInterval(sessionTimer);
+            expireSession();
+            return;
+        }
+
+        const remainingText = formatRemainingTime(remainingMs);
+        if (remainingMs <= 10 * 1000) {
+            statusBar.classList.add("danger");
+            statusText.innerHTML = `⚠️ <strong>Cảnh báo:</strong> Phiên sắp hết hạn sau <strong>${remainingText}</strong>!`;
+        } else {
+            statusText.innerHTML = `⏳ Phiên đăng nhập còn hiệu lực: <strong>${remainingText}</strong>`;
+            statusBar.classList.remove("danger");
+        }
+    }, 1000);
+
+    function giaHanPhien() {
+        refreshSessionActivity(true).then(() => {
+            if (handlingExpiredSession) return;
+            statusBar.classList.remove("danger");
+            statusText.innerHTML = "✅ Phiên đã được gia hạn thành công!";
+        });
+    }
+
+    async function dangXuatAnToan() {
+        if (!confirm("Bạn có chắc chắn muốn đăng xuất an toàn không?")) return;
+        try {
+            await fetch("/api/session/logout", { method: "POST", headers: apiHeaders });
+        } catch (error) {
+            console.error("Không thể xác nhận thu hồi phiên trên máy chủ:", error);
+            localStorage.setItem("logout_reason", "logout-failed");
+        } finally {
+            clearSessionValues();
+            localStorage.removeItem("diem_danh_form_draft");
+            localStorage.removeItem("diem_danh_draft");
+            localStorage.removeItem("diem_danh_mon_hoc");
+            window.location.href = "login.html";
+        }
+    }
+
+    async function diemDanhThanhCong() {
+        if (!studentEmail.value.trim() || !attendanceDate.value) {
+            attendanceFeedback.textContent = "Vui lòng nhập email học sinh và ngày điểm danh.";
+            return;
+        }
+
+        attendanceSubmit.disabled = true;
+        attendanceFeedback.textContent = "Đang lưu điểm danh...";
+        try {
+            const result = await sessionRequest("/api/attendance", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    className: monHoc.value,
+                    studentEmail: studentEmail.value.trim(),
+                    attendanceDate: attendanceDate.value,
+                    status: attendanceStatus.value,
+                    note: noiDungNhap.value
+                })
+            });
+            attendanceFeedback.textContent = result.message;
+            attendanceFeedback.className = "is-success";
+            localStorage.removeItem("diem_danh_form_draft");
+            localStorage.removeItem("diem_danh_draft");
+            localStorage.removeItem("diem_danh_mon_hoc");
+        } catch (error) {
+            if (!handlingExpiredSession) {
+                attendanceFeedback.textContent = error.message || "Không thể lưu điểm danh.";
+                attendanceFeedback.className = "is-error";
+            }
+        } finally {
+            attendanceSubmit.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>

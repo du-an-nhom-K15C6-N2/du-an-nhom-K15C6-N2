@@ -1,0 +1,47 @@
+[
+  {
+    "id": "demo-course-foundation",
+    "code": "CS101",
+    "name": "Nhập môn Công nghệ thông tin",
+    "sessionCount": 12,
+    "weight": 1,
+    "outcomesDescription": "Nắm kiến thức nền tảng về máy tính và công nghệ thông tin.",
+    "programIds": ["CNTT-2026"]
+  },
+  {
+    "id": "demo-course-programming",
+    "code": "CS102",
+    "name": "Lập trình cơ bản",
+    "sessionCount": 15,
+    "weight": 1.5,
+    "outcomesDescription": "Sử dụng cấu trúc điều khiển, hàm và kiểu dữ liệu cơ bản.",
+    "programIds": ["CNTT-2026"]
+  },
+  {
+    "id": "demo-course-database",
+    "code": "CS201",
+    "name": "Cơ sở dữ liệu",
+    "sessionCount": 15,
+    "weight": 1.5,
+    "outcomesDescription": "Thiết kế mô hình quan hệ và truy vấn dữ liệu.",
+    "programIds": ["CNTT-2026"]
+  },
+  {
+    "id": "demo-course-web",
+    "code": "CS301",
+    "name": "Phát triển ứng dụng Web nâng cao",
+    "sessionCount": 18,
+    "weight": 2,
+    "outcomesDescription": "Xây dựng và triển khai ứng dụng web hoàn chỉnh.",
+    "programIds": ["CNTT-2026"]
+  },
+  {
+    "id": "demo-course-security",
+    "code": "CS302",
+    "name": "An toàn thông tin",
+    "sessionCount": 12,
+    "weight": 1.5,
+    "outcomesDescription": "Nhận diện rủi ro và áp dụng các nguyên tắc bảo mật ứng dụng.",
+    "programIds": ["CNTT-2026"]
+  }
+]

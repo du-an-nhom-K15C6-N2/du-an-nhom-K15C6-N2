@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Danh mục môn học</title>
+  <link rel="stylesheet" href="/features/course-catalog/frontend/course-catalog.css">
+</head>
+<body>
+  <main class="catalog">
+    <header class="catalog__header">
+      <div>
+        <p class="catalog__eyebrow">QUẢN LÝ ĐÀO TẠO</p>
+        <h1>Danh mục môn học</h1>
+        <p class="catalog__intro">Quản lý môn học dùng chung cho nhiều chương trình đào tạo.</p>
+        <a href="/">Quay lại hệ thống</a>
+      </div>
+      <button class="button button--primary" id="create-course" type="button">+ Thêm môn học</button>
+    </header>
+
+    <section class="panel" aria-labelledby="course-list-heading">
+      <div class="panel__heading">
+        <div>
+          <h2 id="course-list-heading">Danh sách môn học</h2>
+          <p id="list-summary" class="muted" aria-live="polite"></p>
+        </div>
+        <form id="search-form" class="search">
+          <label class="visually-hidden" for="search-query">Tìm theo mã, tên hoặc chuẩn đầu ra</label>
+          <input id="search-query" name="q" type="search" placeholder="Tìm môn học...">
+          <button class="button button--secondary" type="submit">Tìm kiếm</button>
+        </form>
+      </div>
+
+      <p id="notice" class="notice" role="status" aria-live="polite"></p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Mã môn</th>
+              <th scope="col">Tên môn học</th>
+              <th scope="col">Số buổi</th>
+              <th scope="col">Trọng số</th>
+              <th scope="col">Chương trình</th>
+              <th scope="col">Lớp đang dùng</th>
+              <th scope="col">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="course-rows"></tbody>
+        </table>
+      </div>
+      <nav class="pagination" aria-label="Phân trang danh mục môn học">
+        <button class="button button--secondary" id="previous-page" type="button">Trang trước</button>
+        <span id="page-label" aria-live="polite"></span>
+        <button class="button button--secondary" id="next-page" type="button">Trang sau</button>
+      </nav>
+    </section>
+  </main>
+
+  <dialog id="course-dialog" aria-labelledby="dialog-title">
+    <form id="course-form" class="course-form">
+      <div class="course-form__heading">
+        <div>
+          <p class="catalog__eyebrow">DANH MỤC MÔN HỌC</p>
+          <h2 id="dialog-title">Thêm môn học</h2>
+        </div>
+        <button class="icon-button" id="close-dialog" type="button" aria-label="Đóng">×</button>
+      </div>
+      <input id="course-id" name="id" type="hidden">
+      <div class="form-grid">
+        <label>
+          Mã môn học <span aria-hidden="true">*</span>
+          <input id="course-code" name="code" maxlength="40" required autocomplete="off">
+        </label>
+        <label>
+          Tên môn học <span aria-hidden="true">*</span>
+          <input id="course-name" name="name" maxlength="160" required>
+        </label>
+        <label>
+          Số buổi <span aria-hidden="true">*</span>
+          <input id="session-count" name="sessionCount" type="number" min="1" step="1" required>
+        </label>
+        <label>
+          Trọng số <span aria-hidden="true">*</span>
+          <input id="course-weight" name="weight" type="number" min="0.001" step="any" required>
+        </label>
+        <label class="form-grid__wide">
+          Mã chương trình sử dụng môn học
+          <input id="program-ids" name="programIds" placeholder="Ví dụ: CNTT-2026, QTKD-2026">
+          <small>Nhập mã chương trình, phân cách bằng dấu phẩy. Cùng mã môn học được dùng lại ở nhiều chương trình.</small>
+        </label>
+        <label class="form-grid__wide">
+          Mô tả chuẩn đầu ra <span aria-hidden="true">*</span>
+          <textarea id="outcomes-description" name="outcomesDescription" rows="4" required></textarea>
+        </label>
+      </div>
+      <p id="form-error" class="form-error" role="alert"></p>
+      <div class="course-form__actions">
+        <button class="button button--secondary" id="cancel-dialog" type="button">Huỷ</button>
+        <button class="button button--primary" id="save-course" type="submit">Lưu môn học</button>
+      </div>
+    </form>
+  </dialog>
+  <script src="/features/course-catalog/frontend/course-catalog.js" defer></script>
+</body>
+</html>
